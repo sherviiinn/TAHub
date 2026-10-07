@@ -17,7 +17,20 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        http
+                .authorizeHttpRequests(auth -> auth
+                        // Anyone may see the login page.
+                        .requestMatchers("/login").permitAll()
+                        // Only admins may manage users.
+                        .requestMatchers("/users/**").hasRole("ADMIN")
+                        // Everything else requires a logged-in user.
+                        .anyRequest().authenticated())
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/", true)
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout"));
         return http.build();
     }
 }

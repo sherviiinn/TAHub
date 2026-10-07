@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TA Hub</title>
+    <title th:text="${appName}">TA Hub</title>
 </head>
 <body>
-<h1>به <span th:text="${appName}">نام برنامه</span> خوش آمدید</h1>
-<p>سرور با موفقیت کار می‌کند.</p>
+<h1 th:text="#{home.welcome(${appName})}">Welcome</h1>
+<p th:text="#{home.signedInAs(${username})}">Signed in as</p>
+
+<p><a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a></p>
+
+<form method="post" th:action="@{/logout}">
+    <button type="submit" th:text="#{home.logout}">Sign out</button>
+</form>
 </body>
 </html>

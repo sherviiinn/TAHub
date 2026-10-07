@@ -1,32 +1,32 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>کاربران</title>
+    <title>Users</title>
 </head>
 <body>
-<h1>کاربران</h1>
+<h1>Users</h1>
 
 <form method="post" th:action="@{/users}">
-    <input type="text" name="fullName" placeholder="نام کامل" required>
-    <input type="text" name="studentNumber" placeholder="شماره دانشجویی" required>
-    <input type="password" name="password" placeholder="رمز عبور" required>
+    <input type="text" name="fullName" placeholder="Full name" required>
+    <input type="text" name="studentNumber" placeholder="Student number" required>
+    <input type="password" name="password" placeholder="Password" required>
     <select name="role">
-        <option value="STUDENT">دانشجو</option>
-        <option value="PROFESSOR">استاد</option>
-        <option value="ADMIN">ادمین</option>
+        <option value="STUDENT">Student</option>
+        <option value="PROFESSOR">Professor</option>
+        <option value="ADMIN">Admin</option>
     </select>
-    <button type="submit">ذخیره</button>
+    <button type="submit">Save</button>
 </form>
 
 <table border="1">
     <tr>
-        <th>شناسه</th>
-        <th>نام</th>
-        <th>شماره دانشجویی</th>
-        <th>نقش</th>
-        <th>عملیات</th>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Student number</th>
+        <th>Role</th>
+        <th>Actions</th>
     </tr>
     <tr th:each="u : ${users}">
         <td th:text="${u.id}"></td>
@@ -35,7 +35,7 @@
         <td th:text="${u.role}"></td>
         <td>
             <form method="post" th:action="@{/users/{id}/delete(id=${u.id})}">
-                <button type="submit">حذف</button>
+                <button type="submit">Delete</button>
             </form>
         </td>
     </tr>

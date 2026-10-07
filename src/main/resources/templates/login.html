@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{login.title}">Sign in</title>
+</head>
+<body>
+<h1 th:text="#{login.title}">Sign in</h1>
+
+<p th:if="${param.error}" th:text="#{login.error}"></p>
+<p th:if="${param.logout}" th:text="#{login.logout}"></p>
+
+<form method="post" th:action="@{/login}">
+    <input type="text" name="username" th:placeholder="#{login.studentNumber}" required autofocus>
+    <input type="password" name="password" th:placeholder="#{login.password}" required>
+    <button type="submit" th:text="#{login.submit}">Sign in</button>
+</form>
+</body>
+</html>
