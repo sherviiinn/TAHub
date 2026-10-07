@@ -8,27 +8,28 @@
 <body>
 <h1 th:text="#{courses.title}">Courses</h1>
 
+<p th:if="${semester != null}" th:text="#{courses.semester.current(${semester.code})}"></p>
+<p th:if="${semester == null}" th:text="#{courses.noSemester}"></p>
+
 <p th:if="${canCreate}">
     <a th:href="@{/courses/new}" th:text="#{courses.new}">New course</a>
 </p>
 
-<p th:if="${#lists.isEmpty(courses)}" th:text="#{courses.empty}">No courses yet.</p>
+<p th:if="${#lists.isEmpty(offerings)}" th:text="#{courses.empty}">No courses yet.</p>
 
-<table border="1" th:unless="${#lists.isEmpty(courses)}">
+<table border="1" th:unless="${#lists.isEmpty(offerings)}">
     <tr>
         <th th:text="#{courses.code}">Code</th>
         <th th:text="#{courses.name}">Name</th>
-        <th th:text="#{courses.semester}">Semester</th>
         <th th:text="#{courses.professor}">Professor</th>
     </tr>
-    <tr th:each="c : ${courses}">
-        <td th:text="${c.code}"></td>
-        <td th:text="${c.name}"></td>
-        <td th:text="${c.semester}"></td>
-        <td th:text="${c.professor.fullName}"></td>
+    <tr th:each="o : ${offerings}">
+        <td th:text="${o.course.code}"></td>
+        <td th:text="${o.course.name}"></td>
+        <td th:text="${o.professor.fullName}"></td>
     </tr>
 </table>
 
-<p><a th:href="@{/}" th:text="#{courses.back}">Back to home</a></p>
+<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
 </body>
 </html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{semesters.title}">Semesters</title>
+</head>
+<body>
+<h1 th:text="#{semesters.title}">Semesters</h1>
+
+<table border="1">
+    <tr>
+        <th th:text="#{semesters.code}">Code</th>
+        <th th:text="#{semesters.status}">Status</th>
+    </tr>
+    <tr th:each="s : ${semesters}">
+        <td th:text="${s.code}"></td>
+        <td th:text="${s.active} ? #{semesters.active} : #{semesters.archived}"></td>
+    </tr>
+</table>
+
+<h2 th:text="#{semesters.startNew}">Start new semester</h2>
+<p th:text="#{semesters.warning}"></p>
+<p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
+
+<form method="post" th:action="@{/admin/semesters}">
+    <label for="code" th:text="#{semesters.codeLabel}">Semester code</label><br>
+    <input type="text" id="code" name="code" maxlength="5">
+    <button type="submit" th:text="#{semesters.submit}">Start semester</button>
+</form>
+
+<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+</body>
+</html>

@@ -13,6 +13,9 @@
 <p th:if="${isAdmin}">
     <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
 </p>
+<p th:if="${isAdmin}">
+    <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
+</p>
 
 <form method="post" th:action="@{/logout}">
     <button type="submit" th:text="#{home.logout}">Sign out</button>

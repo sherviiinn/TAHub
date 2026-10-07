@@ -1,13 +1,6 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="#{course.form.title}">New course</title>
-</head>
-<body>
 <h1 th:text="#{course.form.title}">New course</h1>
 
+<p th:if="${semester != null}" th:text="#{course.form.forSemester(${semester.code})}"></p>
 <p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
 
 <form method="post" th:action="@{/courses}" th:object="${form}">
@@ -19,12 +12,8 @@
         <label for="name" th:text="#{course.form.name}">Course name</label><br>
         <input type="text" id="name" th:field="*{name}" maxlength="100">
     </div>
-    <div>
-        <label for="semester" th:text="#{course.form.semester}">Semester (for example 14051)</label><br>
-        <input type="text" id="semester" th:field="*{semester}" maxlength="100">
-    </div>
 
-    <!-- Only admins choose the professor. Professors always create their own courses. -->
+    <!-- Only admins choose the professor. Professors always offer their own courses. -->
     <div th:if="${isAdmin}">
         <label for="professorId" th:text="#{course.form.professor}">Professor</label><br>
         <select id="professorId" name="professorId">
@@ -38,7 +27,3 @@
 
     <button type="submit" th:text="#{course.form.submit}">Create course</button>
 </form>
-
-<p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
-</body>
-</html>
