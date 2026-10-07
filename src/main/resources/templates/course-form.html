@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{course.form.title}">New course</title>
+</head>
+<body>
+<h1 th:text="#{course.form.title}">New course</h1>
+
+<p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
+
+<form method="post" th:action="@{/courses}" th:object="${form}">
+    <div>
+        <label for="code" th:text="#{course.form.code}">Course code</label><br>
+        <input type="text" id="code" th:field="*{code}" maxlength="100">
+    </div>
+    <div>
+        <label for="name" th:text="#{course.form.name}">Course name</label><br>
+        <input type="text" id="name" th:field="*{name}" maxlength="100">
+    </div>
+    <div>
+        <label for="semester" th:text="#{course.form.semester}">Semester (for example 14051)</label><br>
+        <input type="text" id="semester" th:field="*{semester}" maxlength="100">
+    </div>
+
+    <!-- Only admins choose the professor. Professors always create their own courses. -->
+    <div th:if="${isAdmin}">
+        <label for="professorId" th:text="#{course.form.professor}">Professor</label><br>
+        <select id="professorId" name="professorId">
+            <option value="" th:text="#{course.form.chooseProfessor}">Choose a professor</option>
+            <option th:each="p : ${professors}"
+                    th:value="${p.id}"
+                    th:selected="${form.professorId != null and form.professorId == p.id}"
+                    th:text="${p.fullName} + ' (' + ${p.studentNumber} + ')'"></option>
+        </select>
+    </div>
+
+    <button type="submit" th:text="#{course.form.submit}">Create course</button>
+</form>
+
+<p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
+</body>
+</html>
