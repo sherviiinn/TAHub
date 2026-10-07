@@ -1,29 +1,15 @@
 package ir.TAHub.TAHub.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-
 /**
  * Data submitted by the registration form.
  * It deliberately has no "role" field: new accounts are always students.
+ * Validation is done step by step in RegistrationController.
  */
 public class RegisterForm {
 
-    @NotBlank
-    @Size(max = 100)
     private String fullName;
-
-    @NotBlank
-    @Pattern(regexp = "\\d{4,20}")
     private String studentNumber;
-
-    // BCrypt only uses the first 72 bytes, so we cap the length.
-    @NotBlank
-    @Size(min = 8, max = 64)
     private String password;
-
-    @NotBlank
     private String confirmPassword;
 
     public String getFullName() { return fullName; }

@@ -13,10 +13,17 @@
 <p th:if="${param.registered}" th:text="#{login.registered}"></p>
 
 <form method="post" th:action="@{/login}">
-    <input type="text" name="username" th:placeholder="#{login.studentNumber}" required autofocus>
-    <input type="password" name="password" th:placeholder="#{login.password}" required>
+    <div>
+        <label for="username" th:text="#{login.studentNumber}">Student number</label><br>
+        <input type="text" id="username" name="username" required autofocus>
+    </div>
+    <div>
+        <label for="password" th:text="#{login.password}">Password</label><br>
+        <input type="password" id="password" name="password" required>
+    </div>
     <button type="submit" th:text="#{login.submit}">Sign in</button>
 </form>
-</body>
+
 <p><a th:href="@{/register}" th:text="#{login.register}">Create an account</a></p>
+</body>
 </html>

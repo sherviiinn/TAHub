@@ -31,31 +31,62 @@ public class RegistrationController {
     }
 
     @PostMapping("/register")
-    public String register(@Valid @ModelAttribute("form") RegisterForm form,
-                           BindingResult result) {
+    public String register(@ModelAttribute("form") RegisterForm form, Model model) {
 
-        // Checks that annotations cannot express.
-        if (form.getPassword() != null && !form.getPassword().equals(form.getConfirmPassword())) {
-            result.rejectValue("confirmPassword", "register.error.mismatch", "Passwords do not match.");
-        }
-        if (form.getStudentNumber() != null
-                && userRepository.existsByStudentNumber(form.getStudentNumber())) {
-            result.rejectValue("studentNumber", "register.error.duplicate",
-                    "This student number is already registered.");
-        }
+        // Clean up whitespace first, so " 12345 " is treated as "12345".
+        form.setFullName(trimOrEmpty(form.getFullName()));
+        form.setStudentNumber(trimOrEmpty(form.getStudentNumber()));
 
-        // If anything failed, show the same page again with the error messages.
-        if (result.hasErrors()) {
+        String errorKey = findFirstError(form);
+        if (errorKey != null) {
+            model.addAttribute("errorKey", errorKey);
             return "register";
         }
 
         User user = new User();
-        user.setFullName(form.getFullName().trim());
+        user.setFullName(form.getFullName());
         user.setStudentNumber(form.getStudentNumber());
         user.setPasswordHash(passwordEncoder.encode(form.getPassword()));
         user.setRole(Role.STUDENT); // never taken from user input
         userRepository.save(user);
 
         return "redirect:/login?registered";
+    }
+
+    /**
+     * Checks the form in the same order as the fields on the page and
+     * returns the message key of the FIRST problem, or null if all is fine.
+     */
+    private String findFirstError(RegisterForm form) {
+        if (form.getFullName().isEmpty()) {
+            return "register.error.fullNameRequired";
+        }
+        if (form.getFullName().length() > 100) {
+            return "register.error.fullNameTooLong";
+        }
+        if (form.getStudentNumber().isEmpty()) {
+            return "register.error.studentNumberRequired";
+        }
+        if (!form.getStudentNumber().matches("\\d{4,20}")) {
+            return "register.error.studentNumberFormat";
+        }
+        if (userRepository.existsByStudentNumber(form.getStudentNumber())) {
+            return "register.error.studentNumberTaken";
+        }
+        String password = form.getPassword();
+        if (password == null || password.isBlank()) {
+            return "register.error.passwordRequired";
+        }
+        if (password.length() < 8 || password.length() > 64) {
+            return "register.error.passwordLength";
+        }
+        if (!password.equals(form.getConfirmPassword())) {
+            return "register.error.passwordMismatch";
+        }
+        return null;
+    }
+
+    private String trimOrEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 }
