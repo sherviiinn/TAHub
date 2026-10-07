@@ -1,12 +1,7 @@
 package ir.TAHub.TAHub.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
+import jakarta.persistence.EnumType;
 @Entity
 @Table(name = "users")
 public class User {
@@ -20,6 +15,13 @@ public class User {
 
     @Column(nullable = false, unique = true)
     private String studentNumber;
+
+    @Column(nullable = false)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     public User() {
     }
@@ -43,4 +45,20 @@ public class User {
     public void setStudentNumber(String studentNumber) {
         this.studentNumber = studentNumber;
     }
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
 }
