@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: tahub-db
+    environment:
+      POSTGRES_DB: tahub
+      POSTGRES_USER: tahub
+      POSTGRES_PASSWORD: tahub123
+    ports:
+      - "5433:5432"
+    volumes:
+      - tahub-data:/var/lib/postgresql/data
+
+volumes:
+  tahub-data:

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>کاربران</title>
+</head>
+<body>
+<h1>کاربران</h1>
+
+<form method="post" action="/users">
+    <input type="text" name="fullName" placeholder="نام کامل" required>
+    <input type="text" name="studentNumber" placeholder="شماره دانشجویی" required>
+    <button type="submit">ذخیره</button>
+</form>
+
+<table border="1">
+    <tr>
+        <th>شناسه</th>
+        <th>نام</th>
+        <th>شماره دانشجویی</th>
+        <th>عملیات</th>
+    </tr>
+    <tr th:each="u : ${users}">
+        <td th:text="${u.id}"></td>
+        <td th:text="${u.fullName}"></td>
+        <td th:text="${u.studentNumber}"></td>
+        <td>
+            <form method="post" th:action="@{/users/{id}/delete(id=${u.id})}">
+                <button type="submit">حذف</button>
+            </form>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
