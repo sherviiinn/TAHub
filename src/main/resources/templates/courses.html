@@ -24,7 +24,7 @@
         <th th:text="#{courses.professor}">Professor</th>
     </tr>
     <tr th:each="o : ${offerings}">
-        <td th:text="${o.course.code}"></td>
+        <td><a th:href="@{/courses/{id}(id=${o.id})}" th:text="${o.course.code}"></a></td>
         <td th:text="${o.course.name}"></td>
         <td th:text="${o.professor.fullName}"></td>
     </tr>

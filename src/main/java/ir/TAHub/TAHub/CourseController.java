@@ -10,12 +10,15 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
@@ -62,6 +65,16 @@ public class CourseController {
         model.addAttribute("form", new CourseForm());
         addFormData(model, authentication);
         return "course-form";
+    }
+    /** Shows one offering. Old (archived) offerings can still be opened here, they are only hidden from the list. */
+    @GetMapping("/courses/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        CourseOffering offering = offeringRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        model.addAttribute("offering", offering);
+        model.addAttribute("isCurrentSemester", offering.getSemester().isActive());
+        return "course-detail";
     }
 
     @PostMapping("/courses")

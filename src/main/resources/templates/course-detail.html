@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${offering.course.code}">Course</title>
+</head>
+<body>
+<h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
+
+<p th:text="#{course.detail.semester(${offering.semester.code})}"></p>
+<p th:if="${!isCurrentSemester}" th:text="#{course.detail.archived}"></p>
+<p th:text="#{course.detail.professor(${offering.professor.fullName})}"></p>
+
+<p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
+</body>
+</html>
