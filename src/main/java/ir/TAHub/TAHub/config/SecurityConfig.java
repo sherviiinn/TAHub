@@ -20,7 +20,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Anyone may see the login page.
-                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/login", "/register").permitAll()
                         // Only admins may manage users.
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         // Everything else requires a logged-in user.

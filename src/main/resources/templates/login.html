@@ -10,6 +10,7 @@
 
 <p th:if="${param.error}" th:text="#{login.error}"></p>
 <p th:if="${param.logout}" th:text="#{login.logout}"></p>
+<p th:if="${param.registered}" th:text="#{login.registered}"></p>
 
 <form method="post" th:action="@{/login}">
     <input type="text" name="username" th:placeholder="#{login.studentNumber}" required autofocus>
@@ -17,4 +18,5 @@
     <button type="submit" th:text="#{login.submit}">Sign in</button>
 </form>
 </body>
+<p><a th:href="@{/register}" th:text="#{login.register}">Create an account</a></p>
 </html>

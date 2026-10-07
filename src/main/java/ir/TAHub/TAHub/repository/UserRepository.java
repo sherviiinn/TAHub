@@ -11,6 +11,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Used by login: the student number is the username.
     Optional<User> findByStudentNumber(String studentNumber);
 
+    // Used by registration to reject duplicate student numbers.
+    boolean existsByStudentNumber(String studentNumber);
+
     // Used to create the first admin only when none exists.
     boolean existsByRole(Role role);
 }
