@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${offering.course.code}">Course</title>
+</head>
 <body>
 <h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
 
@@ -5,26 +12,42 @@
 <p th:if="${!isCurrentSemester}" th:text="#{course.detail.archived}"></p>
 <p th:text="#{course.detail.professor(${offering.professor.fullName})}"></p>
 
-<!-- Student actions -->
-<div th:if="${isCurrentSemester and isStudent}">
-    <p th:if="${isEnrolled}" th:text="#{course.detail.enrolled}"></p>
+<!-- What a student sees about their own enrollment -->
+<div th:if="${isStudent}">
 
-    <form th:if="${!isEnrolled}" method="post"
-          th:action="@{/courses/{id}/enroll(id=${offering.id})}">
-        <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
-    </form>
+    <!-- Current semester: the student can act -->
+    <th:block th:if="${isCurrentSemester}">
+        <p th:if="${isEnrolled}" th:text="#{course.detail.enrolled}"></p>
+        <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
 
-    <form th:if="${isEnrolled}" method="post"
-          th:action="@{/courses/{id}/drop(id=${offering.id})}">
-        <button type="submit" th:text="#{course.detail.drop}">Drop this course</button>
-    </form>
+        <form th:if="${isEnrolled}" method="post"
+              th:action="@{/courses/{id}/drop(id=${offering.id})}">
+            <button type="submit" th:text="#{course.detail.drop}">Drop this course</button>
+        </form>
+
+        <!-- Not enrolled and not removed: the student may enroll (or enroll again after dropping) -->
+        <form th:if="${!isEnrolled and !wasRemoved}" method="post"
+              th:action="@{/courses/{id}/enroll(id=${offering.id})}">
+            <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
+        </form>
+    </th:block>
+
+    <!-- Archived semester: only past-tense information, no buttons -->
+    <th:block th:unless="${isCurrentSemester}">
+        <p th:if="${isEnrolled}" th:text="#{course.detail.wasEnrolled}"></p>
+        <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
+    </th:block>
 </div>
 
-<!-- Professor and admin: the list of enrolled students -->
+<!-- Professor and admin: the list of students -->
 <div th:if="${canManage}">
-    <h2 th:text="#{course.detail.students(${#lists.size(enrollments)})}">Enrolled students</h2>
+    <h2 th:text="${isCurrentSemester}
+                ? #{course.detail.students(${#lists.size(enrollments)})}
+                : #{course.detail.students.past(${#lists.size(enrollments)})}">Enrolled students</h2>
 
-    <p th:if="${#lists.isEmpty(enrollments)}" th:text="#{course.detail.noStudents}">No students yet.</p>
+    <p th:if="${#lists.isEmpty(enrollments)}"
+       th:text="${isCurrentSemester} ? #{course.detail.noStudents} : #{course.detail.noStudents.past}">
+        No students yet.</p>
 
     <table border="1" th:unless="${#lists.isEmpty(enrollments)}">
         <tr>
@@ -43,7 +66,31 @@
             </td>
         </tr>
     </table>
+
+    <!-- Students removed by the professor. Shown only if there are any. -->
+    <th:block th:unless="${#lists.isEmpty(removedEnrollments)}">
+        <h2 th:text="#{course.detail.removedStudents(${#lists.size(removedEnrollments)})}">Removed students</h2>
+
+        <table border="1">
+            <tr>
+                <th th:text="#{course.detail.studentName}">Name</th>
+                <th th:text="#{course.detail.studentNumber}">Student number</th>
+                <th th:if="${isCurrentSemester}"></th>
+            </tr>
+            <tr th:each="e : ${removedEnrollments}">
+                <td th:text="${e.student.fullName}"></td>
+                <td th:text="${e.student.studentNumber}"></td>
+                <td th:if="${isCurrentSemester}">
+                    <form method="post"
+                          th:action="@{/courses/{id}/students/{sid}/restore(id=${offering.id},sid=${e.student.id})}">
+                        <button type="submit" th:text="#{course.detail.restore}">Restore</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </th:block>
 </div>
 
 <p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
 </body>
+</html>

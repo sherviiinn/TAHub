@@ -1,11 +1,7 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.dto.CourseForm;
-import ir.TAHub.TAHub.model.Course;
-import ir.TAHub.TAHub.model.CourseOffering;
-import ir.TAHub.TAHub.model.Role;
-import ir.TAHub.TAHub.model.Semester;
-import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.model.*;
 import ir.TAHub.TAHub.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -77,16 +73,27 @@ public class CourseController {
         boolean isStudent = current.getRole() == Role.STUDENT;
         boolean canManage = offering.isManagedBy(current);
 
+        // The student's own enrollment (if any) decides which buttons and messages they see.
+        EnrollmentStatus myStatus = null;
+        if (isStudent) {
+            myStatus = enrollmentRepository.findByStudentAndOffering(current, offering)
+                    .map(Enrollment::getStatus)
+                    .orElse(null);
+        }
+
         model.addAttribute("offering", offering);
         model.addAttribute("isCurrentSemester", offering.getSemester().isActive());
         model.addAttribute("isStudent", isStudent);
-        model.addAttribute("isEnrolled",
-                isStudent && enrollmentRepository.existsByStudentAndOffering(current, offering));
+        model.addAttribute("isEnrolled", myStatus == EnrollmentStatus.ACTIVE);
+        model.addAttribute("wasRemoved", myStatus == EnrollmentStatus.REMOVED);
         model.addAttribute("canManage", canManage);
 
         // Only the professor and admins see who is enrolled. Students do not see their classmates.
         if (canManage) {
-            model.addAttribute("enrollments", enrollmentRepository.findByOfferingOrderByStudentFullNameAsc(offering));
+            model.addAttribute("enrollments", enrollmentRepository
+                    .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.ACTIVE));
+            model.addAttribute("removedEnrollments", enrollmentRepository
+                    .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.REMOVED));
         }
         return "course-detail";
     }

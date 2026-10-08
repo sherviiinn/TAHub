@@ -2,6 +2,8 @@ package ir.TAHub.TAHub.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,7 +14,11 @@ import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 
-/** Says that one student takes one course offering. A student can enroll in an offering only once. */
+/**
+ * Says that one student takes (or took) one course offering.
+ * There is only one row per student and offering. Leaving or being removed
+ * changes the status, the row is kept as history.
+ */
 @Entity
 @Table(name = "enrollments",
         uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "offering_id"}))
@@ -33,6 +39,10 @@ public class Enrollment {
     @Column(nullable = false)
     private Instant enrolledAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EnrollmentStatus status;
+
     public Enrollment() {
     }
 
@@ -46,4 +56,7 @@ public class Enrollment {
 
     public Instant getEnrolledAt() { return enrolledAt; }
     public void setEnrolledAt(Instant enrolledAt) { this.enrolledAt = enrolledAt; }
+
+    public EnrollmentStatus getStatus() { return status; }
+    public void setStatus(EnrollmentStatus status) { this.status = status; }
 }
