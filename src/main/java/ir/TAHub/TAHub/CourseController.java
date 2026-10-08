@@ -6,10 +6,7 @@ import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.Semester;
 import ir.TAHub.TAHub.model.User;
-import ir.TAHub.TAHub.repository.CourseOfferingRepository;
-import ir.TAHub.TAHub.repository.CourseRepository;
-import ir.TAHub.TAHub.repository.SemesterRepository;
-import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -34,14 +31,18 @@ public class CourseController {
     private final SemesterRepository semesterRepository;
     private final UserRepository userRepository;
 
+    private final EnrollmentRepository enrollmentRepository;
+
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
                             SemesterRepository semesterRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            EnrollmentRepository enrollmentRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
         this.userRepository = userRepository;
+        this.enrollmentRepository = enrollmentRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -68,12 +69,25 @@ public class CourseController {
     }
     /** Shows one offering. Old (archived) offerings can still be opened here, they are only hidden from the list. */
     @GetMapping("/courses/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(@PathVariable Long id, Model model, Authentication authentication) {
         CourseOffering offering = offeringRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        User current = currentUser(authentication);
+
+        boolean isStudent = current.getRole() == Role.STUDENT;
+        boolean canManage = offering.isManagedBy(current);
 
         model.addAttribute("offering", offering);
         model.addAttribute("isCurrentSemester", offering.getSemester().isActive());
+        model.addAttribute("isStudent", isStudent);
+        model.addAttribute("isEnrolled",
+                isStudent && enrollmentRepository.existsByStudentAndOffering(current, offering));
+        model.addAttribute("canManage", canManage);
+
+        // Only the professor and admins see who is enrolled. Students do not see their classmates.
+        if (canManage) {
+            model.addAttribute("enrollments", enrollmentRepository.findByOfferingOrderByStudentFullNameAsc(offering));
+        }
         return "course-detail";
     }
 

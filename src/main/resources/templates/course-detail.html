@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${offering.course.code}">Course</title>
-</head>
 <body>
 <h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
 
@@ -12,6 +5,45 @@
 <p th:if="${!isCurrentSemester}" th:text="#{course.detail.archived}"></p>
 <p th:text="#{course.detail.professor(${offering.professor.fullName})}"></p>
 
+<!-- Student actions -->
+<div th:if="${isCurrentSemester and isStudent}">
+    <p th:if="${isEnrolled}" th:text="#{course.detail.enrolled}"></p>
+
+    <form th:if="${!isEnrolled}" method="post"
+          th:action="@{/courses/{id}/enroll(id=${offering.id})}">
+        <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
+    </form>
+
+    <form th:if="${isEnrolled}" method="post"
+          th:action="@{/courses/{id}/drop(id=${offering.id})}">
+        <button type="submit" th:text="#{course.detail.drop}">Drop this course</button>
+    </form>
+</div>
+
+<!-- Professor and admin: the list of enrolled students -->
+<div th:if="${canManage}">
+    <h2 th:text="#{course.detail.students(${#lists.size(enrollments)})}">Enrolled students</h2>
+
+    <p th:if="${#lists.isEmpty(enrollments)}" th:text="#{course.detail.noStudents}">No students yet.</p>
+
+    <table border="1" th:unless="${#lists.isEmpty(enrollments)}">
+        <tr>
+            <th th:text="#{course.detail.studentName}">Name</th>
+            <th th:text="#{course.detail.studentNumber}">Student number</th>
+            <th th:if="${isCurrentSemester}"></th>
+        </tr>
+        <tr th:each="e : ${enrollments}">
+            <td th:text="${e.student.fullName}"></td>
+            <td th:text="${e.student.studentNumber}"></td>
+            <td th:if="${isCurrentSemester}">
+                <form method="post"
+                      th:action="@{/courses/{id}/students/{sid}/remove(id=${offering.id},sid=${e.student.id})}">
+                    <button type="submit" th:text="#{course.detail.remove}">Remove</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+</div>
+
 <p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
 </body>
-</html>

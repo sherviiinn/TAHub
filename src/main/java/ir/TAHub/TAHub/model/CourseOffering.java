@@ -48,4 +48,11 @@ public class CourseOffering {
 
     public User getProfessor() { return professor; }
     public void setProfessor(User professor) { this.professor = professor; }
+    /** True if this user may manage the offering: an admin, or the professor who teaches it. */
+    public boolean isManagedBy(User user) {
+        if (user.getRole() == Role.ADMIN) {
+            return true;
+        }
+        return user.getRole() == Role.PROFESSOR && professor.getId().equals(user.getId());
+    }
 }
