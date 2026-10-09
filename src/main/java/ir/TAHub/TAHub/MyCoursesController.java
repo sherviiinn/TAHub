@@ -10,6 +10,7 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -118,6 +119,7 @@ public class MyCoursesController {
             next.setCourse(previous.getCourse());
             next.setSemester(active);
             next.setProfessor(current);
+            next.setJoinCode(JoinCodes.generate());
             offeringRepository.save(next);
         }
         return "redirect:/my-courses";

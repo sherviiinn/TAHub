@@ -3,6 +3,7 @@ package ir.TAHub.TAHub;
 import ir.TAHub.TAHub.dto.CourseForm;
 import ir.TAHub.TAHub.model.*;
 import ir.TAHub.TAHub.repository.*;
+import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -88,6 +89,10 @@ public class CourseController {
         model.addAttribute("wasRemoved", myStatus == EnrollmentStatus.REMOVED);
         model.addAttribute("canManage", canManage);
 
+        // Students only learn whether enrollment is open. The code itself goes only to people who manage the offering.
+        model.addAttribute("enrollmentOpen", offering.getJoinCode() != null);
+        model.addAttribute("joinCode", canManage ? offering.getJoinCode() : null);
+
         // Only the professor and admins see who is enrolled. Students do not see their classmates.
         if (canManage) {
             model.addAttribute("enrollments", enrollmentRepository
@@ -160,6 +165,7 @@ public class CourseController {
         offering.setCourse(course);
         offering.setSemester(semester);
         offering.setProfessor(professor);
+        offering.setJoinCode(JoinCodes.generate());
         offeringRepository.save(offering);
 
         return "redirect:/courses";

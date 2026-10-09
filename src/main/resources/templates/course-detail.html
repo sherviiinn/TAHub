@@ -25,11 +25,18 @@
             <button type="submit" th:text="#{course.detail.drop}">Drop this course</button>
         </form>
 
-        <!-- Not enrolled and not removed: the student may enroll (or enroll again after dropping) -->
-        <form th:if="${!isEnrolled and !wasRemoved}" method="post"
-              th:action="@{/courses/{id}/enroll(id=${offering.id})}">
-            <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
-        </form>
+        <!-- Not enrolled and not removed: the student may enroll with the join code -->
+        <th:block th:if="${!isEnrolled and !wasRemoved}">
+            <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
+            <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
+
+            <form th:if="${enrollmentOpen}" method="post"
+                  th:action="@{/courses/{id}/enroll(id=${offering.id})}">
+                <label for="code" th:text="#{course.detail.joinCodeLabel}">Join code</label>
+                <input type="text" id="code" name="code" maxlength="20" required autocomplete="off">
+                <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
+            </form>
+        </th:block>
     </th:block>
 
     <!-- Archived semester: only past-tense information, no buttons -->
@@ -37,6 +44,29 @@
         <p th:if="${isEnrolled}" th:text="#{course.detail.wasEnrolled}"></p>
         <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
     </th:block>
+</div>
+
+<!-- Professor and admin: join code -->
+<div th:if="${canManage and isCurrentSemester}">
+    <h2 th:text="#{course.detail.joinCode.title}">Join code</h2>
+
+    <p th:if="${joinCode != null}">
+        <span th:text="#{course.detail.joinCode.label}">Join code:</span>
+        <strong th:text="${joinCode}"></strong>
+    </p>
+    <p th:if="${joinCode != null}" th:text="#{course.detail.joinCode.help}"></p>
+    <p th:if="${joinCode == null}" th:text="#{course.detail.enrollmentClosed.manager}"></p>
+
+    <form method="post" th:action="@{/courses/{id}/join-code/regenerate(id=${offering.id})}">
+        <button type="submit"
+                th:text="${joinCode != null} ? #{course.detail.joinCode.regenerate} : #{course.detail.joinCode.generate}">
+            Generate code</button>
+    </form>
+
+    <form th:if="${joinCode != null}" method="post"
+          th:action="@{/courses/{id}/join-code/close(id=${offering.id})}">
+        <button type="submit" th:text="#{course.detail.joinCode.close}">Close enrollment</button>
+    </form>
 </div>
 
 <!-- Professor and admin: the list of students -->

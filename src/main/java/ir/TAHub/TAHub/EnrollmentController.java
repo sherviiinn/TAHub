@@ -8,16 +8,19 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.Optional;
 
-/** Enrolling in, dropping, removing and restoring students in course offerings. */
+/** Enrolling, dropping, removing and restoring students, and managing the join code. */
 @Controller
 public class EnrollmentController {
 
@@ -34,7 +37,9 @@ public class EnrollmentController {
     }
 
     @PostMapping("/courses/{id}/enroll")
-    public String enroll(@PathVariable Long id, Authentication authentication) {
+    public String enroll(@PathVariable Long id,
+                         @RequestParam(defaultValue = "") String code,
+                         Authentication authentication) {
         User student = currentUser(authentication);
         CourseOffering offering = findOffering(id);
 
@@ -45,21 +50,27 @@ public class EnrollmentController {
 
         Enrollment enrollment = enrollmentRepository.findByStudentAndOffering(student, offering).orElse(null);
 
+        // A student removed by the professor cannot join again by themselves.
+        if (enrollment != null && enrollment.getStatus() == EnrollmentStatus.REMOVED) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        // Already enrolled: nothing to do.
+        if (enrollment != null && enrollment.getStatus() == EnrollmentStatus.ACTIVE) {
+            return "redirect:/courses/" + id;
+        }
+
+        // New enrollment, or coming back after dropping: the join code is required.
+        if (!isJoinCodeCorrect(offering, code)) {
+            return "redirect:/courses/" + id + "?joinError";
+        }
+
         if (enrollment == null) {
             enrollment = new Enrollment();
             enrollment.setStudent(student);
             enrollment.setOffering(offering);
             enrollment.setEnrolledAt(Instant.now());
-            changeStatus(enrollment, EnrollmentStatus.ACTIVE);
-        } else if (enrollment.getStatus() == EnrollmentStatus.DROPPED) {
-            // The student left earlier and now comes back: reuse the same row.
-            changeStatus(enrollment, EnrollmentStatus.ACTIVE);
-        } else if (enrollment.getStatus() == EnrollmentStatus.REMOVED) {
-            // A student removed by the professor cannot join again by themselves.
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        // If the status is already ACTIVE there is nothing to do.
-
+        changeStatus(enrollment, EnrollmentStatus.ACTIVE);
         return "redirect:/courses/" + id;
     }
 
@@ -103,6 +114,29 @@ public class EnrollmentController {
         return "redirect:/courses/" + id;
     }
 
+    /** Creates a new join code. The old one stops working immediately. */
+    @PostMapping("/courses/{id}/join-code/regenerate")
+    public String regenerateJoinCode(@PathVariable Long id, Authentication authentication) {
+        CourseOffering offering = findManagedOffering(id, authentication);
+        offering.setJoinCode(JoinCodes.generate());
+        offeringRepository.save(offering);
+        return "redirect:/courses/" + id;
+    }
+
+    /** Closes enrollment: without a code nobody can join. */
+    @PostMapping("/courses/{id}/join-code/close")
+    public String closeEnrollment(@PathVariable Long id, Authentication authentication) {
+        CourseOffering offering = findManagedOffering(id, authentication);
+        offering.setJoinCode(null);
+        offeringRepository.save(offering);
+        return "redirect:/courses/" + id;
+    }
+
+    private boolean isJoinCodeCorrect(CourseOffering offering, String code) {
+        String expected = offering.getJoinCode();
+        return expected != null && expected.equalsIgnoreCase(code.trim());
+    }
+
     /**
      * Loads the offering and checks that the current user may manage it.
      * URL rules cannot know who owns an offering, so we check it here.
@@ -116,7 +150,7 @@ public class EnrollmentController {
         return offering;
     }
 
-    private java.util.Optional<Enrollment> findEnrollment(Long studentId, CourseOffering offering) {
+    private Optional<Enrollment> findEnrollment(Long studentId, CourseOffering offering) {
         return userRepository.findById(studentId)
                 .flatMap(student -> enrollmentRepository.findByStudentAndOffering(student, offering));
     }
