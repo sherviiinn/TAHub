@@ -6,6 +6,7 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Component;
  * at least one admin and one active semester.
  * DEV ONLY: the admin password below must come from an environment variable in production.
  */
-@Component
+@Component @Order(2)
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
