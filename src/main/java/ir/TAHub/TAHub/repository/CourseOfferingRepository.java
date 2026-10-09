@@ -14,4 +14,7 @@ public interface CourseOfferingRepository extends JpaRepository<CourseOffering, 
     List<CourseOffering> findBySemesterOrderByCourseCodeAsc(Semester semester);
 
     boolean existsByCourseAndSemesterAndProfessor(Course course, Semester semester, User professor);
+
+    // Offerings taught by one professor, newest semester first.
+    List<CourseOffering> findByProfessorOrderBySemesterIdDescCourseCodeAsc(User professor);
 }

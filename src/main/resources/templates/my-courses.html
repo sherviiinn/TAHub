@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{mycourses.title}">My courses</title>
+</head>
+<body>
+<h1 th:text="#{mycourses.title}">My courses</h1>
+
+<!-- Semester switcher -->
+<form method="get" th:action="@{/my-courses}">
+    <label for="semester" th:text="#{mycourses.semester}">Semester</label>
+    <select id="semester" name="semester">
+        <option th:each="s : ${semesters}"
+                th:value="${s.id}"
+                th:selected="${s.id == selectedSemesterId}"
+                th:text="${s.active} ? (${s.code} + ' (' + #{semesters.active} + ')') : ${s.code}"></option>
+    </select>
+    <button type="submit" th:text="#{mycourses.show}">Show</button>
+</form>
+
+<p th:if="${#lists.isEmpty(offerings)}"
+   th:text="${selectedIsActive} ? #{mycourses.empty} : #{mycourses.empty.past}">You have no courses.</p>
+
+<table border="1" th:unless="${#lists.isEmpty(offerings)}">
+    <tr>
+        <th th:text="#{courses.code}">Code</th>
+        <th th:text="#{courses.name}">Name</th>
+        <th th:text="#{courses.professor}">Professor</th>
+    </tr>
+    <tr th:each="o : ${offerings}">
+        <td><a th:href="@{/courses/{id}(id=${o.id})}" th:text="${o.course.code}"></a></td>
+        <td th:text="${o.course.name}"></td>
+        <td th:text="${o.professor.fullName}"></td>
+    </tr>
+</table>
+
+<!-- Professors: courses from earlier semesters not yet offered in the active semester -->
+<div th:if="${isProfessor and !#lists.isEmpty(reofferable)}">
+    <h2 th:text="#{mycourses.reoffer.title(${activeSemester.code})}">Offer your earlier courses again</h2>
+    <p th:text="#{mycourses.reoffer.help}"></p>
+
+    <table border="1">
+        <tr>
+            <th th:text="#{courses.code}">Code</th>
+            <th th:text="#{courses.name}">Name</th>
+            <th th:text="#{mycourses.reoffer.lastOffered}">Last offered</th>
+            <th></th>
+        </tr>
+        <tr th:each="o : ${reofferable}">
+            <td th:text="${o.course.code}"></td>
+            <td th:text="${o.course.name}"></td>
+            <td th:text="${o.semester.code}"></td>
+            <td>
+                <form method="post" th:action="@{/courses/{id}/reoffer(id=${o.id})}">
+                    <button type="submit" th:text="#{mycourses.reoffer.button}">Offer again</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+</body>
+</html>
