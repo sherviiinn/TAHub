@@ -1,14 +1,14 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.dto.RegisterForm;
+import ir.TAHub.TAHub.model.Major;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.repository.MajorRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
-import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,16 +17,21 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class RegistrationController {
 
     private final UserRepository userRepository;
+    private final MajorRepository majorRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public RegistrationController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public RegistrationController(UserRepository userRepository,
+                                  MajorRepository majorRepository,
+                                  PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.majorRepository = majorRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/register")
     public String showForm(Model model) {
         model.addAttribute("form", new RegisterForm());
+        model.addAttribute("majors", majorRepository.findAllByOrderByNameAsc());
         return "register";
     }
 
@@ -37,9 +42,15 @@ public class RegistrationController {
         form.setFullName(trimOrEmpty(form.getFullName()));
         form.setStudentNumber(trimOrEmpty(form.getStudentNumber()));
 
-        String errorKey = findFirstError(form);
+        // We never trust the id from the form: we load the real major (or null if it does not exist).
+        Major major = form.getMajorId() == null
+                ? null
+                : majorRepository.findById(form.getMajorId()).orElse(null);
+
+        String errorKey = findFirstError(form, major);
         if (errorKey != null) {
             model.addAttribute("errorKey", errorKey);
+            model.addAttribute("majors", majorRepository.findAllByOrderByNameAsc());
             return "register";
         }
 
@@ -48,6 +59,7 @@ public class RegistrationController {
         user.setStudentNumber(form.getStudentNumber());
         user.setPasswordHash(passwordEncoder.encode(form.getPassword()));
         user.setRole(Role.STUDENT); // never taken from user input
+        user.setMajor(major);
         userRepository.save(user);
 
         return "redirect:/login?registered";
@@ -57,7 +69,7 @@ public class RegistrationController {
      * Checks the form in the same order as the fields on the page and
      * returns the message key of the FIRST problem, or null if all is fine.
      */
-    private String findFirstError(RegisterForm form) {
+    private String findFirstError(RegisterForm form, Major major) {
         if (form.getFullName().isEmpty()) {
             return "register.error.fullNameRequired";
         }
@@ -72,6 +84,9 @@ public class RegistrationController {
         }
         if (userRepository.existsByStudentNumber(form.getStudentNumber())) {
             return "register.error.studentNumberTaken";
+        }
+        if (major == null) {
+            return "register.error.majorRequired";
         }
         String password = form.getPassword();
         if (password == null || password.isBlank()) {

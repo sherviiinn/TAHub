@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{profile.title}">My profile</title>
+</head>
+<body>
+<h1 th:text="#{profile.title}">My profile</h1>
+
+<p th:if="${param.saved}" th:text="#{profile.saved}"></p>
+
+<p><span th:text="#{profile.name}">Name</span>: <strong th:text="${profileUser.fullName}"></strong></p>
+<p><span th:text="#{profile.studentNumber}">Student number</span>: <strong th:text="${profileUser.studentNumber}"></strong></p>
+<p><span th:text="#{profile.role}">Role</span>: <strong th:text="${profileUser.role}"></strong></p>
+
+<form th:if="${isStudent}" method="post" th:action="@{/profile/major}">
+    <label for="majorId" th:text="#{profile.major}">Field of study</label><br>
+    <select id="majorId" name="majorId" required>
+        <option value="" th:text="#{profile.chooseMajor}">Choose your field of study</option>
+        <option th:each="m : ${majors}"
+                th:value="${m.id}"
+                th:selected="${profileUser.major != null and profileUser.major.id == m.id}"
+                th:text="${m.name}"></option>
+    </select>
+    <button type="submit" th:text="#{profile.save}">Save</button>
+</form>
+
+<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+</body>
+</html>

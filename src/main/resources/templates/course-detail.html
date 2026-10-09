@@ -105,11 +105,13 @@
             <tr>
                 <th th:text="#{course.detail.studentName}">Name</th>
                 <th th:text="#{course.detail.studentNumber}">Student number</th>
+                <th th:text="#{course.detail.major}">Field of study</th>
                 <th th:if="${isCurrentSemester}"></th>
             </tr>
             <tr th:each="e : ${removedEnrollments}">
                 <td th:text="${e.student.fullName}"></td>
                 <td th:text="${e.student.studentNumber}"></td>
+                <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
                 <td th:if="${isCurrentSemester}">
                     <form method="post"
                           th:action="@{/courses/{id}/students/{sid}/restore(id=${offering.id},sid=${e.student.id})}">

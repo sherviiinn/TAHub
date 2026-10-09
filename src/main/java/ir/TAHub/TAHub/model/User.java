@@ -23,6 +23,11 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    // Field of study. Only students have one; professors and admins leave it empty.
+    @ManyToOne
+    @JoinColumn(name = "major_id")
+    private Major major;
+
     public User() {
     }
 
@@ -60,5 +65,8 @@ public class User {
     public void setRole(Role role) {
         this.role = role;
     }
+
+    public Major getMajor() { return major; }
+    public void setMajor(Major major) { this.major = major; }
 
 }

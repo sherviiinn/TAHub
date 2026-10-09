@@ -9,6 +9,11 @@
 <h1 th:text="#{home.welcome(${appName})}">Welcome</h1>
 <p th:text="#{home.signedInAs(${fullName}, ${role})}">Signed in as</p>
 <p><a th:href="@{/courses}" th:text="#{home.courses}">Courses</a></p>
+<p><a th:href="@{/profile}" th:text="#{home.profile}">My profile</a></p>
+
+<p th:if="${isAdmin}">
+    <a th:href="@{/admin/majors}" th:text="#{home.majors}">Manage fields of study</a>
+</p>
 <p th:if="${!isAdmin}">
     <a th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
 </p>

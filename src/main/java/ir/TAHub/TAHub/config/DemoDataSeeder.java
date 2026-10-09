@@ -1,5 +1,6 @@
 package ir.TAHub.TAHub.config;
 
+import ir.TAHub.TAHub.model.Major;
 import ir.TAHub.TAHub.model.Course;
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Enrollment;
@@ -7,11 +8,7 @@ import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.Semester;
 import ir.TAHub.TAHub.model.User;
-import ir.TAHub.TAHub.repository.CourseOfferingRepository;
-import ir.TAHub.TAHub.repository.CourseRepository;
-import ir.TAHub.TAHub.repository.EnrollmentRepository;
-import ir.TAHub.TAHub.repository.SemesterRepository;
-import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.repository.*;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +33,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
     private static final String DEMO_PASSWORD = "demo12345";
+    private final MajorRepository majorRepository;
 
     private final UserRepository userRepository;
     private final SemesterRepository semesterRepository;
@@ -49,13 +47,16 @@ public class DemoDataSeeder implements CommandLineRunner {
                           CourseRepository courseRepository,
                           CourseOfferingRepository offeringRepository,
                           EnrollmentRepository enrollmentRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          MajorRepository majorRepository) {
+
         this.userRepository = userRepository;
         this.semesterRepository = semesterRepository;
         this.courseRepository = courseRepository;
         this.offeringRepository = offeringRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.majorRepository = majorRepository;
     }
 
     @Override
@@ -69,15 +70,20 @@ public class DemoDataSeeder implements CommandLineRunner {
         Semester previous = semester("4051", false);
         Semester current = semester("4052", true);
 
-        User prof1 = user("Dr. Ali Karimi", "9001", Role.PROFESSOR);
-        User prof2 = user("Dr. Maryam Hosseini", "9002", Role.PROFESSOR);
+        Major computer = major("Computer Engineering");
+        Major electrical = major("Electrical Engineering");
+        Major mechanical = major("Mechanical Engineering");
 
-        User sara = user("Sara Ahmadi", "40000001", Role.STUDENT);
-        User reza = user("Reza Mohammadi", "40000002", Role.STUDENT);
-        User nima = user("Nima Rahimi", "40000003", Role.STUDENT);
-        User tina = user("Tina Karimi", "40000004", Role.STUDENT);
-        User omid = user("Omid Hashemi", "40000005", Role.STUDENT);
-        User lena = user("Lena Sadeghi", "40000006", Role.STUDENT);
+
+        User prof1 = user("Dr. Ali Karimi", "9001", Role.PROFESSOR, null);
+        User prof2 = user("Dr. Maryam Hosseini", "9002", Role.PROFESSOR, null);
+
+        User sara = user("Sara Ahmadi", "40000001", Role.STUDENT, computer);
+        User reza = user("Reza Mohammadi", "40000002", Role.STUDENT, computer);
+        User nima = user("Nima Rahimi", "40000003", Role.STUDENT, electrical);
+        User tina = user("Tina Karimi", "40000004", Role.STUDENT, computer);
+        User omid = user("Omid Hashemi", "40000005", Role.STUDENT, mechanical);
+        User lena = user("Lena Sadeghi", "40000006", Role.STUDENT, computer);
 
         Course cs101 = course("CS101", "Introduction to Programming");
         Course cs201 = course("CS201", "Data Structures");
@@ -118,12 +124,19 @@ public class DemoDataSeeder implements CommandLineRunner {
         return semesterRepository.save(semester);
     }
 
-    private User user(String fullName, String studentNumber, Role role) {
+    private Major major(String name) {
+        Major major = new Major();
+        major.setName(name);
+        return majorRepository.save(major);
+    }
+
+    private User user(String fullName, String studentNumber, Role role, Major major) {
         User user = new User();
         user.setFullName(fullName);
         user.setStudentNumber(studentNumber);
         user.setPasswordHash(passwordEncoder.encode(DEMO_PASSWORD));
         user.setRole(role);
+        user.setMajor(major);
         return userRepository.save(user);
     }
 

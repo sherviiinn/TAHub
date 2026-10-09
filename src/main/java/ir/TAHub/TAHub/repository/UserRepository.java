@@ -1,6 +1,8 @@
 package ir.TAHub.TAHub.repository;
 
 import java.util.List;
+
+import ir.TAHub.TAHub.model.Major;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +11,8 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    // How many users have this field of study (a used major cannot be deleted).
+    long countByMajor(Major major);
     // Used by login: the student number is the username.
     Optional<User> findByStudentNumber(String studentNumber);
 

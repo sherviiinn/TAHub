@@ -8,23 +8,43 @@
 <body>
 <h1 th:text="#{register.title}">Create an account</h1>
 
-<p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
+<!-- Without any field of study registration cannot work, so we explain instead of showing the form. -->
+<p th:if="${#lists.isEmpty(majors)}" th:text="#{register.noMajors}"></p>
 
-<form method="post" th:action="@{/register}" th:object="${form}">
-    <div>
-        <input type="text" th:field="*{fullName}" th:placeholder="#{register.fullName}">
-    </div>
-    <div>
-        <input type="text" th:field="*{studentNumber}" th:placeholder="#{register.studentNumber}">
-    </div>
-    <div>
-        <input type="password" th:field="*{password}" th:placeholder="#{register.password}">
-    </div>
-    <div>
-        <input type="password" th:field="*{confirmPassword}" th:placeholder="#{register.confirmPassword}">
-    </div>
-    <button type="submit" th:text="#{register.submit}">Register</button>
-</form>
+<th:block th:unless="${#lists.isEmpty(majors)}">
+    <p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
+
+    <form method="post" th:action="@{/register}" th:object="${form}">
+        <div>
+            <label for="fullName" th:text="#{register.fullName}">Full name</label><br>
+            <input type="text" th:field="*{fullName}">
+        </div>
+        <div>
+            <label for="studentNumber" th:text="#{register.studentNumber}">Student number</label><br>
+            <input type="text" th:field="*{studentNumber}">
+        </div>
+        <div>
+            <label for="majorId" th:text="#{register.major}">Field of study</label><br>
+            <select id="majorId" name="majorId">
+                <option value="" th:text="#{register.chooseMajor}">Choose your field of study</option>
+                <option th:each="m : ${majors}"
+                        th:value="${m.id}"
+                        th:selected="${form.majorId != null and form.majorId == m.id}"
+                        th:text="${m.name}"></option>
+            </select>
+        </div>
+        <div>
+            <label for="password" th:text="#{register.password}">Password</label><br>
+            <input type="password" th:field="*{password}">
+        </div>
+        <div>
+            <label for="confirmPassword" th:text="#{register.confirmPassword}">Confirm password</label><br>
+            <input type="password" th:field="*{confirmPassword}">
+        </div>
+        <button type="submit" th:text="#{register.submit}">Register</button>
+    </form>
+</th:block>
+
 <p><a th:href="@{/login}" th:text="#{register.haveAccount}">Already have an account? Sign in</a></p>
 </body>
 </html>

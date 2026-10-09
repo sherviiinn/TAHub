@@ -11,6 +11,10 @@ public class RegisterForm {
     private String studentNumber;
     private String password;
     private String confirmPassword;
+    private Long majorId;
+
+    public Long getMajorId() { return majorId; }
+    public void setMajorId(Long majorId) { this.majorId = majorId; }
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
