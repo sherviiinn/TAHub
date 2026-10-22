@@ -24,7 +24,9 @@
 <p th:if="${isAdmin}">
     <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
 </p>
-
+<p th:if="${isAdmin}">
+    <a th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
+</p>
 <form method="post" th:action="@{/logout}">
     <button type="submit" th:text="#{home.logout}">Sign out</button>
 </form>

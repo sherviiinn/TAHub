@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{ta.mine.title}">My TA requests</title>
+</head>
+<body>
+    <h1 th:text="#{ta.mine.title}">My TA requests</h1>
+
+    <p th:if="${#lists.isEmpty(applications)}" th:text="#{ta.mine.none}">You have not sent any TA request.</p>
+
+    <table border="1" th:unless="${#lists.isEmpty(applications)}">
+        <tr>
+            <th th:text="#{ta.requests.course}">Course</th>
+            <th th:text="#{ta.mine.semester}">Semester</th>
+            <th th:text="#{ta.mine.status}">Status</th>
+            <th th:text="#{ta.requests.message}">Message</th>
+            <th></th>
+        </tr>
+        <tr th:each="a : ${applications}">
+            <td><a th:href="@{/courses/{id}(id=${a.offering.id})}"
+                   th:text="${a.offering.course.code} + ' - ' + ${a.offering.course.name}"></a></td>
+            <td th:text="${a.offering.semester.code}"></td>
+            <td th:text="#{${'ta.status.' + a.status}}"></td>
+            <td th:text="${a.message}"></td>
+            <td>
+                <form th:if="${a.status.name() == 'PENDING'}" method="post"
+                      th:action="@{/ta-applications/{id}/withdraw(id=${a.id})}">
+                    <button type="submit" th:text="#{ta.apply.withdraw}">Withdraw request</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <p><a th:href="@{/my-courses}" th:text="#{ta.mine.back}">Back to my courses</a></p>
+</body>
+</html>

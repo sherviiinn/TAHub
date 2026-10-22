@@ -5,6 +5,8 @@ import ir.TAHub.TAHub.model.Course;
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
+import ir.TAHub.TAHub.model.TaApplication;
+import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.Semester;
 import ir.TAHub.TAHub.model.User;
@@ -12,6 +14,7 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
+import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
@@ -42,6 +45,7 @@ public class CourseController {
     private final EnrollmentRepository enrollmentRepository;
     private final RosterEntryRepository rosterRepository;
     private final TaAssignmentRepository taRepository;
+    private final TaApplicationRepository applicationRepository;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -49,7 +53,8 @@ public class CourseController {
                             UserRepository userRepository,
                             EnrollmentRepository enrollmentRepository,
                             RosterEntryRepository rosterRepository,
-                            TaAssignmentRepository taRepository) {
+                            TaAssignmentRepository taRepository,
+                            TaApplicationRepository applicationRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -57,6 +62,7 @@ public class CourseController {
         this.enrollmentRepository = enrollmentRepository;
         this.rosterRepository = rosterRepository;
         this.taRepository = taRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -110,6 +116,17 @@ public class CourseController {
         model.addAttribute("teachingAssistants",
                 taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering));
         model.addAttribute("isTa", taRepository.existsByUserAndOfferingAndActiveTrue(current, offering));
+
+        // TA applications: is the offering taking them, and what is this student's own request (if any).
+        model.addAttribute("taApplicationsOpen", offering.isTaApplicationsOpen());
+        TaApplication myApplication = isStudent
+                ? applicationRepository.findByStudentAndOffering(current, offering).orElse(null)
+                : null;
+        model.addAttribute("myTaApplication", myApplication);
+        if (canManage) {
+            model.addAttribute("pendingTaRequests",
+                    applicationRepository.countByOfferingAndStatus(offering, TaApplicationStatus.PENDING));
+        }
 
         // Students only learn whether enrollment is open. The code itself goes only to people who manage the offering.
         model.addAttribute("enrollmentOpen", offering.getJoinCode() != null);

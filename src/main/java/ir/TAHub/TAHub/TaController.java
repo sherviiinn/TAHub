@@ -1,14 +1,12 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.model.CourseOffering;
-import ir.TAHub.TAHub.model.EnrollmentStatus;
-import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
-import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.TaService;
 import ir.TAHub.TAHub.util.Digits;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -19,25 +17,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.Instant;
-
 /** The professor (or an admin) adds and removes the teaching assistants of an offering. */
 @Controller
 public class TaController {
 
     private final UserRepository userRepository;
     private final CourseOfferingRepository offeringRepository;
-    private final EnrollmentRepository enrollmentRepository;
     private final TaAssignmentRepository taRepository;
+    private final TaService taService;
 
     public TaController(UserRepository userRepository,
                         CourseOfferingRepository offeringRepository,
-                        EnrollmentRepository enrollmentRepository,
-                        TaAssignmentRepository taRepository) {
+                        TaAssignmentRepository taRepository,
+                        TaService taService) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
-        this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
+        this.taService = taService;
     }
 
     @PostMapping("/courses/{id}/tas")
@@ -51,33 +47,10 @@ public class TaController {
         String number = Digits.toAscii(studentNumber).trim();
         User candidate = number.isEmpty() ? null : userRepository.findByStudentNumber(number).orElse(null);
 
-        String errorKey = null;
-        if (candidate == null) {
-            errorKey = "ta.error.notFound";
-        } else if (candidate.getRole() != Role.STUDENT) {
-            errorKey = "ta.error.notStudent";
-        } else if (isActiveStudentOf(candidate, offering)) {
-            // A person cannot be a student and a TA of the same offering.
-            errorKey = "ta.error.enrolled";
-        }
-
+        String errorKey = candidate == null ? "ta.error.notFound" : taService.assign(candidate, offering);
         if (errorKey != null) {
             redirect.addFlashAttribute("taErrorKey", errorKey);
-            return "redirect:/courses/" + id;
         }
-
-        TaAssignment assignment = taRepository.findByUserAndOffering(candidate, offering).orElse(null);
-        if (assignment == null) {
-            assignment = new TaAssignment();
-            assignment.setUser(candidate);
-            assignment.setOffering(offering);
-            assignment.setAssignedAt(Instant.now());
-        } else if (assignment.isActive()) {
-            redirect.addFlashAttribute("taErrorKey", "ta.error.already");
-            return "redirect:/courses/" + id;
-        }
-        assignment.setActive(true); // new, or coming back after being removed
-        taRepository.save(assignment);
         return "redirect:/courses/" + id;
     }
 
@@ -95,12 +68,6 @@ public class TaController {
                     taRepository.save(assignment);
                 });
         return "redirect:/courses/" + id;
-    }
-
-    private boolean isActiveStudentOf(User user, CourseOffering offering) {
-        return enrollmentRepository.findByStudentAndOffering(user, offering)
-                .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.ACTIVE)
-                .isPresent();
     }
 
     /** Loads an offering of the active semester and checks that the current user manages it. */

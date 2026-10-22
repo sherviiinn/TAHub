@@ -1,0 +1,63 @@
+package ir.TAHub.TAHub.service;
+
+import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.EnrollmentStatus;
+import ir.TAHub.TAHub.model.Role;
+import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.repository.EnrollmentRepository;
+import ir.TAHub.TAHub.repository.TaAssignmentRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+
+/** The rules for making someone a TA. Used both when a professor adds a TA and when a request is accepted. */
+@Service
+public class TaService {
+
+    private final EnrollmentRepository enrollmentRepository;
+    private final TaAssignmentRepository taRepository;
+
+    public TaService(EnrollmentRepository enrollmentRepository, TaAssignmentRepository taRepository) {
+        this.enrollmentRepository = enrollmentRepository;
+        this.taRepository = taRepository;
+    }
+
+    /** Returns the message key of the first problem, or null if this person can become a TA of the offering. */
+    public String findProblem(User candidate, CourseOffering offering) {
+        if (candidate.getRole() != Role.STUDENT) {
+            return "ta.error.notStudent";
+        }
+        // A person cannot be a student and a TA of the same offering.
+        boolean activeStudent = enrollmentRepository.findByStudentAndOffering(candidate, offering)
+                .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.ACTIVE)
+                .isPresent();
+        if (activeStudent) {
+            return "ta.error.enrolled";
+        }
+        if (taRepository.existsByUserAndOfferingAndActiveTrue(candidate, offering)) {
+            return "ta.error.already";
+        }
+        return null;
+    }
+
+    /** Makes the person a TA (or activates their old assignment). Returns a problem key, or null on success. */
+    @Transactional
+    public String assign(User candidate, CourseOffering offering) {
+        String problem = findProblem(candidate, offering);
+        if (problem != null) {
+            return problem;
+        }
+        TaAssignment assignment = taRepository.findByUserAndOffering(candidate, offering).orElse(null);
+        if (assignment == null) {
+            assignment = new TaAssignment();
+            assignment.setUser(candidate);
+            assignment.setOffering(offering);
+            assignment.setAssignedAt(Instant.now());
+        }
+        assignment.setActive(true); // new, or coming back after being removed
+        taRepository.save(assignment);
+        return null;
+    }
+}

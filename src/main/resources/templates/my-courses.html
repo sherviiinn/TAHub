@@ -8,6 +8,10 @@
 <body>
 <h1 th:text="#{mycourses.title}">My courses</h1>
 
+<p th:if="${isProfessor}"><a th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a></p>
+<p th:unless="${isProfessor}"><a th:href="@{/my-ta-requests}" th:text="#{ta.link.mine}">My TA requests</a></p>
+
+
 <!-- Semester switcher -->
 <form method="get" th:action="@{/my-courses}">
     <label for="semester" th:text="#{mycourses.semester}">Semester</label>
