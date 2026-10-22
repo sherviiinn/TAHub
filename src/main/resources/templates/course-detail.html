@@ -64,6 +64,21 @@
         </li>
     </ul>
 
+    <!-- TAs removed by the professor. Shown only if there are any, so a mistake can be undone. -->
+    <th:block th:if="${canManage and !#lists.isEmpty(removedTeachingAssistants)}">
+        <h3 th:text="#{ta.removed.title(${#lists.size(removedTeachingAssistants)})}">Removed TAs</h3>
+        <ul>
+            <li th:each="t : ${removedTeachingAssistants}">
+                <span th:text="${t.user.fullName}"></span>
+                <span th:text="'(' + ${t.user.studentNumber} + ')'"></span>
+                <form th:if="${isCurrentSemester and !isCancelled}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/restore(id=${offering.id},uid=${t.user.id})}">
+                    <button type="submit" th:text="#{ta.restore}">Restore</button>
+                </form>
+            </li>
+        </ul>
+    </th:block>
+
     <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
         <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
         <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
