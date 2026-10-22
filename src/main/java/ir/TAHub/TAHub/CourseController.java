@@ -124,6 +124,8 @@ public class CourseController {
                 : null;
         model.addAttribute("myTaApplication", myApplication);
         if (canManage) {
+            model.addAttribute("removedTeachingAssistants",
+                    taRepository.findByOfferingAndActiveFalseOrderByUserFullNameAsc(offering));
             model.addAttribute("pendingTaRequests",
                     applicationRepository.countByOfferingAndStatus(offering, TaApplicationStatus.PENDING));
         }

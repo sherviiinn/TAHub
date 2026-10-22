@@ -70,6 +70,26 @@ public class TaController {
         return "redirect:/courses/" + id;
     }
 
+    /** Undo a removal: the person becomes a TA of this offering again (the same rules apply). */
+    @PostMapping("/courses/{id}/tas/{userId}/restore")
+    public String restore(@PathVariable Long id,
+                          @PathVariable Long userId,
+                          Authentication authentication,
+                          RedirectAttributes redirect) {
+        CourseOffering offering = findManagedOffering(id, authentication);
+
+        User user = userRepository.findById(userId).orElse(null);
+        TaAssignment old = user == null ? null : taRepository.findByUserAndOffering(user, offering).orElse(null);
+        if (old != null && !old.isActive()) {
+            // The person may have become a student of this course in the meantime.
+            String problem = taService.assign(user, offering);
+            if (problem != null) {
+                redirect.addFlashAttribute("taErrorKey", problem);
+            }
+        }
+        return "redirect:/courses/" + id;
+    }
+
     /** Loads an offering of the active semester and checks that the current user manages it. */
     private CourseOffering findManagedOffering(Long id, Authentication authentication) {
         User current = userRepository.findByStudentNumber(authentication.getName())
