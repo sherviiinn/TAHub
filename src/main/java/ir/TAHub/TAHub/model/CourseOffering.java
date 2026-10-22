@@ -36,6 +36,10 @@ public class CourseOffering {
     @Column(nullable = false)
     private boolean cancelled;
 
+    // A professor opens this when they want TA requests. It is closed by default.
+    @Column(nullable = false)
+    private boolean taApplicationsOpen;
+
     public CourseOffering() {
     }
 
@@ -63,4 +67,7 @@ public class CourseOffering {
     }
     public boolean isCancelled() { return cancelled; }
     public void setCancelled(boolean cancelled) { this.cancelled = cancelled; }
+
+    public boolean isTaApplicationsOpen() { return taApplicationsOpen; }
+    public void setTaApplicationsOpen(boolean taApplicationsOpen) { this.taApplicationsOpen = taApplicationsOpen; }
 }

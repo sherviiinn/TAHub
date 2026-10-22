@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{ta.requests.title}">TA requests</title>
+</head>
+<body>
+<h1 th:text="#{ta.requests.title}">TA requests</h1>
+
+<p th:if="${requestErrorKey}" th:text="#{${requestErrorKey}}"></p>
+
+<h2 th:text="#{ta.requests.pending(${#lists.size(pending)})}">Waiting requests</h2>
+<p th:if="${#lists.isEmpty(pending)}" th:text="#{ta.requests.none}">No requests.</p>
+
+<table border="1" th:unless="${#lists.isEmpty(pending)}">
+    <tr>
+        <th th:text="#{ta.requests.course}">Course</th>
+        <th th:text="#{course.detail.studentName}">Name</th>
+        <th th:text="#{course.detail.studentNumber}">Student number</th>
+        <th th:text="#{course.detail.major}">Field of study</th>
+        <th th:text="#{ta.requests.message}">Message</th>
+        <th></th>
+    </tr>
+    <tr th:each="a : ${pending}">
+        <td><a th:href="@{/courses/{id}(id=${a.offering.id})}" th:text="${a.offering.course.code}"></a></td>
+        <td th:text="${a.student.fullName}"></td>
+        <td th:text="${a.student.studentNumber}"></td>
+        <td th:text="${a.student.major != null} ? ${a.student.major.name} : #{course.detail.majorNotSet}"></td>
+        <td th:text="${a.message}"></td>
+        <td>
+            <form method="post" th:action="@{/ta-applications/{id}/accept(id=${a.id})}">
+                <button type="submit" th:text="#{ta.requests.accept}">Accept</button>
+            </form>
+            <form method="post" th:action="@{/ta-applications/{id}/reject(id=${a.id})}">
+                <button type="submit" th:text="#{ta.requests.reject}">Reject</button>
+            </form>
+        </td>
+    </tr>
+</table>
+
+<!-- Rejected requests stay here, so a mistake can be undone -->
+<th:block th:unless="${#lists.isEmpty(rejected)}">
+    <h2 th:text="#{ta.requests.rejected(${#lists.size(rejected)})}">Rejected requests</h2>
+
+    <table border="1">
+        <tr>
+            <th th:text="#{ta.requests.course}">Course</th>
+            <th th:text="#{course.detail.studentName}">Name</th>
+            <th th:text="#{course.detail.studentNumber}">Student number</th>
+            <th th:text="#{course.detail.major}">Field of study</th>
+            <th th:text="#{ta.requests.message}">Message</th>
+            <th></th>
+        </tr>
+        <tr th:each="a : ${rejected}">
+            <td><a th:href="@{/courses/{id}(id=${a.offering.id})}" th:text="${a.offering.course.code}"></a></td>
+            <td th:text="${a.student.fullName}"></td>
+            <td th:text="${a.student.studentNumber}"></td>
+            <td th:text="${a.student.major != null} ? ${a.student.major.name} : #{course.detail.majorNotSet}"></td>
+            <td th:text="${a.message}"></td>
+            <td>
+                <form method="post" th:action="@{/ta-applications/{id}/reconsider(id=${a.id})}">
+                    <button type="submit" th:text="#{ta.requests.reconsider}">Reconsider</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+</th:block>
+
+<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+</body>
+</html>

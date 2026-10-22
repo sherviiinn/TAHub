@@ -74,6 +74,50 @@
     </th:block>
 </div>
 
+<!-- Student: ask to become a TA (only while the professor accepts requests) -->
+<div th:if="${isStudent and isCurrentSemester and !isCancelled and taApplicationsOpen and !isEnrolled and !isTa}">
+    <h2 th:text="#{ta.apply.title}">Become a TA</h2>
+    <p th:if="${taApplyErrorKey}" th:text="#{${taApplyErrorKey}}"></p>
+
+    <!-- No request yet, or the student took the old one back -->
+    <form th:if="${myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN'}" method="post"
+          th:action="@{/courses/{id}/ta-applications(id=${offering.id})}">
+        <label for="taMessage" th:text="#{ta.apply.messageLabel}">Message</label><br>
+        <textarea id="taMessage" name="message" rows="4" cols="40" maxlength="500"></textarea><br>
+        <button type="submit" th:text="#{ta.apply.submit}">Apply to be a TA</button>
+    </form>
+
+    <th:block th:if="${myTaApplication != null and myTaApplication.status.name() == 'PENDING'}">
+        <p th:text="#{ta.apply.pending}">Your request is waiting.</p>
+        <form method="post" th:action="@{/ta-applications/{id}/withdraw(id=${myTaApplication.id})}">
+            <button type="submit" th:text="#{ta.apply.withdraw}">Withdraw request</button>
+        </form>
+    </th:block>
+
+    <p th:if="${myTaApplication != null and myTaApplication.status.name() == 'REJECTED'}"
+       th:text="#{ta.apply.rejected}">Your request was not accepted.</p>
+</div>
+
+<!-- Professor and admin: open or close TA requests -->
+<div th:if="${canManage and isCurrentSemester and !isCancelled}">
+    <h2 th:text="#{ta.manage.title}">TA requests</h2>
+    <p th:text="${taApplicationsOpen} ? #{ta.manage.isOpen} : #{ta.manage.isClosed}"></p>
+
+    <form th:if="${!taApplicationsOpen}" method="post"
+          th:action="@{/courses/{id}/ta-applications/open(id=${offering.id})}">
+        <button type="submit" th:text="#{ta.manage.openButton}">Open requests</button>
+    </form>
+    <form th:if="${taApplicationsOpen}" method="post"
+          th:action="@{/courses/{id}/ta-applications/close(id=${offering.id})}">
+        <button type="submit" th:text="#{ta.manage.closeButton}">Close requests</button>
+    </form>
+
+    <p>
+        <span th:text="#{ta.manage.pending(${pendingTaRequests})}"></span>
+        <a th:href="@{/ta-requests}" th:text="#{ta.manage.viewRequests}">View requests</a>
+    </p>
+</div>
+
 <!-- Professor and admin: cancel or restore this offering -->
 <div th:if="${canManage and isCurrentSemester}">
     <p th:if="${param.cancelError}" th:text="#{course.detail.cancelError}"></p>
