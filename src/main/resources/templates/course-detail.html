@@ -121,12 +121,14 @@
         <tr>
             <th th:text="#{course.detail.studentName}">Name</th>
             <th th:text="#{course.detail.studentNumber}">Student number</th>
+            <th th:text="#{course.detail.major}">Field of study</th>
             <th th:text="#{course.detail.source}">Source</th>
             <th th:if="${isCurrentSemester}"></th>
         </tr>
         <tr th:each="e : ${enrollments}">
             <td th:text="${e.student.fullName}"></td>
             <td th:text="${e.student.studentNumber}"></td>
+            <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
             <td th:text="#{${'course.detail.source.' + e.source}}"></td>
             <td th:if="${isCurrentSemester}">
                 <form method="post"
