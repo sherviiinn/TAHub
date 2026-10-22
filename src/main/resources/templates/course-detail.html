@@ -27,7 +27,8 @@
         </form>
 
         <!-- Not enrolled and not removed: the student may enroll with the join code -->
-        <th:block th:if="${!isEnrolled and !wasRemoved}">
+        <p th:if="${isTa}" th:text="#{course.detail.youAreTa}"></p>
+        <th:block th:if="${!isEnrolled and !wasRemoved and !isTa}">
             <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
             <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
 
@@ -44,6 +45,32 @@
     <th:block th:unless="${isCurrentSemester}">
         <p th:if="${isEnrolled}" th:text="#{course.detail.wasEnrolled}"></p>
         <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
+    </th:block>
+</div>
+
+<!-- Teaching assistants: everybody sees the names, managers can add and remove -->
+<div>
+    <h2 th:text="#{ta.title}">Teaching assistants</h2>
+    <p th:if="${#lists.isEmpty(teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</p>
+
+    <ul th:unless="${#lists.isEmpty(teachingAssistants)}">
+        <li th:each="t : ${teachingAssistants}">
+            <span th:text="${t.user.fullName}"></span>
+            <span th:if="${canManage}" th:text="'(' + ${t.user.studentNumber} + ')'"></span>
+            <form th:if="${canManage and isCurrentSemester and !isCancelled}" method="post"
+                  th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.user.id})}">
+                <button type="submit" th:text="#{ta.remove}">Remove</button>
+            </form>
+        </li>
+    </ul>
+
+    <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
+        <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
+        <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
+            <label for="taNumber" th:text="#{ta.studentNumber}">Student number</label>
+            <input type="text" id="taNumber" name="studentNumber" maxlength="20" required autocomplete="off">
+            <button type="submit" th:text="#{ta.add}">Add TA</button>
+        </form>
     </th:block>
 </div>
 

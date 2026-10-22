@@ -12,6 +12,7 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
+import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.util.JoinCodes;
@@ -40,19 +41,22 @@ public class CourseController {
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final RosterEntryRepository rosterRepository;
+    private final TaAssignmentRepository taRepository;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
                             SemesterRepository semesterRepository,
                             UserRepository userRepository,
                             EnrollmentRepository enrollmentRepository,
-                            RosterEntryRepository rosterRepository) {
+                            RosterEntryRepository rosterRepository,
+                            TaAssignmentRepository taRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.rosterRepository = rosterRepository;
+        this.taRepository = taRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -101,6 +105,11 @@ public class CourseController {
         model.addAttribute("isEnrolled", myStatus == EnrollmentStatus.ACTIVE);
         model.addAttribute("wasRemoved", myStatus == EnrollmentStatus.REMOVED);
         model.addAttribute("canManage", canManage);
+
+        // Everybody can see who the TAs are. A TA cannot enroll as a student in the same offering.
+        model.addAttribute("teachingAssistants",
+                taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering));
+        model.addAttribute("isTa", taRepository.existsByUserAndOfferingAndActiveTrue(current, offering));
 
         // Students only learn whether enrollment is open. The code itself goes only to people who manage the offering.
         model.addAttribute("enrollmentOpen", offering.getJoinCode() != null);

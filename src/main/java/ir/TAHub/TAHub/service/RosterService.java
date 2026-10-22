@@ -9,6 +9,7 @@ import ir.TAHub.TAHub.model.RosterEntry;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
+import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.util.Digits;
 import org.springframework.stereotype.Service;
@@ -36,13 +37,16 @@ public class RosterService {
     private final RosterEntryRepository rosterRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final TaAssignmentRepository taRepository;
 
     public RosterService(RosterEntryRepository rosterRepository,
                          UserRepository userRepository,
-                         EnrollmentRepository enrollmentRepository) {
+                         EnrollmentRepository enrollmentRepository,
+                         TaAssignmentRepository taRepository) {
         this.rosterRepository = rosterRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.taRepository = taRepository;
     }
 
     /** Splits the text on spaces, new lines, commas and semicolons. Duplicates are removed. */
@@ -83,7 +87,8 @@ public class RosterService {
                 waiting++; // enrolled automatically when they register
                 continue;
             }
-            if (user.getRole() != Role.STUDENT) {
+            // Only students are enrolled, and never a TA of this same offering.
+            if (user.getRole() != Role.STUDENT || taRepository.existsByUserAndOfferingAndActiveTrue(user, offering)) {
                 skipped++;
                 continue;
             }
