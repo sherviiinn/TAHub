@@ -9,6 +9,7 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
+import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
@@ -30,15 +31,18 @@ public class EnrollmentController {
     private final CourseOfferingRepository offeringRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final RosterEntryRepository rosterRepository;
+    private final TaAssignmentRepository taRepository;
 
     public EnrollmentController(UserRepository userRepository,
                                 CourseOfferingRepository offeringRepository,
                                 EnrollmentRepository enrollmentRepository,
-                                RosterEntryRepository rosterRepository) {
+                                RosterEntryRepository rosterRepository,
+                                TaAssignmentRepository taRepository) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.rosterRepository = rosterRepository;
+        this.taRepository = taRepository;
     }
 
     @PostMapping("/courses/{id}/enroll")
@@ -50,6 +54,11 @@ public class EnrollmentController {
 
         // Only students can enroll, and only in the active semester.
         if (student.getRole() != Role.STUDENT || !offering.getSemester().isActive() || offering.isCancelled()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        // A TA of this offering cannot also be one of its students.
+        if (taRepository.existsByUserAndOfferingAndActiveTrue(student, offering)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
