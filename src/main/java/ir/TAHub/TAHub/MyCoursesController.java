@@ -10,7 +10,6 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
-import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -71,19 +70,24 @@ public class MyCoursesController {
                 .map(Enrollment::getOffering)
                 .toList();
 
+        // Hide cancelled offerings, except in the active semester where they can still be restored.
+        List<CourseOffering> visible = allOfferings.stream()
+                .filter(o -> !o.isCancelled() || o.getSemester().isActive())
+                .toList();
+
         // Semesters the user can switch between: the active one plus every semester they took part in.
         // The map is sorted by id, newest first.
         Map<Long, Semester> choices = new TreeMap<>(Comparator.reverseOrder());
         if (active != null) {
             choices.put(active.getId(), active);
         }
-        for (CourseOffering offering : allOfferings) {
+        for (CourseOffering offering : visible) {
             choices.put(offering.getSemester().getId(), offering.getSemester());
         }
 
         Long selectedId = chooseSemesterId(semester, choices, active);
 
-        List<CourseOffering> offerings = allOfferings.stream()
+        List<CourseOffering> offerings = visible.stream()
                 .filter(o -> o.getSemester().getId().equals(selectedId))
                 .sorted(Comparator.comparing(o -> o.getCourse().getCode()))
                 .toList();
@@ -94,7 +98,7 @@ public class MyCoursesController {
         model.addAttribute("selectedIsActive", active != null && active.getId().equals(selectedId));
         model.addAttribute("offerings", offerings);
         model.addAttribute("activeSemester", active);
-        model.addAttribute("reofferable", isProfessor ? findReofferable(allOfferings, active) : List.of());
+        model.addAttribute("reofferable", isProfessor ? findReofferable(visible, active) : List.of());
         return "my-courses";
     }
 
@@ -119,7 +123,6 @@ public class MyCoursesController {
             next.setCourse(previous.getCourse());
             next.setSemester(active);
             next.setProfessor(current);
-            next.setJoinCode(JoinCodes.generate());
             offeringRepository.save(next);
         }
         return "redirect:/my-courses";

@@ -1,8 +1,19 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.dto.CourseForm;
-import ir.TAHub.TAHub.model.*;
-import ir.TAHub.TAHub.repository.*;
+import ir.TAHub.TAHub.model.Course;
+import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.Enrollment;
+import ir.TAHub.TAHub.model.EnrollmentStatus;
+import ir.TAHub.TAHub.model.Role;
+import ir.TAHub.TAHub.model.Semester;
+import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.repository.CourseOfferingRepository;
+import ir.TAHub.TAHub.repository.CourseRepository;
+import ir.TAHub.TAHub.repository.EnrollmentRepository;
+import ir.TAHub.TAHub.repository.RosterEntryRepository;
+import ir.TAHub.TAHub.repository.SemesterRepository;
+import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -27,19 +38,21 @@ public class CourseController {
     private final CourseRepository courseRepository;
     private final SemesterRepository semesterRepository;
     private final UserRepository userRepository;
-
     private final EnrollmentRepository enrollmentRepository;
+    private final RosterEntryRepository rosterRepository;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
                             SemesterRepository semesterRepository,
                             UserRepository userRepository,
-                            EnrollmentRepository enrollmentRepository) {
+                            EnrollmentRepository enrollmentRepository,
+                            RosterEntryRepository rosterRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.rosterRepository = rosterRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -49,7 +62,7 @@ public class CourseController {
         Optional<Semester> active = semesterRepository.findByActiveTrue();
 
         List<CourseOffering> offerings = active
-                .map(offeringRepository::findBySemesterOrderByCourseCodeAsc)
+                .map(offeringRepository::findBySemesterAndCancelledFalseOrderByCourseCodeAsc)
                 .orElse(List.of());
 
         model.addAttribute("semester", active.orElse(null));
@@ -58,12 +71,6 @@ public class CourseController {
         return "courses";
     }
 
-    @GetMapping("/courses/new")
-    public String showForm(Model model, Authentication authentication) {
-        model.addAttribute("form", new CourseForm());
-        addFormData(model, authentication);
-        return "course-form";
-    }
     /** Shows one offering. Old (archived) offerings can still be opened here, they are only hidden from the list. */
     @GetMapping("/courses/{id}")
     public String detail(@PathVariable Long id, Model model, Authentication authentication) {
@@ -73,6 +80,11 @@ public class CourseController {
 
         boolean isStudent = current.getRole() == Role.STUDENT;
         boolean canManage = offering.isManagedBy(current);
+
+        // A cancelled offering exists only for the people who manage it.
+        if (offering.isCancelled() && !canManage) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
 
         // The student's own enrollment (if any) decides which buttons and messages they see.
         EnrollmentStatus myStatus = null;
@@ -84,6 +96,7 @@ public class CourseController {
 
         model.addAttribute("offering", offering);
         model.addAttribute("isCurrentSemester", offering.getSemester().isActive());
+        model.addAttribute("isCancelled", offering.isCancelled());
         model.addAttribute("isStudent", isStudent);
         model.addAttribute("isEnrolled", myStatus == EnrollmentStatus.ACTIVE);
         model.addAttribute("wasRemoved", myStatus == EnrollmentStatus.REMOVED);
@@ -99,8 +112,55 @@ public class CourseController {
                     .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.ACTIVE));
             model.addAttribute("removedEnrollments", enrollmentRepository
                     .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.REMOVED));
+
+            // Numbers on the class list that have no account yet.
+            model.addAttribute("pendingRoster", rosterRepository.findByOfferingOrderByStudentNumberAsc(offering).stream()
+                    .filter(entry -> !userRepository.existsByStudentNumber(entry.getStudentNumber()))
+                    .toList());
         }
         return "course-detail";
+    }
+
+    @PostMapping("/courses/{id}/cancel")
+    public String cancel(@PathVariable Long id, Authentication authentication) {
+        CourseOffering offering = findManagedCurrentOffering(id, authentication);
+
+        // We do not leave enrolled students without a course. The professor must remove them first.
+        if (enrollmentRepository.countByOfferingAndStatus(offering, EnrollmentStatus.ACTIVE) > 0) {
+            return "redirect:/courses/" + id + "?cancelError";
+        }
+
+        offering.setCancelled(true);
+        offering.setJoinCode(null); // enrollment is closed
+        offeringRepository.save(offering);
+        return "redirect:/courses/" + id;
+    }
+
+    @PostMapping("/courses/{id}/uncancel")
+    public String uncancel(@PathVariable Long id, Authentication authentication) {
+        CourseOffering offering = findManagedCurrentOffering(id, authentication);
+        offering.setCancelled(false);
+        offering.setJoinCode(JoinCodes.generate()); // a fresh code, since the old one was removed
+        offeringRepository.save(offering);
+        return "redirect:/courses/" + id;
+    }
+
+    /** Loads an offering of the ACTIVE semester and checks that the current user manages it. */
+    private CourseOffering findManagedCurrentOffering(Long id, Authentication authentication) {
+        User current = currentUser(authentication);
+        CourseOffering offering = offeringRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!offering.isManagedBy(current) || !offering.getSemester().isActive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return offering;
+    }
+
+    @GetMapping("/courses/new")
+    public String showForm(Model model, Authentication authentication) {
+        model.addAttribute("form", new CourseForm());
+        addFormData(model, authentication);
+        return "course-form";
     }
 
     @PostMapping("/courses")
@@ -142,9 +202,12 @@ public class CourseController {
         if (errorKey == null) {
             // If the course code already exists we reuse that course (and its saved name).
             course = courseRepository.findByCode(form.getCode()).orElse(null);
-            if (course != null
-                    && offeringRepository.existsByCourseAndSemesterAndProfessor(course, semester, professor)) {
-                errorKey = "course.error.alreadyOffered";
+            if (course != null) {
+                CourseOffering existing = offeringRepository
+                        .findByCourseAndSemesterAndProfessor(course, semester, professor).orElse(null);
+                if (existing != null) {
+                    errorKey = existing.isCancelled() ? "course.error.cancelledExists" : "course.error.alreadyOffered";
+                }
             }
         }
 

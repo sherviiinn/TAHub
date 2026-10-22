@@ -6,6 +6,7 @@ import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.MajorRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.RosterService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,13 +20,16 @@ public class RegistrationController {
     private final UserRepository userRepository;
     private final MajorRepository majorRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RosterService rosterService;
 
     public RegistrationController(UserRepository userRepository,
                                   MajorRepository majorRepository,
-                                  PasswordEncoder passwordEncoder) {
+                                  PasswordEncoder passwordEncoder,
+                                  RosterService rosterService) {
         this.userRepository = userRepository;
         this.majorRepository = majorRepository;
         this.passwordEncoder = passwordEncoder;
+        this.rosterService = rosterService;
     }
 
     @GetMapping("/register")
@@ -61,6 +65,9 @@ public class RegistrationController {
         user.setRole(Role.STUDENT); // never taken from user input
         user.setMajor(major);
         userRepository.save(user);
+
+        // If professors already put this number on their class lists, enroll the new student there.
+        rosterService.enrollFromRosters(user);
 
         return "redirect:/login?registered";
     }

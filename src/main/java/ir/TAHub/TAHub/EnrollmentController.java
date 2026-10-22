@@ -2,11 +2,13 @@ package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Enrollment;
+import ir.TAHub.TAHub.model.EnrollmentSource;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
+import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
@@ -27,13 +29,16 @@ public class EnrollmentController {
     private final UserRepository userRepository;
     private final CourseOfferingRepository offeringRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final RosterEntryRepository rosterRepository;
 
     public EnrollmentController(UserRepository userRepository,
                                 CourseOfferingRepository offeringRepository,
-                                EnrollmentRepository enrollmentRepository) {
+                                EnrollmentRepository enrollmentRepository,
+                                RosterEntryRepository rosterRepository) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.rosterRepository = rosterRepository;
     }
 
     @PostMapping("/courses/{id}/enroll")
@@ -44,7 +49,7 @@ public class EnrollmentController {
         CourseOffering offering = findOffering(id);
 
         // Only students can enroll, and only in the active semester.
-        if (student.getRole() != Role.STUDENT || !offering.getSemester().isActive()) {
+        if (student.getRole() != Role.STUDENT || !offering.getSemester().isActive() || offering.isCancelled()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
@@ -70,6 +75,9 @@ public class EnrollmentController {
             enrollment.setOffering(offering);
             enrollment.setEnrolledAt(Instant.now());
         }
+        // A student who is on the class list counts as official even when they used the code.
+        boolean onList = rosterRepository.existsByOfferingAndStudentNumber(offering, student.getStudentNumber());
+        enrollment.setSource(onList ? EnrollmentSource.ROSTER : EnrollmentSource.JOIN_CODE);
         changeStatus(enrollment, EnrollmentStatus.ACTIVE);
         return "redirect:/courses/" + id;
     }
@@ -118,6 +126,10 @@ public class EnrollmentController {
     @PostMapping("/courses/{id}/join-code/regenerate")
     public String regenerateJoinCode(@PathVariable Long id, Authentication authentication) {
         CourseOffering offering = findManagedOffering(id, authentication);
+        // A cancelled offering must stay closed, a new code would reopen it.
+        if (offering.isCancelled()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         offering.setJoinCode(JoinCodes.generate());
         offeringRepository.save(offering);
         return "redirect:/courses/" + id;
