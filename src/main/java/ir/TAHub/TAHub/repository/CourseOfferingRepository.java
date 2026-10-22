@@ -7,6 +7,7 @@ import ir.TAHub.TAHub.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CourseOfferingRepository extends JpaRepository<CourseOffering, Long> {
 
@@ -17,4 +18,8 @@ public interface CourseOfferingRepository extends JpaRepository<CourseOffering, 
 
     // Offerings taught by one professor, newest semester first.
     List<CourseOffering> findByProfessorOrderBySemesterIdDescCourseCodeAsc(User professor);
+    // Lists shown to students must not include cancelled offerings.
+    List<CourseOffering> findBySemesterAndCancelledFalseOrderByCourseCodeAsc(Semester semester);
+
+    Optional<CourseOffering> findByCourseAndSemesterAndProfessor(Course course, Semester semester, User professor);
 }

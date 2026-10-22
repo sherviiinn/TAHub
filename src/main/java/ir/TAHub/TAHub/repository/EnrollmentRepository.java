@@ -18,4 +18,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
                                                                       EnrollmentStatus status);
     // All enrollments of one student with the given status (used for "my courses").
     List<Enrollment> findByStudentAndStatus(User student, EnrollmentStatus status);
+
+    long countByOfferingAndStatus(CourseOffering offering, EnrollmentStatus status);
 }

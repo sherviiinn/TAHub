@@ -43,6 +43,10 @@ public class Enrollment {
     @Column(nullable = false)
     private EnrollmentStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EnrollmentSource source;
+
     public Enrollment() {
     }
 
@@ -59,4 +63,7 @@ public class Enrollment {
 
     public EnrollmentStatus getStatus() { return status; }
     public void setStatus(EnrollmentStatus status) { this.status = status; }
+
+    public EnrollmentSource getSource() { return source; }
+    public void setSource(EnrollmentSource source) { this.source = source; }
 }

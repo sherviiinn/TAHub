@@ -32,6 +32,10 @@ public class CourseOffering {
     @Column(length = 20)
     private String joinCode;
 
+    // A cancelled offering is hidden from students and lists, but kept (it may have history).
+    @Column(nullable = false)
+    private boolean cancelled;
+
     public CourseOffering() {
     }
 
@@ -55,5 +59,8 @@ public class CourseOffering {
             return true;
         }
         return user.getRole() == Role.PROFESSOR && professor.getId().equals(user.getId());
+
     }
+    public boolean isCancelled() { return cancelled; }
+    public void setCancelled(boolean cancelled) { this.cancelled = cancelled; }
 }
