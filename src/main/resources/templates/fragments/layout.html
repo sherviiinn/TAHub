@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  Shared parts of every page. Use them like this in a page:
+
+    <head th:replace="~{fragments/layout :: head(#{some.title.key})}"></head>
+    <body>
+        <nav th:replace="~{fragments/layout :: nav}"></nav>
+        <main> ... the page ... </main>
+    </body>
+-->
+
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle}">TA Hub</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+    <!-- The menu. The nav* variables come from GlobalModelAttributes. -->
+    <nav th:fragment="nav" class="main-nav">
+        <th:block th:if="${navLoggedIn}">
+            <a th:href="@{/}" th:text="#{nav.home}">Home</a>
+            <a th:href="@{/courses}" th:text="#{home.courses}">Courses</a>
+            <a th:if="${navIsStudent or navIsProfessor}" th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
+            <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
+            <a th:if="${navIsStudent}" th:href="@{/my-ta-requests}" th:text="#{ta.link.mine}">My TA requests</a>
+            <a th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
+
+            <th:block th:if="${navIsAdmin}">
+                <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
+                <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
+                <a th:href="@{/admin/majors}" th:text="#{home.majors}">Manage fields of study</a>
+            </th:block>
+
+            <a th:href="@{/profile}" th:text="#{home.profile}">My profile</a>
+            <span class="nav-user" th:text="${navFullName}"></span>
+            <form method="post" th:action="@{/logout}" class="nav-logout">
+                <button type="submit" th:text="#{home.logout}">Sign out</button>
+            </form>
+        </th:block>
+    </nav>
+</body>
+</html>

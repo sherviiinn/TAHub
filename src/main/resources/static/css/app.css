@@ -1,0 +1,111 @@
+/* Base styles for TA Hub. The frontend developer owns this file.
+   Use logical properties (margin-inline-start, padding-inline, ...) instead of left/right,
+   so the pages also work right-to-left when Persian is added. */
+
+:root {
+    --color-text: #1f2933;
+    --color-muted: #52606d;
+    --color-bg: #ffffff;
+    --color-surface: #f5f7fa;
+    --color-border: #cbd2d9;
+    --color-primary: #1f5eff;
+    --space: 1rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--color-text);
+    background: var(--color-bg);
+    line-height: 1.5;
+}
+
+main,
+body > h1,
+body > h2,
+body > p,
+body > div,
+body > table,
+body > ul,
+body > form {
+    max-inline-size: 60rem;
+    margin-inline: auto;
+    padding-inline: var(--space);
+}
+
+a {
+    color: var(--color-primary);
+}
+
+/* ----- menu ----- */
+.main-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem var(--space);
+    background: var(--color-surface);
+    border-block-end: 1px solid var(--color-border);
+}
+
+.main-nav .nav-user {
+    margin-inline-start: auto;
+    color: var(--color-muted);
+}
+
+.main-nav .nav-logout {
+    margin: 0;
+}
+
+/* ----- tables ----- */
+table {
+    border-collapse: collapse;
+    inline-size: 100%;
+}
+
+th, td {
+    padding: 0.4rem 0.6rem;
+    text-align: start;
+    border: 1px solid var(--color-border);
+}
+
+th {
+    background: var(--color-surface);
+}
+
+/* ----- forms ----- */
+input[type="text"],
+input[type="password"],
+select,
+textarea {
+    max-inline-size: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font: inherit;
+}
+
+button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    font: inherit;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #e4e7eb;
+}
+
+/* small screens */
+@media (max-width: 40rem) {
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+}
