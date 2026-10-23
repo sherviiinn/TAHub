@@ -1,35 +1,34 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${professor.fullName}">Professor</title>
-</head>
+<head th:replace="~{fragments/layout :: head(${professor.fullName})}"></head>
 <body>
-<h1 th:text="${professor.fullName}">Professor</h1>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+    <h1 th:text="${professor.fullName}">Professor</h1>
 
-<h2 th:text="#{professors.courses}">Courses this semester</h2>
-<p th:if="${#lists.isEmpty(courses)}" th:text="#{professors.noCourses}">No courses this semester.</p>
+    <h2 th:text="#{professors.courses}">Courses this semester</h2>
+    <p th:if="${#lists.isEmpty(courses)}" th:text="#{professors.noCourses}">No courses this semester.</p>
 
-<table border="1" th:unless="${#lists.isEmpty(courses)}">
-    <tr>
-        <th th:text="#{professors.course}">Course</th>
-        <th th:text="#{ta.title}">Teaching assistants</th>
-    </tr>
-    <tr th:each="c : ${courses}">
-        <td>
-            <a th:href="@{/courses/{id}(id=${c.offering.id})}"
-               th:text="${c.offering.course.code} + ' - ' + ${c.offering.course.name}"></a>
-        </td>
-        <td>
-            <span th:if="${#lists.isEmpty(c.teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</span>
-            <ul th:unless="${#lists.isEmpty(c.teachingAssistants)}">
-                <li th:each="t : ${c.teachingAssistants}" th:text="${t.user.fullName}"></li>
-            </ul>
-        </td>
-    </tr>
-</table>
+    <table border="1" th:unless="${#lists.isEmpty(courses)}">
+        <tr>
+            <th th:text="#{professors.course}">Course</th>
+            <th th:text="#{ta.title}">Teaching assistants</th>
+        </tr>
+        <tr th:each="c : ${courses}">
+            <td>
+                <a th:href="@{/courses/{id}(id=${c.offering.id})}"
+                   th:text="${c.offering.course.code} + ' - ' + ${c.offering.course.name}"></a>
+            </td>
+            <td>
+                <span th:if="${#lists.isEmpty(c.teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</span>
+                <ul th:unless="${#lists.isEmpty(c.teachingAssistants)}">
+                    <li th:each="t : ${c.teachingAssistants}" th:text="${t.user.fullName}"></li>
+                </ul>
+            </td>
+        </tr>
+    </table>
 
-<p><a th:href="@{/professors}" th:text="#{professors.back}">Back to professors</a></p>
+    <p><a th:href="@{/professors}" th:text="#{professors.back}">Back to professors</a></p>
+    </main>
 </body>
 </html>

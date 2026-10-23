@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="#{ta.mine.title}">My TA requests</title>
-</head>
+<head th:replace="~{fragments/layout :: head(#{ta.mine.title})}"></head>
 <body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
     <h1 th:text="#{ta.mine.title}">My TA requests</h1>
 
     <p th:if="${#lists.isEmpty(applications)}" th:text="#{ta.mine.none}">You have not sent any TA request.</p>
@@ -34,5 +32,6 @@
     </table>
 
     <p><a th:href="@{/my-courses}" th:text="#{ta.mine.back}">Back to my courses</a></p>
+    </main>
 </body>
 </html>

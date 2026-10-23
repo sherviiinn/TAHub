@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="#{professors.title}">Professors</title>
-</head>
+<head th:replace="~{fragments/layout :: head(#{professors.title})}"></head>
 <body>
-<h1 th:text="#{professors.title}">Professors</h1>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+    <h1 th:text="#{professors.title}">Professors</h1>
 
-<p th:if="${#lists.isEmpty(professors)}" th:text="#{professors.none}">No professors yet.</p>
+    <p th:if="${#lists.isEmpty(professors)}" th:text="#{professors.none}">No professors yet.</p>
 
-<ul th:unless="${#lists.isEmpty(professors)}">
-    <li th:each="p : ${professors}">
-        <a th:href="@{/professors/{id}(id=${p.id})}" th:text="${p.fullName}"></a>
-    </li>
-</ul>
+    <ul th:unless="${#lists.isEmpty(professors)}">
+        <li th:each="p : ${professors}">
+            <a th:href="@{/professors/{id}(id=${p.id})}" th:text="${p.fullName}"></a>
+        </li>
+    </ul>
 
-<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+    <p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+    </main>
 </body>
 </html>
