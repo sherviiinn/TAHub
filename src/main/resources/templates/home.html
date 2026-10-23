@@ -17,6 +17,9 @@
 <p th:if="${!isAdmin}">
     <a th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
 </p>
+<p>
+    <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
+</p>
 
 <p th:if="${isAdmin}">
     <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
