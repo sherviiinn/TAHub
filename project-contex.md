@@ -1,6 +1,6 @@
 # TA Hub - زمینه‌ی پروژه
 
-آخرین به‌روزرسانی: ۳۰ مهر ۱۴۰۵ (2026-10-22)
+آخرین به‌روزرسانی: ۱ آبان ۱۴۰۵ (2026-10-23)
 
 ## این فایل رو چطور استفاده کنیم
 
@@ -23,11 +23,11 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - Java 21، Spring Boot 4.1.1، Maven، Thymeleaf (صفحه‌ها سمت سرور ساخته می‌شن)، Spring Security، Spring Data JPA (Hibernate)، PostgreSQL 16 توی Docker.
 - IntelliJ IDEA، ویندوز، Git و ریپوی Private روی GitHub.
 - اجرای لوکال:
-    1. نصب JDK 21، IntelliJ، Docker Desktop و Git.
-    2. `git clone` و باز کردن پروژه توی IntelliJ.
-    3. توی پوشه‌ی پروژه `docker compose up -d` (دیتابیس روی پورت 5433 سیستم، پورت 5432 داخل کانتینر).
-    4. Run کردن `TaHubApplication`.
-    5. باز کردن `http://localhost:8080` (با `http://`، نه `https://`).
+  1. نصب JDK 21، IntelliJ، Docker Desktop و Git.
+  2. `git clone` و باز کردن پروژه توی IntelliJ.
+  3. توی پوشه‌ی پروژه `docker compose up -d` (دیتابیس روی پورت 5433 سیستم، پورت 5432 داخل کانتینر).
+  4. Run کردن `TaHubApplication`.
+  5. باز کردن `http://localhost:8080` (با `http://`، نه `https://`).
 - اگه پورتی روی سیستم شما مشغوله، فقط روی سیستم خودتون عوضش کنید و commit نکنید.
 - مشکل دیتابیس یا تغییر ساختار: `docker compose down -v` و بعد `docker compose up -d` (همه‌ی داده‌ی لوکال پاک می‌شه).
 - داده‌ی نمونه: با `tahub.demo-data=true` توی `application.properties`، دیتابیس **خالی** موقع اجرا پر می‌شه: دو ترم (4051 آرشیو، 4052 فعال)، دو استاد (شماره‌های 9001 و 9002)، شش دانشجو (40000001 تا 40000006)، سه رشته، سه درس، ارائه‌ها و ثبت‌نام‌ها با همه‌ی وضعیت‌ها. رمز حساب‌های نمونه اولین بار توی کنسول چاپ می‌شه. ادمین پیش‌فرض (شماره `admin`) رو `DataInitializer` می‌سازه. همه‌ی این‌ها فقط برای توسعه‌ان.
@@ -38,14 +38,14 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 
 | پکیج | محتوا |
 |---|---|
-| ریشه | `TaHubApplication` و کنترلرها: `HomeController`، `LoginController`، `RegistrationController`، `UserController`، `CourseController`، `SemesterController`، `EnrollmentController`، `MyCoursesController`، `MajorController`، `ProfileController` |
-| `model` | `User`، `Role` (STUDENT, PROFESSOR, ADMIN)، `Semester`، `Course`، `CourseOffering`، `Enrollment`، `EnrollmentStatus`، `Major` |
+| ریشه | `TaHubApplication` و کنترلرها: `HomeController`، `LoginController`، `RegistrationController`، `UserController`، `CourseController`، `SemesterController`، `EnrollmentController`، `MyCoursesController`، `MajorController`، `ProfileController`، `RosterController` (لیست کلاس)، `TaController` (اضافه، حذف و برگردوندن TA)، `TaApplicationController` (درخواست TA شدن)، `ProfessorController` (بخش اساتید)، `GlobalModelAttributes` (داده‌ی منو برای همه‌ی صفحه‌ها) |
+| `model` | `User`، `Role` (STUDENT, PROFESSOR, ADMIN)، `Semester`، `Course`، `CourseOffering`، `Enrollment`، `EnrollmentStatus`، `EnrollmentSource` (ROSTER، JOIN_CODE)، `Major`، `RosterEntry`، `TaAssignment`، `TaApplication`، `TaApplicationStatus` |
 | `repository` | برای هر جدول یه Repository (متدهایی که Spring از روی اسمشون کوئری می‌سازه) |
 | `dto` | `RegisterForm`، `CourseForm` (فرم‌ها، تا کاربر نتونه فیلدهایی مثل نقش رو بفرسته) |
 | `config` | `SecurityConfig`، `DataInitializer`، `DemoDataSeeder` |
 | `security` | `CustomUserDetailsService` (لاگین با شماره‌ی دانشجویی) |
-| `service` | `SemesterService` (شروع ترم جدید به‌صورت یکجا) |
-| `util` | `JoinCodes` (ساخت کد ورود با SecureRandom) |
+| `service` | `SemesterService` (شروع ترم جدید به‌صورت یکجا)، `RosterService` (خوندن لیست چسبونده‌شده و ثبت‌نام خودکار)، `TaService` (قانون‌های TA شدن، هم برای افزودن دستی و هم قبول درخواست) |
+| `util` | `JoinCodes` (ساخت کد ورود با SecureRandom)، `Digits` (تبدیل ارقام فارسی و عربی به انگلیسی) |
 
 منابع: `templates/` (صفحه‌های Thymeleaf)، `static/` (CSS و JS، بعداً)، `messages.properties` (همه‌ی متن‌های صفحه)، `application.properties`.
 
@@ -75,8 +75,8 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 ## ۶. چیزهایی که الان کار می‌کنن
 
 نقش‌ها:
-- **دانشجو:** ثبت‌نام (به شرطی که ادمین حداقل یه رشته تعریف کرده باشه)، لاگین با شماره‌ی دانشجویی، دیدن درس‌های ترم فعال، ورود به درس با کد، انصراف، «درس‌های من» برای هر ترمی که توش بوده، تغییر رشته از پروفایل.
-- **استاد:** ساخت ارائه برای خودش، دیدن لیست دانشجوهای درس‌هاش (با رشته‌شون، چه فعال چه حذف‌شده)، حذف و برگردوندن دانشجو، ساخت کد جدید یا بستن ثبت‌نام، لغو ارائه (فقط وقتی دانشجوی فعال نداره) و برگردوندنش، ارائه‌ی دوباره‌ی درس‌های ترم‌های قبل توی ترم فعال.
+- **دانشجو:** ثبت‌نام (به شرطی که ادمین حداقل یه رشته تعریف کرده باشه)، لاگین با شماره‌ی دانشجویی، دیدن درس‌های ترم فعال، ورود به درس با کد، انصراف، «درس‌های من» برای هر ترمی که توش بوده، تغییر رشته از پروفایل، دیدن TA های هر درس و بخش اساتید، درخواست TA شدن (وقتی استاد باز کرده باشه) و «درخواست‌های TA من».
+- **استاد:** ساخت ارائه برای خودش، دیدن لیست دانشجوهای درس‌هاش (با رشته‌شون، چه فعال چه حذف‌شده)، حذف و برگردوندن دانشجو، ساخت کد جدید یا بستن ثبت‌نام، لغو ارائه (فقط وقتی دانشجوی فعال نداره) و برگردوندنش، ارائه‌ی دوباره‌ی درس‌های ترم‌های قبل توی ترم فعال، چسبوندن لیست شماره‌های دانشجویی کلاس، اضافه و حذف و برگردوندن TA، باز و بسته کردن درخواست TA، و قبول و رد و بازبینی درخواست‌ها توی «TA requests».
 - **ادمین:** هر کاری که استاد روی ارائه‌ها می‌کنه، روی همه‌ی ارائه‌ها (و موقع ساخت، استاد رو انتخاب می‌کنه)، به‌علاوه‌ی مدیریت کاربرها، ترم‌ها (شروع ترم جدید) و رشته‌ها. ادمین «درس‌های من» نداره.
 
 قوانین:
@@ -85,6 +85,10 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - کد ورود: ۶ کاراکتر از حروفی که با هم قاطی نمی‌شن، ساخته‌شده با SecureRandom، فقط به مدیرهای ارائه نشون داده می‌شه و دانشجو هیچ‌وقت نمی‌بینه. کد جدید کد قبلی رو باطل می‌کنه. بستن ثبت‌نام کد رو خالی می‌کنه.
 - شروع ترم جدید، ترم فعلی رو یکجا آرشیو می‌کنه. چیزی پاک نمی‌شه.
 - حذف دانشجو از یه درس به حساب و درس‌های دیگه‌اش هیچ ربطی نداره.
+- لیست کلاس: ارقام فارسی قبوله، حداکثر ۵۰۰ شماره در هر بار. دانشجوی دارای حساب خودکار وارد می‌شه، بقیه یادداشت می‌شن و موقع ثبت‌نام وارد می‌شن. کسی که انصراف داده یا حذف شده برنمی‌گرده. TA همون ارائه هم با لیست دانشجو نمی‌شه.
+- TA: فقط کاربر با نقش دانشجو می‌تونه TA باشه. نمی‌شه توی ارائه‌ای که دانشجوی فعالشه TA باشه (و برعکس). حذف TA فقط `active` رو false می‌کنه و استاد می‌تونه با Restore برش گردونه. اسم TA ها رو همه می‌بینن، شماره‌ی دانشجویی و دکمه‌ها فقط مدیرهای ارائه.
+- درخواست TA: پیش‌فرض بسته‌ست و استاد برای هر ارائه بازش می‌کنه. هر دانشجو برای هر ارائه یه درخواست داره (وضعیت‌ها PENDING، ACCEPTED، REJECTED، WITHDRAWN). رد شده با Reconsider برمی‌گرده. پس گرفته‌شده رو دانشجو می‌تونه دوباره بده. قبول کردن همون قانون‌های TA شدن رو دوباره چک می‌کنه.
+- بخش اساتید: همه‌ی کاربرها لیست استادها و درس‌های ترم فعال هر استاد (بدون ارائه‌های لغوشده) و TA های هر درس رو می‌بینن.
 
 ## ۷. آدرس‌ها و قرارداد صفحه‌ها (برای فرانت)
 
@@ -98,13 +102,29 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 | `users` (ادمین) | `GET /users` | `users` (id، fullName، studentNumber، role) | `/users`: `fullName`، `studentNumber`، `password`، `role`؛ `/users/{id}/delete` |
 | `courses` | `GET /courses` | `semester`، `offerings`، `canCreate` | ندارد |
 | `course-form` | `GET /courses/new` | `form` (`code`، `name`، `professorId`)، `isAdmin`، `professors`، `semester`، `errorKey` | `/courses` |
-| `course-detail` | `GET /courses/{id}` (پارامترهای `joinError`، `cancelError`) | `offering`، `isCurrentSemester`، `isStudent`، `isEnrolled`، `wasRemoved`، `canManage`، `isCancelled`، `enrollmentOpen`، `joinCode` (فقط مدیرها)، `enrollments`، `removedEnrollments` | `/courses/{id}/enroll` (`code`)، `/drop`، `/cancel`، `/uncancel`، `/join-code/regenerate`، `/join-code/close`، `/students/{sid}/remove`، `/students/{sid}/restore` |
+| `course-detail` | `GET /courses/{id}` (پارامترهای `joinError`، `cancelError`) | `offering`، `isCurrentSemester`، `isStudent`، `isEnrolled`، `wasRemoved`، `canManage`، `isCancelled`، `enrollmentOpen`، `joinCode` (فقط مدیرها)، `enrollments`، `removedEnrollments`، `pendingRoster`، `rosterResult` و `rosterErrorKey` (فقط بعد از چسبوندن لیست)، `teachingAssistants`، `removedTeachingAssistants`، `isTa`، `taErrorKey`، `taApplicationsOpen`، `myTaApplication`، `taApplyErrorKey`، `pendingTaRequests` | `/courses/{id}/enroll` (`code`)، `/drop`، `/cancel`، `/uncancel`، `/join-code/regenerate`، `/join-code/close`، `/students/{sid}/remove`، `/students/{sid}/restore`، `/roster` (`numbers`)، `/tas` (`studentNumber`)، `/tas/{uid}/remove`، `/tas/{uid}/restore`، `/ta-applications` (`message`)، `/ta-applications/open`، `/ta-applications/close` |
 | `my-courses` | `GET /my-courses?semester={id}` | `isProfessor`، `semesters`، `selectedSemesterId`، `selectedIsActive`، `offerings`، `activeSemester`، `reofferable` | `/courses/{id}/reoffer` |
 | `semesters` (ادمین) | `GET /admin/semesters` | `semesters`، `errorKey` | `/admin/semesters`: `code` |
 | `majors` (ادمین) | `GET /admin/majors` | `majors`، `usage` (تعداد دانشجوی هر رشته)، `errorKey` | `/admin/majors`: `name`؛ `/admin/majors/{id}/delete` |
 | `ta-requests` (استاد، ادمین) | `GET /ta-requests` | `pending`، `rejected`، `requestErrorKey` | `/ta-applications/{id}/accept`، `/reject`، `/reconsider` |
 | `my-ta-requests` (دانشجو) | `GET /my-ta-requests` | `applications` | `/ta-applications/{id}/withdraw` |
+| `professors` | `GET /professors` | `professors` | ندارد |
+| `professor-detail` | `GET /professors/{id}` | `professor`، `courses` (هر ردیف: `offering` و `teachingAssistants`) | ندارد |
 | `profile` | `GET /profile` (پارامتر `saved`) | `profileUser`، `isStudent`، `majors` | `/profile/major`: `majorId` |
+
+## ۷.۱. قالب مشترک (layout)
+
+- `templates/fragments/layout.html` دو تکه داره: `head(عنوان)` (متا، عنوان و `static/css/app.css`) و `nav` (منوی بالا، بر اساس نقش).
+- هر صفحه این‌طور شروع می‌شه:
+  ```html
+  <head th:replace="~{fragments/layout :: head(#{some.title.key})}"></head>
+  <body>
+      <nav th:replace="~{fragments/layout :: nav}"></nav>
+      <main> ... </main>
+  </body>
+  ```
+- داده‌ی منو رو `GlobalModelAttributes` (بک‌اند) به همه‌ی صفحه‌ها می‌ده: `navLoggedIn`، `navFullName`، `navIsStudent`، `navIsProfessor`، `navIsAdmin`. این اسم‌ها نباید عوض بشن.
+- فایل `static/css/app.css` مال فرانت‌کاره. از ویژگی‌های منطقی (`margin-inline-start` و ...) استفاده کنید تا فارسی و راست‌به‌چپ بعداً خراب نشه.
 
 ## ۸. تصمیم‌هایی که گرفته شده
 
@@ -123,14 +143,15 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 
 ## ۹. نقشه‌ی راه
 
-**فاز ۲ (درس‌ها)، باقی‌مونده:**
+**فاز ۲ (درس‌ها): تموم شد** (برچسب `phase-2-done`). کارهای کوچیکی که از این فاز عقب افتاده و موقع مناسب انجام می‌شن: وضعیت حساب به‌جای حذف، کد دعوت استاد، جلوگیری از ثبت‌نام با شماره‌ی دانشجویی دیگران. جزئیات قدم‌های انجام‌شده:
 - ۲-ز: استاد لیست شماره‌های دانشجویی کلاس رو می‌چسبونه. کسایی که حساب دارن خودکار وارد درس می‌شن، بقیه یادداشت می‌شن و موقع ثبت‌نام خودکار وارد می‌شن. هر ثبت‌نام یه «منبع» (لیست یا کد) داره. دانشجوی حذف‌شده توسط استاد برنمی‌گرده. **(انجام و تست شد)**
-- ۲-ح: TA بودن توی ارائه (جدول `ta_assignments`، یکتا روی کاربر و ارائه؛ حذف TA فقط `active` رو false می‌کنه)، نمایش TA ها توی صفحه‌ی ارائه. **(کد داده شد، تست در انتظار)**
-- ۲-ح۲: درخواست TA شدن: استاد برای ارائه‌اش «پذیرش درخواست TA» رو باز یا بسته می‌کنه. دانشجو درخواست (با پیام کوتاه) می‌ده، استاد توی یه پنل «درخواست‌های TA» قبول یا رد می‌کنه، و قبول کردن خودکار اون دانشجو رو TA می‌کنه (جدول `ta_applications`، وضعیت‌ها PENDING، ACCEPTED، REJECTED، WITHDRAWN). بعداً توی فاز ۱۰ رزومه و نمره‌ی درس به همین درخواست وصل می‌شه. ردکردن برگشت‌پذیره (دکمه‌ی Reconsider)؛ درخواستی که دانشجو خودش پس گرفته (WITHDRAWN) رو می‌تونه دوباره بده. **(کد داده شد، تست در انتظار)**
-- ۲-ط: بخش اساتید: لیست استادها، با کلیک روی استاد درس‌هاش، با کلیک روی درس TA هاش. بعداً اطلاعات دفتر و نظرسنجی هم اینجا میاد.
-- بعدش: قالب مشترک و منوی بالا و CSS پایه، وضعیت حساب (غیرفعال کردن به‌جای حذف)، کد دعوت استاد (قابل عقب انداختن).
+- ۲-ح: TA بودن توی ارائه (جدول `ta_assignments`، یکتا روی کاربر و ارائه؛ حذف TA فقط `active` رو false می‌کنه)، نمایش TA ها توی صفحه‌ی ارائه. **(انجام و تست شد؛ حذف TA برگشت‌پذیره)**
+- ۲-ح۲: درخواست TA شدن: استاد برای ارائه‌اش «پذیرش درخواست TA» رو باز یا بسته می‌کنه. دانشجو درخواست (با پیام کوتاه) می‌ده، استاد توی یه پنل «درخواست‌های TA» قبول یا رد می‌کنه، و قبول کردن خودکار اون دانشجو رو TA می‌کنه (جدول `ta_applications`، وضعیت‌ها PENDING، ACCEPTED، REJECTED، WITHDRAWN). بعداً توی فاز ۱۰ رزومه و نمره‌ی درس به همین درخواست وصل می‌شه. ردکردن برگشت‌پذیره (دکمه‌ی Reconsider)؛ درخواستی که دانشجو خودش پس گرفته (WITHDRAWN) رو می‌تونه دوباره بده. **(انجام و تست شد)**
+- ۲-ط: بخش اساتید: لیست استادها، با کلیک روی استاد درس‌های ترم فعالش و TA هاش، با کلیک روی درس صفحه‌ی ارائه. بعداً اطلاعات دفتر و نظرسنجی هم اینجا میاد. **(انجام و تست شد)**
+- قالب مشترک، منوی بالا و CSS پایه (بخش ۷.۱). **(انجام و تست شد؛ بقیه‌ی صفحه‌ها رو دوست فرانت‌کار به قالب می‌بره)**
+- بعد از فاز ۲: وضعیت حساب (غیرفعال کردن به‌جای حذف)، کد دعوت استاد (قابل عقب انداختن).
 
-**فاز ۳:** اطلاعیه‌ها (برای هر ارائه)، لینک تلگرام (برای هر ارائه)، ویدیوها و منابع آموزشی از یوتیوب و آپارات (به درس دائمی وصل: عنوان، فصل، لینک، توضیح، آپلودکننده)، اطلاعات دفتر استاد (ساختمان، اتاق، ساعت حضور، ایمیل دانشگاهی، راه‌های تماس).
+**فاز ۳ (قدم بعدی):** اطلاعیه‌ها (برای هر ارائه)، لینک تلگرام (برای هر ارائه)، ویدیوها و منابع آموزشی از یوتیوب و آپارات (به درس دائمی وصل: عنوان، فصل، لینک، توضیح، آپلودکننده)، اطلاعات دفتر استاد (ساختمان، اتاق، ساعت حضور، ایمیل دانشگاهی، راه‌های تماس).
 
 **فاز ۴:** تمرین با سؤال‌ها و بارم، آپلود PDF توسط دانشجو (فقط تحویل خودش، حذف و تعویض قبل از مهلت)، ذخیره‌ی فایل روی دیسک با اسمی که سرور می‌سازه.
 
@@ -180,5 +201,5 @@ Rules you must follow:
 - تا ادمین حداقل یه رشته اضافه نکنه، ثبت‌نام بسته‌ست.
 - کاربرهایی که ادمین از `/users` می‌سازه رشته ندارن (از پروفایل انتخاب می‌کنن). حذف کاربری که سابقه داره به‌خاطر کلیدهای خارجی خطا می‌ده (راه‌حل: وضعیت حساب).
 - صفحه‌های خطا همون Whitelabel پیش‌فرض‌ان. هشدار `spring.jpa.open-in-view` هنوز رسیدگی نشده.
-- آخرین چیزی که صاحب پروژه تست کرده و تأیید شده: تا رشته‌ی تحصیلی (۲-و). قدم لغو و برگردوندن ارائه تحویل داده شده ولی نتیجه‌ی تستش هنوز تأیید نشده.
+- آخرین چیزی که صاحب پروژه تست کرده و تأیید شده: همه‌ی فاز ۲، یعنی تا بخش اساتید و قالب مشترک. صفحه‌های قدیمی (`home`، `courses`، `course-detail` و ...) هنوز به قالب مشترک و منو منتقل نشدن؛ این کار با دوست فرانت‌کاره.
 - نقش نفر سوم تیم هنوز مشخص نیست.
