@@ -113,3 +113,25 @@ button:hover {
 .announcement-body {
     white-space: pre-line; /* keep the line breaks the author typed */
 }
+
+/* ----- notifications ----- */
+.notification-list {
+    list-style: none;
+    padding: 0;
+}
+
+.notification-list li {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    margin-block-end: 0.5rem;
+}
+
+.notification-list .notification-unread {
+    background: var(--color-surface);
+    border-inline-start: 4px solid var(--color-primary);
+}
+
+.notification-list form {
+    margin: 0;
+}

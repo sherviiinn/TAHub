@@ -9,6 +9,7 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.NotificationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -50,17 +51,20 @@ public class AnnouncementController {
     private final AnnouncementRepository announcementRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final TaAssignmentRepository taRepository;
+    private final NotificationService notificationService;
 
     public AnnouncementController(UserRepository userRepository,
                                   CourseOfferingRepository offeringRepository,
                                   AnnouncementRepository announcementRepository,
                                   EnrollmentRepository enrollmentRepository,
-                                  TaAssignmentRepository taRepository) {
+                                  TaAssignmentRepository taRepository,
+                                  NotificationService notificationService) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.announcementRepository = announcementRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
+        this.notificationService = notificationService;
     }
 
     @GetMapping("/courses/{id}/announcements")
@@ -134,6 +138,9 @@ public class AnnouncementController {
         announcement.setBody(cleanBody);
         announcement.setCreatedAt(Instant.now());
         announcementRepository.save(announcement);
+
+        // Every enrolled student gets a notification about it.
+        notificationService.notifyAnnouncement(announcement);
         return "redirect:/courses/" + id + "/announcements";
     }
 
