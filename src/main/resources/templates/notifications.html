@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{notifications.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{notifications.title}">Notifications</h1>
+
+        <p th:if="${#lists.isEmpty(notifications)}" th:text="#{notifications.none}">You have no notifications.</p>
+
+        <form th:if="${unreadCount > 0}" method="post" th:action="@{/notifications/read-all}">
+            <button type="submit" th:text="#{notifications.readAll}">Mark all as read</button>
+        </form>
+
+        <ul class="notification-list" th:unless="${#lists.isEmpty(notifications)}">
+            <li th:each="n : ${notifications}" th:classappend="${n.notification.seen} ? '' : 'notification-unread'">
+                <small th:text="#{${'notifications.type.' + n.notification.type}} + ' - ' + ${n.when}"></small>
+                <strong th:unless="${n.notification.seen}" th:text="#{notifications.new}">New</strong>
+                <form method="post" th:action="@{/notifications/{id}/open(id=${n.notification.id})}">
+                    <button type="submit" th:text="${n.notification.title}">Title</button>
+                </form>
+            </li>
+        </ul>
+    </main>
+</body>
+</html>
