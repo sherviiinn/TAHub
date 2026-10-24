@@ -109,3 +109,7 @@ button:hover {
         overflow-x: auto;
     }
 }
+/* ----- announcements ----- */
+.announcement-body {
+    white-space: pre-line; /* keep the line breaks the author typed */
+}

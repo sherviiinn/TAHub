@@ -6,251 +6,257 @@
     <title th:text="${offering.course.code}">Course</title>
 </head>
 <body>
-<h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
+    <h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
 
-<p th:text="#{course.detail.semester(${offering.semester.code})}"></p>
-<p th:if="${!isCurrentSemester}" th:text="#{course.detail.archived}"></p>
-<p th:text="#{course.detail.professor(${offering.professor.fullName})}"></p>
-<p th:if="${isCancelled}" th:text="#{course.detail.cancelledBanner}"></p>
+    <p th:text="#{course.detail.semester(${offering.semester.code})}"></p>
+    <p th:if="${!isCurrentSemester}" th:text="#{course.detail.archived}"></p>
+    <p th:text="#{course.detail.professor(${offering.professor.fullName})}"></p>
+    <p th:if="${isCancelled}" th:text="#{course.detail.cancelledBanner}"></p>
 
-<!-- What a student sees about their own enrollment -->
-<div th:if="${isStudent}">
+    <!-- Announcements: only for the people of this offering -->
+    <p th:if="${canSeeAnnouncements}">
+        <a th:href="@{/courses/{id}/announcements(id=${offering.id})}"
+           th:text="#{announcements.link(${announcementCount})}">Announcements</a>
+    </p>
 
-    <!-- Current semester: the student can act -->
-    <th:block th:if="${isCurrentSemester}">
-        <p th:if="${isEnrolled}" th:text="#{course.detail.enrolled}"></p>
-        <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
+    <!-- What a student sees about their own enrollment -->
+    <div th:if="${isStudent}">
 
-        <form th:if="${isEnrolled}" method="post"
-              th:action="@{/courses/{id}/drop(id=${offering.id})}">
-            <button type="submit" th:text="#{course.detail.drop}">Drop this course</button>
-        </form>
+        <!-- Current semester: the student can act -->
+        <th:block th:if="${isCurrentSemester}">
+            <p th:if="${isEnrolled}" th:text="#{course.detail.enrolled}"></p>
+            <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
 
-        <!-- Not enrolled and not removed: the student may enroll with the join code -->
-        <p th:if="${isTa}" th:text="#{course.detail.youAreTa}"></p>
-        <th:block th:if="${!isEnrolled and !wasRemoved and !isTa}">
-            <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
-            <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
-
-            <form th:if="${enrollmentOpen}" method="post"
-                  th:action="@{/courses/{id}/enroll(id=${offering.id})}">
-                <label for="code" th:text="#{course.detail.joinCodeLabel}">Join code</label>
-                <input type="text" id="code" name="code" maxlength="20" required autocomplete="off">
-                <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
+            <form th:if="${isEnrolled}" method="post"
+                  th:action="@{/courses/{id}/drop(id=${offering.id})}">
+                <button type="submit" th:text="#{course.detail.drop}">Drop this course</button>
             </form>
+
+            <!-- Not enrolled and not removed: the student may enroll with the join code -->
+            <p th:if="${isTa}" th:text="#{course.detail.youAreTa}"></p>
+            <th:block th:if="${!isEnrolled and !wasRemoved and !isTa}">
+                <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
+                <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
+
+                <form th:if="${enrollmentOpen}" method="post"
+                      th:action="@{/courses/{id}/enroll(id=${offering.id})}">
+                    <label for="code" th:text="#{course.detail.joinCodeLabel}">Join code</label>
+                    <input type="text" id="code" name="code" maxlength="20" required autocomplete="off">
+                    <button type="submit" th:text="#{course.detail.enroll}">Enroll</button>
+                </form>
+            </th:block>
         </th:block>
-    </th:block>
 
-    <!-- Archived semester: only past-tense information, no buttons -->
-    <th:block th:unless="${isCurrentSemester}">
-        <p th:if="${isEnrolled}" th:text="#{course.detail.wasEnrolled}"></p>
-        <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
-    </th:block>
-</div>
+        <!-- Archived semester: only past-tense information, no buttons -->
+        <th:block th:unless="${isCurrentSemester}">
+            <p th:if="${isEnrolled}" th:text="#{course.detail.wasEnrolled}"></p>
+            <p th:if="${wasRemoved}" th:text="#{course.detail.removed}"></p>
+        </th:block>
+    </div>
 
-<!-- Teaching assistants: everybody sees the names, managers can add and remove -->
-<div>
-    <h2 th:text="#{ta.title}">Teaching assistants</h2>
-    <p th:if="${#lists.isEmpty(teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</p>
+    <!-- Teaching assistants: everybody sees the names, managers can add and remove -->
+    <div>
+        <h2 th:text="#{ta.title}">Teaching assistants</h2>
+        <p th:if="${#lists.isEmpty(teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</p>
 
-    <ul th:unless="${#lists.isEmpty(teachingAssistants)}">
-        <li th:each="t : ${teachingAssistants}">
-            <span th:text="${t.user.fullName}"></span>
-            <span th:if="${canManage}" th:text="'(' + ${t.user.studentNumber} + ')'"></span>
-            <form th:if="${canManage and isCurrentSemester and !isCancelled}" method="post"
-                  th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.user.id})}">
-                <button type="submit" th:text="#{ta.remove}">Remove</button>
-            </form>
-        </li>
-    </ul>
-
-    <!-- TAs removed by the professor. Shown only if there are any, so a mistake can be undone. -->
-    <th:block th:if="${canManage and !#lists.isEmpty(removedTeachingAssistants)}">
-        <h3 th:text="#{ta.removed.title(${#lists.size(removedTeachingAssistants)})}">Removed TAs</h3>
-        <ul>
-            <li th:each="t : ${removedTeachingAssistants}">
+        <ul th:unless="${#lists.isEmpty(teachingAssistants)}">
+            <li th:each="t : ${teachingAssistants}">
                 <span th:text="${t.user.fullName}"></span>
-                <span th:text="'(' + ${t.user.studentNumber} + ')'"></span>
-                <form th:if="${isCurrentSemester and !isCancelled}" method="post"
-                      th:action="@{/courses/{id}/tas/{uid}/restore(id=${offering.id},uid=${t.user.id})}">
-                    <button type="submit" th:text="#{ta.restore}">Restore</button>
+                <span th:if="${canManage}" th:text="'(' + ${t.user.studentNumber} + ')'"></span>
+                <form th:if="${canManage and isCurrentSemester and !isCancelled}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.user.id})}">
+                    <button type="submit" th:text="#{ta.remove}">Remove</button>
                 </form>
             </li>
         </ul>
-    </th:block>
 
-    <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
-        <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
-        <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
-            <label for="taNumber" th:text="#{ta.studentNumber}">Student number</label>
-            <input type="text" id="taNumber" name="studentNumber" maxlength="20" required autocomplete="off">
-            <button type="submit" th:text="#{ta.add}">Add TA</button>
+        <!-- TAs removed by the professor. Shown only if there are any, so a mistake can be undone. -->
+        <th:block th:if="${canManage and !#lists.isEmpty(removedTeachingAssistants)}">
+            <h3 th:text="#{ta.removed.title(${#lists.size(removedTeachingAssistants)})}">Removed TAs</h3>
+            <ul>
+                <li th:each="t : ${removedTeachingAssistants}">
+                    <span th:text="${t.user.fullName}"></span>
+                    <span th:text="'(' + ${t.user.studentNumber} + ')'"></span>
+                    <form th:if="${isCurrentSemester and !isCancelled}" method="post"
+                          th:action="@{/courses/{id}/tas/{uid}/restore(id=${offering.id},uid=${t.user.id})}">
+                        <button type="submit" th:text="#{ta.restore}">Restore</button>
+                    </form>
+                </li>
+            </ul>
+        </th:block>
+
+        <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
+            <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
+            <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
+                <label for="taNumber" th:text="#{ta.studentNumber}">Student number</label>
+                <input type="text" id="taNumber" name="studentNumber" maxlength="20" required autocomplete="off">
+                <button type="submit" th:text="#{ta.add}">Add TA</button>
+            </form>
+        </th:block>
+    </div>
+
+    <!-- Student: ask to become a TA (only while the professor accepts requests) -->
+    <div th:if="${isStudent and isCurrentSemester and !isCancelled and taApplicationsOpen and !isEnrolled and !isTa}">
+        <h2 th:text="#{ta.apply.title}">Become a TA</h2>
+        <p th:if="${taApplyErrorKey}" th:text="#{${taApplyErrorKey}}"></p>
+
+        <!-- No request yet, or the student took the old one back -->
+        <form th:if="${myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN'}" method="post"
+              th:action="@{/courses/{id}/ta-applications(id=${offering.id})}">
+            <label for="taMessage" th:text="#{ta.apply.messageLabel}">Message</label><br>
+            <textarea id="taMessage" name="message" rows="4" cols="40" maxlength="500"></textarea><br>
+            <button type="submit" th:text="#{ta.apply.submit}">Apply to be a TA</button>
         </form>
-    </th:block>
-</div>
 
-<!-- Student: ask to become a TA (only while the professor accepts requests) -->
-<div th:if="${isStudent and isCurrentSemester and !isCancelled and taApplicationsOpen and !isEnrolled and !isTa}">
-    <h2 th:text="#{ta.apply.title}">Become a TA</h2>
-    <p th:if="${taApplyErrorKey}" th:text="#{${taApplyErrorKey}}"></p>
+        <th:block th:if="${myTaApplication != null and myTaApplication.status.name() == 'PENDING'}">
+            <p th:text="#{ta.apply.pending}">Your request is waiting.</p>
+            <form method="post" th:action="@{/ta-applications/{id}/withdraw(id=${myTaApplication.id})}">
+                <button type="submit" th:text="#{ta.apply.withdraw}">Withdraw request</button>
+            </form>
+        </th:block>
 
-    <!-- No request yet, or the student took the old one back -->
-    <form th:if="${myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN'}" method="post"
-          th:action="@{/courses/{id}/ta-applications(id=${offering.id})}">
-        <label for="taMessage" th:text="#{ta.apply.messageLabel}">Message</label><br>
-        <textarea id="taMessage" name="message" rows="4" cols="40" maxlength="500"></textarea><br>
-        <button type="submit" th:text="#{ta.apply.submit}">Apply to be a TA</button>
-    </form>
+        <p th:if="${myTaApplication != null and myTaApplication.status.name() == 'REJECTED'}"
+           th:text="#{ta.apply.rejected}">Your request was not accepted.</p>
+    </div>
 
-    <th:block th:if="${myTaApplication != null and myTaApplication.status.name() == 'PENDING'}">
-        <p th:text="#{ta.apply.pending}">Your request is waiting.</p>
-        <form method="post" th:action="@{/ta-applications/{id}/withdraw(id=${myTaApplication.id})}">
-            <button type="submit" th:text="#{ta.apply.withdraw}">Withdraw request</button>
+    <!-- Professor and admin: open or close TA requests -->
+    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+        <h2 th:text="#{ta.manage.title}">TA requests</h2>
+        <p th:text="${taApplicationsOpen} ? #{ta.manage.isOpen} : #{ta.manage.isClosed}"></p>
+
+        <form th:if="${!taApplicationsOpen}" method="post"
+              th:action="@{/courses/{id}/ta-applications/open(id=${offering.id})}">
+            <button type="submit" th:text="#{ta.manage.openButton}">Open requests</button>
         </form>
-    </th:block>
+        <form th:if="${taApplicationsOpen}" method="post"
+              th:action="@{/courses/{id}/ta-applications/close(id=${offering.id})}">
+            <button type="submit" th:text="#{ta.manage.closeButton}">Close requests</button>
+        </form>
 
-    <p th:if="${myTaApplication != null and myTaApplication.status.name() == 'REJECTED'}"
-       th:text="#{ta.apply.rejected}">Your request was not accepted.</p>
-</div>
+        <p>
+            <span th:text="#{ta.manage.pending(${pendingTaRequests})}"></span>
+            <a th:href="@{/ta-requests}" th:text="#{ta.manage.viewRequests}">View requests</a>
+        </p>
+    </div>
 
-<!-- Professor and admin: open or close TA requests -->
-<div th:if="${canManage and isCurrentSemester and !isCancelled}">
-    <h2 th:text="#{ta.manage.title}">TA requests</h2>
-    <p th:text="${taApplicationsOpen} ? #{ta.manage.isOpen} : #{ta.manage.isClosed}"></p>
+    <!-- Professor and admin: cancel or restore this offering -->
+    <div th:if="${canManage and isCurrentSemester}">
+        <p th:if="${param.cancelError}" th:text="#{course.detail.cancelError}"></p>
 
-    <form th:if="${!taApplicationsOpen}" method="post"
-          th:action="@{/courses/{id}/ta-applications/open(id=${offering.id})}">
-        <button type="submit" th:text="#{ta.manage.openButton}">Open requests</button>
-    </form>
-    <form th:if="${taApplicationsOpen}" method="post"
-          th:action="@{/courses/{id}/ta-applications/close(id=${offering.id})}">
-        <button type="submit" th:text="#{ta.manage.closeButton}">Close requests</button>
-    </form>
+        <form th:if="${!isCancelled}" method="post"
+              th:action="@{/courses/{id}/cancel(id=${offering.id})}">
+            <button type="submit" th:text="#{course.detail.cancel}">Cancel this offering</button>
+        </form>
+        <form th:if="${isCancelled}" method="post"
+              th:action="@{/courses/{id}/uncancel(id=${offering.id})}">
+            <button type="submit" th:text="#{course.detail.uncancel}">Restore this offering</button>
+        </form>
+    </div>
 
-    <p>
-        <span th:text="#{ta.manage.pending(${pendingTaRequests})}"></span>
-        <a th:href="@{/ta-requests}" th:text="#{ta.manage.viewRequests}">View requests</a>
-    </p>
-</div>
+    <!-- Professor and admin: join code (not for cancelled offerings) -->
+    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+        <h2 th:text="#{course.detail.joinCode.title}">Join code</h2>
 
-<!-- Professor and admin: cancel or restore this offering -->
-<div th:if="${canManage and isCurrentSemester}">
-    <p th:if="${param.cancelError}" th:text="#{course.detail.cancelError}"></p>
+        <p th:if="${joinCode != null}">
+            <span th:text="#{course.detail.joinCode.label}">Join code:</span>
+            <strong th:text="${joinCode}"></strong>
+        </p>
+        <p th:if="${joinCode != null}" th:text="#{course.detail.joinCode.help}"></p>
+        <p th:if="${joinCode == null}" th:text="#{course.detail.enrollmentClosed.manager}"></p>
 
-    <form th:if="${!isCancelled}" method="post"
-          th:action="@{/courses/{id}/cancel(id=${offering.id})}">
-        <button type="submit" th:text="#{course.detail.cancel}">Cancel this offering</button>
-    </form>
-    <form th:if="${isCancelled}" method="post"
-          th:action="@{/courses/{id}/uncancel(id=${offering.id})}">
-        <button type="submit" th:text="#{course.detail.uncancel}">Restore this offering</button>
-    </form>
-</div>
+        <form method="post" th:action="@{/courses/{id}/join-code/regenerate(id=${offering.id})}">
+            <button type="submit"
+                    th:text="${joinCode != null} ? #{course.detail.joinCode.regenerate} : #{course.detail.joinCode.generate}">
+                Generate code</button>
+        </form>
 
-<!-- Professor and admin: join code (not for cancelled offerings) -->
-<div th:if="${canManage and isCurrentSemester and !isCancelled}">
-    <h2 th:text="#{course.detail.joinCode.title}">Join code</h2>
+        <form th:if="${joinCode != null}" method="post"
+              th:action="@{/courses/{id}/join-code/close(id=${offering.id})}">
+            <button type="submit" th:text="#{course.detail.joinCode.close}">Close enrollment</button>
+        </form>
+    </div>
 
-    <p th:if="${joinCode != null}">
-        <span th:text="#{course.detail.joinCode.label}">Join code:</span>
-        <strong th:text="${joinCode}"></strong>
-    </p>
-    <p th:if="${joinCode != null}" th:text="#{course.detail.joinCode.help}"></p>
-    <p th:if="${joinCode == null}" th:text="#{course.detail.enrollmentClosed.manager}"></p>
+    <!-- Professor and admin: paste the official class list -->
+    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+        <h2 th:text="#{roster.title}">Class list</h2>
+        <p th:text="#{roster.help}"></p>
 
-    <form method="post" th:action="@{/courses/{id}/join-code/regenerate(id=${offering.id})}">
-        <button type="submit"
-                th:text="${joinCode != null} ? #{course.detail.joinCode.regenerate} : #{course.detail.joinCode.generate}">
-            Generate code</button>
-    </form>
+        <p th:if="${rosterErrorKey}" th:text="#{${rosterErrorKey}}"></p>
+        <p th:if="${rosterResult}"
+           th:text="#{roster.result(${rosterResult.enrolled()}, ${rosterResult.confirmed()}, ${rosterResult.waiting()}, ${rosterResult.skipped()}, ${rosterResult.invalid()})}"></p>
 
-    <form th:if="${joinCode != null}" method="post"
-          th:action="@{/courses/{id}/join-code/close(id=${offering.id})}">
-        <button type="submit" th:text="#{course.detail.joinCode.close}">Close enrollment</button>
-    </form>
-</div>
+        <form method="post" th:action="@{/courses/{id}/roster(id=${offering.id})}">
+            <textarea name="numbers" rows="6" cols="30"></textarea><br>
+            <button type="submit" th:text="#{roster.submit}">Add to class list</button>
+        </form>
 
-<!-- Professor and admin: paste the official class list -->
-<div th:if="${canManage and isCurrentSemester and !isCancelled}">
-    <h2 th:text="#{roster.title}">Class list</h2>
-    <p th:text="#{roster.help}"></p>
+        <th:block th:unless="${#lists.isEmpty(pendingRoster)}">
+            <h3 th:text="#{roster.pending(${#lists.size(pendingRoster)})}">Waiting for registration</h3>
+            <p th:text="#{roster.pending.help}"></p>
+            <ul>
+                <li th:each="r : ${pendingRoster}" th:text="${r.studentNumber}"></li>
+            </ul>
+        </th:block>
+    </div>
 
-    <p th:if="${rosterErrorKey}" th:text="#{${rosterErrorKey}}"></p>
-    <p th:if="${rosterResult}"
-       th:text="#{roster.result(${rosterResult.enrolled()}, ${rosterResult.confirmed()}, ${rosterResult.waiting()}, ${rosterResult.skipped()}, ${rosterResult.invalid()})}"></p>
-
-    <form method="post" th:action="@{/courses/{id}/roster(id=${offering.id})}">
-        <textarea name="numbers" rows="6" cols="30"></textarea><br>
-        <button type="submit" th:text="#{roster.submit}">Add to class list</button>
-    </form>
-
-    <th:block th:unless="${#lists.isEmpty(pendingRoster)}">
-        <h3 th:text="#{roster.pending(${#lists.size(pendingRoster)})}">Waiting for registration</h3>
-        <p th:text="#{roster.pending.help}"></p>
-        <ul>
-            <li th:each="r : ${pendingRoster}" th:text="${r.studentNumber}"></li>
-        </ul>
-    </th:block>
-</div>
-
-<!-- Professor and admin: the list of students -->
-<div th:if="${canManage}">
-    <h2 th:text="${isCurrentSemester}
+    <!-- Professor and admin: the list of students -->
+    <div th:if="${canManage}">
+        <h2 th:text="${isCurrentSemester}
                 ? #{course.detail.students(${#lists.size(enrollments)})}
                 : #{course.detail.students.past(${#lists.size(enrollments)})}">Enrolled students</h2>
 
-    <p th:if="${#lists.isEmpty(enrollments)}"
-       th:text="${isCurrentSemester} ? #{course.detail.noStudents} : #{course.detail.noStudents.past}">
-        No students yet.</p>
+        <p th:if="${#lists.isEmpty(enrollments)}"
+           th:text="${isCurrentSemester} ? #{course.detail.noStudents} : #{course.detail.noStudents.past}">
+            No students yet.</p>
 
-    <table border="1" th:unless="${#lists.isEmpty(enrollments)}">
-        <tr>
-            <th th:text="#{course.detail.studentName}">Name</th>
-            <th th:text="#{course.detail.studentNumber}">Student number</th>
-            <th th:text="#{course.detail.major}">Field of study</th>
-            <th th:text="#{course.detail.source}">Source</th>
-            <th th:if="${isCurrentSemester}"></th>
-        </tr>
-        <tr th:each="e : ${enrollments}">
-            <td th:text="${e.student.fullName}"></td>
-            <td th:text="${e.student.studentNumber}"></td>
-            <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
-            <td th:text="#{${'course.detail.source.' + e.source}}"></td>
-            <td th:if="${isCurrentSemester}">
-                <form method="post"
-                      th:action="@{/courses/{id}/students/{sid}/remove(id=${offering.id},sid=${e.student.id})}">
-                    <button type="submit" th:text="#{course.detail.remove}">Remove</button>
-                </form>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Students removed by the professor. Shown only if there are any. -->
-    <th:block th:unless="${#lists.isEmpty(removedEnrollments)}">
-        <h2 th:text="#{course.detail.removedStudents(${#lists.size(removedEnrollments)})}">Removed students</h2>
-
-        <table border="1">
+        <table border="1" th:unless="${#lists.isEmpty(enrollments)}">
             <tr>
                 <th th:text="#{course.detail.studentName}">Name</th>
                 <th th:text="#{course.detail.studentNumber}">Student number</th>
                 <th th:text="#{course.detail.major}">Field of study</th>
+                <th th:text="#{course.detail.source}">Source</th>
                 <th th:if="${isCurrentSemester}"></th>
             </tr>
-            <tr th:each="e : ${removedEnrollments}">
+            <tr th:each="e : ${enrollments}">
                 <td th:text="${e.student.fullName}"></td>
                 <td th:text="${e.student.studentNumber}"></td>
                 <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
+                <td th:text="#{${'course.detail.source.' + e.source}}"></td>
                 <td th:if="${isCurrentSemester}">
                     <form method="post"
-                          th:action="@{/courses/{id}/students/{sid}/restore(id=${offering.id},sid=${e.student.id})}">
-                        <button type="submit" th:text="#{course.detail.restore}">Restore</button>
+                          th:action="@{/courses/{id}/students/{sid}/remove(id=${offering.id},sid=${e.student.id})}">
+                        <button type="submit" th:text="#{course.detail.remove}">Remove</button>
                     </form>
                 </td>
             </tr>
         </table>
-    </th:block>
-</div>
 
-<p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
+        <!-- Students removed by the professor. Shown only if there are any. -->
+        <th:block th:unless="${#lists.isEmpty(removedEnrollments)}">
+            <h2 th:text="#{course.detail.removedStudents(${#lists.size(removedEnrollments)})}">Removed students</h2>
+
+            <table border="1">
+                <tr>
+                    <th th:text="#{course.detail.studentName}">Name</th>
+                    <th th:text="#{course.detail.studentNumber}">Student number</th>
+                    <th th:text="#{course.detail.major}">Field of study</th>
+                    <th th:if="${isCurrentSemester}"></th>
+                </tr>
+                <tr th:each="e : ${removedEnrollments}">
+                    <td th:text="${e.student.fullName}"></td>
+                    <td th:text="${e.student.studentNumber}"></td>
+                    <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
+                    <td th:if="${isCurrentSemester}">
+                        <form method="post"
+                              th:action="@{/courses/{id}/students/{sid}/restore(id=${offering.id},sid=${e.student.id})}">
+                            <button type="submit" th:text="#{course.detail.restore}">Restore</button>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+        </th:block>
+    </div>
+
+    <p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
 </body>
 </html>
