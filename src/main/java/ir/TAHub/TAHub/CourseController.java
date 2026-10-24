@@ -10,6 +10,7 @@ import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.Semester;
 import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
@@ -46,6 +47,7 @@ public class CourseController {
     private final RosterEntryRepository rosterRepository;
     private final TaAssignmentRepository taRepository;
     private final TaApplicationRepository applicationRepository;
+    private final AnnouncementRepository announcementRepository;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -54,7 +56,8 @@ public class CourseController {
                             EnrollmentRepository enrollmentRepository,
                             RosterEntryRepository rosterRepository,
                             TaAssignmentRepository taRepository,
-                            TaApplicationRepository applicationRepository) {
+                            TaApplicationRepository applicationRepository,
+                            AnnouncementRepository announcementRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -63,6 +66,7 @@ public class CourseController {
         this.rosterRepository = rosterRepository;
         this.taRepository = taRepository;
         this.applicationRepository = applicationRepository;
+        this.announcementRepository = announcementRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -115,7 +119,15 @@ public class CourseController {
         // Everybody can see who the TAs are. A TA cannot enroll as a student in the same offering.
         model.addAttribute("teachingAssistants",
                 taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering));
-        model.addAttribute("isTa", taRepository.existsByUserAndOfferingAndActiveTrue(current, offering));
+        boolean isTa = taRepository.existsByUserAndOfferingAndActiveTrue(current, offering);
+        model.addAttribute("isTa", isTa);
+
+        // Announcements are for the people of this offering: its managers, its TAs and its enrolled students.
+        boolean canSeeAnnouncements = canManage || isTa || myStatus == EnrollmentStatus.ACTIVE;
+        model.addAttribute("canSeeAnnouncements", canSeeAnnouncements);
+        if (canSeeAnnouncements) {
+            model.addAttribute("announcementCount", announcementRepository.countByOfferingAndDeletedFalse(offering));
+        }
 
         // TA applications: is the offering taking them, and what is this student's own request (if any).
         model.addAttribute("taApplicationsOpen", offering.isTaApplicationsOpen());

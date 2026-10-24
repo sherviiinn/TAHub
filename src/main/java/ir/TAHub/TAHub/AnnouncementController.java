@@ -1,0 +1,227 @@
+package ir.TAHub.TAHub;
+
+import ir.TAHub.TAHub.model.Announcement;
+import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.EnrollmentStatus;
+import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.repository.AnnouncementRepository;
+import ir.TAHub.TAHub.repository.CourseOfferingRepository;
+import ir.TAHub.TAHub.repository.EnrollmentRepository;
+import ir.TAHub.TAHub.repository.TaAssignmentRepository;
+import ir.TAHub.TAHub.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+/**
+ * Announcements of an offering.
+ * Who can read: the professor (and admins), the TAs, and the students who are enrolled.
+ * Who can post: the professor (and admins) and the TAs.
+ * Who can delete: the professor (and admins) delete any announcement, a TA only their own.
+ */
+@Controller
+public class AnnouncementController {
+
+    private static final int TITLE_MAX = 100;
+    private static final int BODY_MAX = 2000;
+
+    // Users are in Iran, so times are shown in Tehran time.
+    private static final DateTimeFormatter WHEN =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("Asia/Tehran"));
+
+    /** One announcement as the page shows it. */
+    public record AnnouncementView(Announcement announcement, String when, boolean canDelete) {
+    }
+
+    private final UserRepository userRepository;
+    private final CourseOfferingRepository offeringRepository;
+    private final AnnouncementRepository announcementRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final TaAssignmentRepository taRepository;
+
+    public AnnouncementController(UserRepository userRepository,
+                                  CourseOfferingRepository offeringRepository,
+                                  AnnouncementRepository announcementRepository,
+                                  EnrollmentRepository enrollmentRepository,
+                                  TaAssignmentRepository taRepository) {
+        this.userRepository = userRepository;
+        this.offeringRepository = offeringRepository;
+        this.announcementRepository = announcementRepository;
+        this.enrollmentRepository = enrollmentRepository;
+        this.taRepository = taRepository;
+    }
+
+    @GetMapping("/courses/{id}/announcements")
+    public String list(@PathVariable Long id, Model model, Authentication authentication) {
+        User current = currentUser(authentication);
+        CourseOffering offering = findOffering(id);
+
+        boolean manager = offering.isManagedBy(current);
+        boolean ta = isTa(current, offering);
+        boolean student = isActiveStudent(current, offering);
+
+        // Only people who belong to this offering can read its announcements.
+        if (!(manager || ta || student)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        // A cancelled offering exists only for the people who manage it.
+        if (offering.isCancelled() && !manager) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        boolean open = isOpen(offering);
+
+        List<AnnouncementView> announcements = announcementRepository
+                .findByOfferingAndDeletedFalseOrderByCreatedAtDescIdDesc(offering).stream()
+                .map(a -> view(a, current, manager, open))
+                .toList();
+
+        model.addAttribute("offering", offering);
+        model.addAttribute("announcements", announcements);
+        model.addAttribute("isCurrentSemester", offering.getSemester().isActive());
+        model.addAttribute("isCancelled", offering.isCancelled());
+        model.addAttribute("canPost", open && (manager || ta));
+        model.addAttribute("canManage", manager);
+
+        // Only the professor sees deleted announcements, so a mistake can be undone.
+        if (manager) {
+            model.addAttribute("removedAnnouncements", announcementRepository
+                    .findByOfferingAndDeletedTrueOrderByCreatedAtDescIdDesc(offering).stream()
+                    .map(a -> view(a, current, true, open))
+                    .toList());
+        }
+        return "announcements";
+    }
+
+    @PostMapping("/courses/{id}/announcements")
+    public String post(@PathVariable Long id,
+                       @RequestParam(defaultValue = "") String title,
+                       @RequestParam(defaultValue = "") String body,
+                       Authentication authentication,
+                       RedirectAttributes redirect) {
+        User current = currentUser(authentication);
+        CourseOffering offering = findOffering(id);
+
+        // Only the professor and the TAs of an open offering can post.
+        if (!isOpen(offering) || !(offering.isManagedBy(current) || isTa(current, offering))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        String cleanTitle = title.trim();
+        String cleanBody = body.trim();
+        String errorKey = findFirstError(cleanTitle, cleanBody);
+        if (errorKey != null) {
+            redirect.addFlashAttribute("announcementErrorKey", errorKey);
+            return "redirect:/courses/" + id + "/announcements";
+        }
+
+        Announcement announcement = new Announcement();
+        announcement.setOffering(offering);
+        announcement.setAuthor(current);
+        announcement.setTitle(cleanTitle);
+        announcement.setBody(cleanBody);
+        announcement.setCreatedAt(Instant.now());
+        announcementRepository.save(announcement);
+        return "redirect:/courses/" + id + "/announcements";
+    }
+
+    @PostMapping("/announcements/{announcementId}/delete")
+    public String delete(@PathVariable Long announcementId, Authentication authentication) {
+        User current = currentUser(authentication);
+        Announcement announcement = findAnnouncement(announcementId);
+        CourseOffering offering = announcement.getOffering();
+
+        // The professor deletes any announcement. A TA (or anyone else) only their own.
+        boolean allowed = offering.isManagedBy(current)
+                || announcement.getAuthor().getId().equals(current.getId());
+        if (!isOpen(offering) || !allowed) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        announcement.setDeleted(true);
+        announcementRepository.save(announcement);
+        return "redirect:/courses/" + offering.getId() + "/announcements";
+    }
+
+    @PostMapping("/announcements/{announcementId}/restore")
+    public String restore(@PathVariable Long announcementId, Authentication authentication) {
+        User current = currentUser(authentication);
+        Announcement announcement = findAnnouncement(announcementId);
+        CourseOffering offering = announcement.getOffering();
+
+        // Only the professor (or an admin) brings announcements back.
+        if (!isOpen(offering) || !offering.isManagedBy(current)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        announcement.setDeleted(false);
+        announcementRepository.save(announcement);
+        return "redirect:/courses/" + offering.getId() + "/announcements";
+    }
+
+    // ---------- helpers ----------
+
+    private AnnouncementView view(Announcement a, User current, boolean manager, boolean open) {
+        boolean canDelete = open && (manager || a.getAuthor().getId().equals(current.getId()));
+        return new AnnouncementView(a, WHEN.format(a.getCreatedAt()), canDelete);
+    }
+
+    /** Returns the message key of the first problem, in the same order as the form fields. */
+    private String findFirstError(String title, String body) {
+        if (title.isEmpty()) {
+            return "announcements.error.titleRequired";
+        }
+        if (title.length() > TITLE_MAX) {
+            return "announcements.error.titleTooLong";
+        }
+        if (body.isEmpty()) {
+            return "announcements.error.bodyRequired";
+        }
+        if (body.length() > BODY_MAX) {
+            return "announcements.error.bodyTooLong";
+        }
+        return null;
+    }
+
+    /** Changes are only allowed in an uncancelled offering of the active semester. */
+    private boolean isOpen(CourseOffering offering) {
+        return offering.getSemester().isActive() && !offering.isCancelled();
+    }
+
+    private boolean isTa(User user, CourseOffering offering) {
+        return taRepository.existsByUserAndOfferingAndActiveTrue(user, offering);
+    }
+
+    private boolean isActiveStudent(User user, CourseOffering offering) {
+        return enrollmentRepository.findByStudentAndOffering(user, offering)
+                .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.ACTIVE)
+                .isPresent();
+    }
+
+    private CourseOffering findOffering(Long id) {
+        return offeringRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    private Announcement findAnnouncement(Long id) {
+        return announcementRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    private User currentUser(Authentication authentication) {
+        return userRepository.findByStudentNumber(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("Logged-in user no longer exists"));
+    }
+}
