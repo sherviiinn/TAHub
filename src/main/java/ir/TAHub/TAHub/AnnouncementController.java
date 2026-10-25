@@ -157,6 +157,9 @@ public class AnnouncementController {
 
         announcement.setDeleted(true);
         announcementRepository.save(announcement);
+
+        // Students who have not read it yet are not told about an announcement that no longer exists.
+        notificationService.onAnnouncementDeleted(announcement);
         return "redirect:/courses/" + offering.getId() + "/announcements";
     }
 
