@@ -1,6 +1,6 @@
 # TA Hub - زمینه‌ی پروژه
 
-آخرین به‌روزرسانی: ۱ آبان ۱۴۰۵ (2026-10-23)
+آخرین به‌روزرسانی: ۳ آبان ۱۴۰۵ (2026-10-25)
 
 ## این فایل رو چطور استفاده کنیم
 
@@ -38,13 +38,13 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 
 | پکیج | محتوا |
 |---|---|
-| ریشه | `TaHubApplication` و کنترلرها: `HomeController`، `LoginController`، `RegistrationController`، `UserController`، `CourseController`، `SemesterController`، `EnrollmentController`، `MyCoursesController`، `MajorController`، `ProfileController`، `RosterController` (لیست کلاس)، `TaController` (اضافه، حذف و برگردوندن TA)، `TaApplicationController` (درخواست TA شدن)، `ProfessorController` (بخش اساتید)، `GlobalModelAttributes` (داده‌ی منو برای همه‌ی صفحه‌ها) |
-| `model` | `User`، `Role` (STUDENT, PROFESSOR, ADMIN)، `Semester`، `Course`، `CourseOffering`، `Enrollment`، `EnrollmentStatus`، `EnrollmentSource` (ROSTER، JOIN_CODE)، `Major`، `RosterEntry`، `TaAssignment`، `TaApplication`، `TaApplicationStatus` |
+| ریشه | `TaHubApplication` و کنترلرها: `HomeController`، `LoginController`، `RegistrationController`، `UserController`، `CourseController`، `SemesterController`، `EnrollmentController`، `MyCoursesController`، `MajorController`، `ProfileController`، `RosterController` (لیست کلاس)، `TaController` (اضافه، حذف و برگردوندن TA)، `TaApplicationController` (درخواست TA شدن)، `ProfessorController` (بخش اساتید)، `AnnouncementController` (اطلاعیه‌ها)، `NotificationController` (نوتیفیکیشن‌ها)، `GlobalModelAttributes` (داده‌ی منو برای همه‌ی صفحه‌ها) |
+| `model` | `User`، `Role` (STUDENT, PROFESSOR, ADMIN)، `Semester`، `Course`، `CourseOffering`، `Enrollment`، `EnrollmentStatus`، `EnrollmentSource` (ROSTER، JOIN_CODE)، `Major`، `RosterEntry`، `TaAssignment`، `TaApplication`، `TaApplicationStatus`، `Announcement`، `Notification`، `NotificationType` (ANNOUNCEMENT، GENERAL) |
 | `repository` | برای هر جدول یه Repository (متدهایی که Spring از روی اسمشون کوئری می‌سازه) |
 | `dto` | `RegisterForm`، `CourseForm` (فرم‌ها، تا کاربر نتونه فیلدهایی مثل نقش رو بفرسته) |
 | `config` | `SecurityConfig`، `DataInitializer`، `DemoDataSeeder` |
 | `security` | `CustomUserDetailsService` (لاگین با شماره‌ی دانشجویی) |
-| `service` | `SemesterService` (شروع ترم جدید به‌صورت یکجا)، `RosterService` (خوندن لیست چسبونده‌شده و ثبت‌نام خودکار)، `TaService` (قانون‌های TA شدن، هم برای افزودن دستی و هم قبول درخواست) |
+| `service` | `SemesterService` (شروع ترم جدید به‌صورت یکجا)، `RosterService` (خوندن لیست چسبونده‌شده و ثبت‌نام خودکار)، `NotificationService` (ساختن نوتیفیکیشن‌ها)، `TaService` (قانون‌های TA شدن، هم برای افزودن دستی و هم قبول درخواست) |
 | `util` | `JoinCodes` (ساخت کد ورود با SecureRandom)، `Digits` (تبدیل ارقام فارسی و عربی به انگلیسی) |
 
 منابع: `templates/` (صفحه‌های Thymeleaf)، `static/` (CSS و JS، بعداً)، `messages.properties` (همه‌ی متن‌های صفحه)، `application.properties`.
@@ -69,6 +69,8 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - `course_offerings`: id، course_id، semester_id، professor_id، join_code (اختیاری؛ خالی یعنی ثبت‌نام بسته)، cancelled، ta_applications_open (پیش‌فرض false). یکتا روی (درس، ترم، استاد)، پس دو استاد می‌تونن یه درس رو توی یه ترم ارائه بدن (دو گروه).
 - `roster_entries`: id، offering_id، student_number، added_at. شماره‌های لیست کلاس که استاد چسبونده (حتی اگه هنوز حساب ندارن). یکتا روی (ارائه، شماره).
 - `ta_assignments`: id، user_id، offering_id، active، assigned_at. یکتا روی (کاربر، ارائه).
+- `announcements`: id، offering_id، author_id، title (حداکثر ۱۰۰)، body (حداکثر ۲۰۰۰)، created_at، deleted (پنهان‌شدن، برگشت‌ناپذیر از داخل برنامه).
+- `notifications`: id، user_id، type، title (برای اطلاعیه: «کد درس - اسم درس»)، link (مسیر داخل برنامه که سرور می‌سازه)، item_count (تعداد رویدادی که این ردیف نشون می‌ده)، seen، created_at.
 - `ta_applications`: id، student_id، offering_id، message، status (PENDING، ACCEPTED، REJECTED، WITHDRAWN)، created_at، decided_at. یکتا روی (دانشجو، ارائه).
 - `enrollments`: id، student_id، offering_id، enrolled_at، status، source (ROSTER یا JOIN_CODE). برای هر دانشجو و ارائه فقط یه ردیف. یکتا روی (دانشجو، ارائه).
 
@@ -88,6 +90,8 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - لیست کلاس: ارقام فارسی قبوله، حداکثر ۵۰۰ شماره در هر بار. دانشجوی دارای حساب خودکار وارد می‌شه، بقیه یادداشت می‌شن و موقع ثبت‌نام وارد می‌شن. کسی که انصراف داده یا حذف شده برنمی‌گرده. TA همون ارائه هم با لیست دانشجو نمی‌شه.
 - TA: فقط کاربر با نقش دانشجو می‌تونه TA باشه. نمی‌شه توی ارائه‌ای که دانشجوی فعالشه TA باشه (و برعکس). حذف TA فقط `active` رو false می‌کنه و استاد می‌تونه با Restore برش گردونه. اسم TA ها رو همه می‌بینن، شماره‌ی دانشجویی و دکمه‌ها فقط مدیرهای ارائه.
 - درخواست TA: پیش‌فرض بسته‌ست و استاد برای هر ارائه بازش می‌کنه. هر دانشجو برای هر ارائه یه درخواست داره (وضعیت‌ها PENDING، ACCEPTED، REJECTED، WITHDRAWN). رد شده با Reconsider برمی‌گرده. پس گرفته‌شده رو دانشجو می‌تونه دوباره بده. قبول کردن همون قانون‌های TA شدن رو دوباره چک می‌کنه.
+- اطلاعیه: استاد (و ادمین) و TA های ارائه می‌نویسن. می‌خونن: استاد، TA ها و دانشجوهای فعال همون ارائه (بقیه ۴۰۳). استاد هر اطلاعیه‌ای رو پاک می‌کنه، TA فقط مال خودش رو. پاک‌کردن فقط پنهان می‌کنه و راه برگشت نداره. ارائه‌ی قدیمی یا لغوشده فقط خواندنیه. اطلاعیه‌های ۳ روز اول برچسب «New» دارن (`recent` توی `AnnouncementView`، کلاس CSS به اسم `tag-new`).
+- نوتیفیکیشن: با هر اطلاعیه‌ی جدید، هر دانشجوی فعال ارائه (به جز نویسنده) یه نوتیفیکیشن می‌گیره. برای اینکه صفحه شلوغ نشه، هر دانشجو برای هر درس فقط **یه نوتیفیکیشن خونده‌نشده** داره و اطلاعیه‌ی بعدی شمارنده‌ش (`item_count`) رو زیاد می‌کنه و بالا میاردش. متن «New announcement in CS201 - Operating Systems» یا «2 new announcements in ...» و با کلیک می‌ره صفحه‌ی اطلاعیه‌های همون درس. هر کس فقط نوتیفیکیشن‌های خودش رو می‌بینه. ۵۰ تای آخر نشون داده می‌شن؛ پاکسازی نوتیفیکیشن‌های خیلی قدیمی بعداً.
 - بخش اساتید: همه‌ی کاربرها لیست استادها و درس‌های ترم فعال هر استاد (بدون ارائه‌های لغوشده) و TA های هر درس رو می‌بینن.
 
 ## ۷. آدرس‌ها و قرارداد صفحه‌ها (برای فرانت)
@@ -110,6 +114,8 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 | `my-ta-requests` (دانشجو) | `GET /my-ta-requests` | `applications` | `/ta-applications/{id}/withdraw` |
 | `professors` | `GET /professors` | `professors` | ندارد |
 | `professor-detail` | `GET /professors/{id}` | `professor`، `courses` (هر ردیف: `offering` و `teachingAssistants`) | ندارد |
+| `announcements` | `GET /courses/{id}/announcements` | `offering`، `announcements` (هر ردیف: `announcement`، `when`، `recent`، `canDelete`)، `isCurrentSemester`، `isCancelled`، `canPost`، `canManage`، `announcementErrorKey` | `/courses/{id}/announcements` (`title`، `body`)، `/announcements/{id}/delete` |
+| `notifications` | `GET /notifications` | `notifications` (هر ردیف: `notification`، `when`)، `unreadCount` | `/notifications/{id}/open`، `/notifications/read-all` |
 | `profile` | `GET /profile` (پارامتر `saved`) | `profileUser`، `isStudent`، `majors` | `/profile/major`: `majorId` |
 
 ## ۷.۱. قالب مشترک (layout)
@@ -123,7 +129,7 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
       <main> ... </main>
   </body>
   ```
-- داده‌ی منو رو `GlobalModelAttributes` (بک‌اند) به همه‌ی صفحه‌ها می‌ده: `navLoggedIn`، `navFullName`، `navIsStudent`، `navIsProfessor`، `navIsAdmin`. این اسم‌ها نباید عوض بشن.
+- داده‌ی منو رو `GlobalModelAttributes` (بک‌اند) به همه‌ی صفحه‌ها می‌ده: `navLoggedIn`، `navFullName`، `navIsStudent`، `navIsProfessor`، `navIsAdmin`، `navUnreadCount` (تعداد نوتیفیکیشن خونده‌نشده، برای لینک «Notifications (n)» توی منو). این اسم‌ها نباید عوض بشن.
 - فایل `static/css/app.css` مال فرانت‌کاره. از ویژگی‌های منطقی (`margin-inline-start` و ...) استفاده کنید تا فارسی و راست‌به‌چپ بعداً خراب نشه.
 
 ## ۸. تصمیم‌هایی که گرفته شده
@@ -151,7 +157,13 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - قالب مشترک، منوی بالا و CSS پایه (بخش ۷.۱). **(انجام و تست شد؛ بقیه‌ی صفحه‌ها رو دوست فرانت‌کار به قالب می‌بره)**
 - بعد از فاز ۲: وضعیت حساب (غیرفعال کردن به‌جای حذف)، کد دعوت استاد (قابل عقب انداختن).
 
-**فاز ۳ (قدم بعدی):** اطلاعیه‌ها (برای هر ارائه)، لینک تلگرام (برای هر ارائه)، ویدیوها و منابع آموزشی از یوتیوب و آپارات (به درس دائمی وصل: عنوان، فصل، لینک، توضیح، آپلودکننده)، اطلاعات دفتر استاد (ساختمان، اتاق، ساعت حضور، ایمیل دانشگاهی، راه‌های تماس).
+**فاز ۳ (در حال انجام):**
+- ۳-الف: اطلاعیه‌ها برای هر ارائه. **(انجام و تست شد)**
+- ۳-ب: نوتیفیکیشن برای دانشجوها (زنگ و تعداد نخوانده توی منو، اطلاعیه‌ها اونجا هم میان). **(انجام و تست شد)**
+- ۳-ب۲: تمیزکاری: یه نوتیفیکیشن برای هر درس به‌جای یکی برای هر اطلاعیه، برچسب «New» کنار اطلاعیه‌های تازه، حذف دکمه‌ی Restore اطلاعیه. **(کد داده شد، تست در انتظار؛ تغییر دیتابیس: `ALTER TABLE notifications ADD COLUMN item_count integer NOT NULL DEFAULT 1` و پاک کردن نوتیفیکیشن‌های تستی قدیمی با `DELETE FROM notifications`)**
+- ۳-پ: منوی سلف دانشگاه. سایت سلف دانشگاه **لاگین می‌خواد**، پس سرور خودش نمی‌تونه بخونتش و رمز شخصی هیچ‌کس نباید توی برنامه ذخیره بشه. اول: صفحه‌ی ادمین که منوی هفته رو دستی وارد می‌کنه (جدول منوی روزانه برای وعده‌ها) و صفحه‌ی نمایش برای دانشجوها. بعداً شاید: اسکریپت روی کامپیوتر صاحب پروژه که با حساب خودش منو رو می‌گیره و با کلید مخصوص به برنامه می‌فرسته.
+- ۳-ت: یادآوری هفتگی رزرو سلف به‌صورت نوتیفیکیشن برای همه‌ی دانشجوها (کار زمان‌بندی‌شده `@Scheduled`؛ گوشی‌ها فقط وقتی زنگ می‌خورن که بعداً ربات تلگرام، ایمیل یا PWA اضافه بشه).
+- بعد: لینک تلگرام (برای هر ارائه)، ویدیوها و منابع آموزشی از یوتیوب و آپارات (به درس دائمی وصل: عنوان، فصل، لینک، توضیح، آپلودکننده)، اطلاعات دفتر استاد (ساختمان، اتاق، ساعت حضور، ایمیل دانشگاهی، راه‌های تماس).
 
 **فاز ۴:** تمرین با سؤال‌ها و بارم، آپلود PDF توسط دانشجو (فقط تحویل خودش، حذف و تعویض قبل از مهلت)، ذخیره‌ی فایل روی دیسک با اسمی که سرور می‌سازه.
 
@@ -164,6 +176,8 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 **فاز ۸:** نظرسنجی استاد و TA (امتیاز ساختاریافته و نظر اختیاری، نمایش ناشناس ولی هویت نویسنده داخلی نگه داشته می‌شه)، ارزیابی پایان ترم TA توسط استاد (شایسته / ناشایسته)، فیلتر کلمات بد، دکمه‌ی گزارش، بررسی ادمین.
 
 **فاز ۹:** برنامه‌ریز درسی با برنامه‌ی A و B و C و تشخیص تداخل زمانی. یه جدول جدید برای جلسه‌های کلاس (روز، ساعت شروع و پایان، کلاس، شاید تاریخ امتحان) برای هر ارائه لازمه. اگه وقت شد: تخمین تقاضا و شباهت برنامه‌ها.
+
+**هماهنگی تاریخ میان‌ترم (ایده‌ی صاحب پروژه، برای بعد از ثبت‌نام‌ها و برنامه‌ی کلاس‌ها، نزدیک فاز ۹):** وقتی چند استاد می‌خوان برای دانشجوهاشون میان‌ترم بذارن، سیستم اول حساب می‌کنه کدوم ارائه‌ها بیشترین دانشجوی مشترک رو دارن (از جدول ثبت‌نام‌های فعال). بعد استادهایی که بیشترین اشتراک رو دارن اول تاریخ میان‌ترم‌شون رو توی یه جدول مشترک ثبت می‌کنن، تا بقیه‌ی استادها اون جدول رو ببینن، تداخل نداشته باشن و بهترین زمان رو انتخاب کنن. به یه جدول تاریخ امتحان برای هر ارائه نیاز داره (همون جدولی که فاز ۹ برای جلسه‌های کلاس و تاریخ امتحان می‌خواد) و یه صفحه‌ی «تداخل» برای استاد: برای هر زمان پیشنهادی نشون می‌ده چند دانشجو دو امتحان توی همون روز یا همون ساعت پیدا می‌کنن.
 
 **فاز ۱۰:** اگه وقت شد: استخدام TA (استاد درخواست می‌ده، دانشجو با رزومه اقدام می‌کنه؛ بخش کوچیک عمومی و بخش کامل که فقط خودش و استاد استخدام‌کننده می‌بینن) و پیشنهاد TA. بعد تست، بررسی امنیت، رفع باگ، دیپلوی (سرور، پورت‌های 80 و 443، رمزها توی متغیر محیطی، Flyway)، فایل exe ویندوز (پوسته‌ای که سرور رو باز می‌کنه، یا jpackage برای دمو)، بعداً PWA یا اندروید، فارسی و راست‌به‌چپ، مستندات و دموی نهایی.
 
@@ -201,5 +215,5 @@ Rules you must follow:
 - تا ادمین حداقل یه رشته اضافه نکنه، ثبت‌نام بسته‌ست.
 - کاربرهایی که ادمین از `/users` می‌سازه رشته ندارن (از پروفایل انتخاب می‌کنن). حذف کاربری که سابقه داره به‌خاطر کلیدهای خارجی خطا می‌ده (راه‌حل: وضعیت حساب).
 - صفحه‌های خطا همون Whitelabel پیش‌فرض‌ان. هشدار `spring.jpa.open-in-view` هنوز رسیدگی نشده.
-- آخرین چیزی که صاحب پروژه تست کرده و تأیید شده: همه‌ی فاز ۲، یعنی تا بخش اساتید و قالب مشترک. صفحه‌های قدیمی (`home`، `courses`، `course-detail` و ...) هنوز به قالب مشترک و منو منتقل نشدن؛ این کار با دوست فرانت‌کاره.
+- آخرین چیزی که صاحب پروژه تست کرده و تأیید شده: همه‌ی فاز ۲ و قدم‌های ۳-الف و ۳-ب (اطلاعیه‌ها و نوتیفیکیشن). قدم ۳-ب۲ تحویل داده شده و تستش مونده. صفحه‌های قدیمی (`home`، `courses`، `course-detail` و ...) هنوز به قالب مشترک و منو منتقل نشدن؛ این کار با دوست فرانت‌کاره.
 - نقش نفر سوم تیم هنوز مشخص نیست.
