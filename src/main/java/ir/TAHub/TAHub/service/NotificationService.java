@@ -1,12 +1,6 @@
 package ir.TAHub.TAHub.service;
 
-import ir.TAHub.TAHub.model.Announcement;
-import ir.TAHub.TAHub.model.CourseOffering;
-import ir.TAHub.TAHub.model.Enrollment;
-import ir.TAHub.TAHub.model.EnrollmentStatus;
-import ir.TAHub.TAHub.model.Notification;
-import ir.TAHub.TAHub.model.NotificationType;
-import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.model.*;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.NotificationRepository;
@@ -68,6 +62,56 @@ public class NotificationService {
     }
 
     /**
+     * Call this after an announcement was edited. Every enrolled student (except the author) is told,
+     * once per announcement: if they have not read the earlier "edited" notification, it just moves to the top.
+     * A student who has an unread "new announcement" notification that already covers this announcement
+     * is not told again, because they will see the new text anyway when they open it.
+     */
+    @Transactional
+    public void notifyAnnouncementEdited(Announcement announcement) {
+        CourseOffering offering = announcement.getOffering();
+        String title = offering.getCourse().getCode() + " - " + offering.getCourse().getName();
+        String link = "/courses/" + offering.getId() + "/announcements";
+
+        List<Notification> notifications = new ArrayList<>();
+        for (Enrollment enrollment : enrollmentRepository
+                .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.ACTIVE)) {
+            User student = enrollment.getStudent();
+            if (student.getId().equals(announcement.getAuthor().getId())) {
+                continue;
+            }
+            if (coveredByUnreadNewNotification(student, link, announcement)) {
+                continue;
+            }
+            Notification existing = notificationRepository
+                    .findFirstByUserAndAnnouncementIdAndSeenFalse(student, announcement.getId())
+                    .orElse(null);
+            if (existing != null) {
+                existing.setCreatedAt(Instant.now());
+                notifications.add(existing);
+            } else {
+                Notification created = create(student, NotificationType.GENERAL, title, link);
+                created.setAnnouncementId(announcement.getId());
+                notifications.add(created);
+            }
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    /** True if the student has an unread "new announcement" notification whose time window includes it. */
+    private boolean coveredByUnreadNewNotification(User student, String link, Announcement announcement) {
+        Notification unread = notificationRepository
+                .findFirstByUserAndTypeAndLinkAndSeenFalse(student, NotificationType.ANNOUNCEMENT, link)
+                .orElse(null);
+        if (unread == null) {
+            return false;
+        }
+        Instant from = unread.getFirstEventAt() != null ? unread.getFirstEventAt() : unread.getCreatedAt();
+        Instant created = announcement.getCreatedAt();
+        return !created.isBefore(from) && !created.isAfter(unread.getCreatedAt());
+    }
+
+    /**
      * Call this after an announcement was deleted. It fixes the notifications of every student of the course,
      * read or unread. A notification covers the announcements from firstEventAt up to createdAt
      * (createdAt moves forward each time a new announcement is added). If no announcement is left in that
@@ -78,6 +122,9 @@ public class NotificationService {
     public void onAnnouncementDeleted(Announcement announcement) {
         CourseOffering offering = announcement.getOffering();
         String link = "/courses/" + offering.getId() + "/announcements";
+
+        // "This announcement was edited" notifications are simply removed, read or unread.
+        notificationRepository.deleteAll(notificationRepository.findByAnnouncementId(announcement.getId()));
 
         for (Notification notification : notificationRepository
                 .findByTypeAndLink(NotificationType.ANNOUNCEMENT, link)) {

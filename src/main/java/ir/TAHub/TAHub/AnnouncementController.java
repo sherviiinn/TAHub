@@ -31,7 +31,8 @@ import java.util.List;
  * Announcements of an offering.
  * Who can read: the professor (and admins), the TAs, and the students who are enrolled.
  * Who can post: the professor (and admins) and the TAs.
- * Who can delete: the professor (and admins) delete any announcement, a TA only their own.
+ * Who can delete or edit: the professor (and admins) any announcement, a TA only their own.
+ * An edited announcement shows an "edited" time. Editing tells the students again (one notification per announcement).
  * A deleted announcement is only hidden (the history stays in the database) and cannot be brought back.
  */
 @Controller
@@ -48,7 +49,8 @@ public class AnnouncementController {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("Asia/Tehran"));
 
     /** One announcement as the page shows it. */
-    public record AnnouncementView(Announcement announcement, String when, boolean recent, boolean canDelete) {
+    public record AnnouncementView(Announcement announcement, String when, String editedWhen,
+                                   boolean recent, boolean canDelete, boolean canEdit) {
     }
 
     private final UserRepository userRepository;
@@ -163,12 +165,61 @@ public class AnnouncementController {
         return "redirect:/courses/" + offering.getId() + "/announcements";
     }
 
+    @GetMapping("/announcements/{announcementId}/edit")
+    public String editForm(@PathVariable Long announcementId, Model model, Authentication authentication) {
+        User current = currentUser(authentication);
+        Announcement announcement = findEditable(announcementId, current);
+
+        // After a validation error the page shows what the user typed, not the saved text.
+        model.addAttribute("title", model.containsAttribute("draftTitle")
+                ? model.getAttribute("draftTitle") : announcement.getTitle());
+        model.addAttribute("body", model.containsAttribute("draftBody")
+                ? model.getAttribute("draftBody") : announcement.getBody());
+        model.addAttribute("announcement", announcement);
+        model.addAttribute("offering", announcement.getOffering());
+        return "announcement-edit";
+    }
+
+    @PostMapping("/announcements/{announcementId}/edit")
+    public String edit(@PathVariable Long announcementId,
+                       @RequestParam(defaultValue = "") String title,
+                       @RequestParam(defaultValue = "") String body,
+                       Authentication authentication,
+                       RedirectAttributes redirect) {
+        User current = currentUser(authentication);
+        Announcement announcement = findEditable(announcementId, current);
+        Long offeringId = announcement.getOffering().getId();
+
+        String cleanTitle = title.trim();
+        String cleanBody = body.trim();
+        String errorKey = findFirstError(cleanTitle, cleanBody);
+        if (errorKey != null) {
+            redirect.addFlashAttribute("announcementErrorKey", errorKey);
+            redirect.addFlashAttribute("draftTitle", title);
+            redirect.addFlashAttribute("draftBody", body);
+            return "redirect:/announcements/" + announcementId + "/edit";
+        }
+
+        // Nothing changed: do not mark it as edited.
+        if (!cleanTitle.equals(announcement.getTitle()) || !cleanBody.equals(announcement.getBody())) {
+            announcement.setTitle(cleanTitle);
+            announcement.setBody(cleanBody);
+            announcement.setEditedAt(Instant.now());
+            announcementRepository.save(announcement);
+            // Students are told that the announcement changed.
+            notificationService.notifyAnnouncementEdited(announcement);
+        }
+        return "redirect:/courses/" + offeringId + "/announcements";
+    }
+
     // ---------- helpers ----------
 
     private AnnouncementView view(Announcement a, User current, boolean manager, boolean open) {
-        boolean canDelete = open && (manager || a.getAuthor().getId().equals(current.getId()));
+        // Delete and edit have the same rule: the professor any, others only their own.
+        boolean canChange = open && (manager || a.getAuthor().getId().equals(current.getId()));
         boolean recent = Duration.between(a.getCreatedAt(), Instant.now()).toDays() < NEW_FOR_DAYS;
-        return new AnnouncementView(a, WHEN.format(a.getCreatedAt()), recent, canDelete);
+        String editedWhen = a.getEditedAt() == null ? null : WHEN.format(a.getEditedAt());
+        return new AnnouncementView(a, WHEN.format(a.getCreatedAt()), editedWhen, recent, canChange, canChange);
     }
 
     /** Returns the message key of the first problem, in the same order as the form fields. */
@@ -201,6 +252,21 @@ public class AnnouncementController {
         return enrollmentRepository.findByStudentAndOffering(user, offering)
                 .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.ACTIVE)
                 .isPresent();
+    }
+
+    /** An announcement the current user may edit, or 404/403. Deleted announcements cannot be edited. */
+    private Announcement findEditable(Long announcementId, User current) {
+        Announcement announcement = findAnnouncement(announcementId);
+        CourseOffering offering = announcement.getOffering();
+        boolean allowed = offering.isManagedBy(current)
+                || announcement.getAuthor().getId().equals(current.getId());
+        if (announcement.isDeleted()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        if (!isOpen(offering) || !allowed) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return announcement;
     }
 
     private CourseOffering findOffering(Long id) {
