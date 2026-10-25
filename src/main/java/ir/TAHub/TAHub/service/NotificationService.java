@@ -1,11 +1,6 @@
 package ir.TAHub.TAHub.service;
 
-import ir.TAHub.TAHub.model.Announcement;
-import ir.TAHub.TAHub.model.CourseOffering;
-import ir.TAHub.TAHub.model.Enrollment;
-import ir.TAHub.TAHub.model.EnrollmentStatus;
-import ir.TAHub.TAHub.model.NotificationType;
-import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.model.*;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.NotificationRepository;
 import org.springframework.stereotype.Service;

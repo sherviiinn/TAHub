@@ -1,5 +1,6 @@
 package ir.TAHub.TAHub;
 
+import ir.TAHub.TAHub.model.Notification;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.NotificationRepository;
 import ir.TAHub.TAHub.repository.UserRepository;

@@ -1,5 +1,6 @@
 package ir.TAHub.TAHub.repository;
 
+import ir.TAHub.TAHub.model.Notification;
 import ir.TAHub.TAHub.model.NotificationType;
 import ir.TAHub.TAHub.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
