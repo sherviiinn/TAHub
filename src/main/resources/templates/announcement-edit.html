@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{announcements.edit.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{announcements.edit.title}">Edit announcement</h1>
+        <h2 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h2>
+
+        <p th:if="${announcementErrorKey}" th:text="#{${announcementErrorKey}}"></p>
+
+        <form method="post" th:action="@{/announcements/{aid}/edit(aid=${announcement.id})}">
+            <label for="title" th:text="#{announcements.titleLabel}">Title</label><br>
+            <input type="text" id="title" name="title" maxlength="100" required autocomplete="off"
+                   th:value="${title}"><br>
+            <label for="body" th:text="#{announcements.bodyLabel}">Message</label><br>
+            <textarea id="body" name="body" rows="6" cols="50" maxlength="2000" required
+                      th:text="${body}"></textarea><br>
+            <button type="submit" th:text="#{announcements.edit.save}">Save changes</button>
+        </form>
+
+        <p><a th:href="@{/courses/{id}/announcements(id=${offering.id})}" th:text="#{announcements.edit.cancel}">Cancel</a></p>
+    </main>
+</body>
+</html>

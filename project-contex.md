@@ -69,7 +69,7 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - `course_offerings`: id، course_id، semester_id، professor_id، join_code (اختیاری؛ خالی یعنی ثبت‌نام بسته)، cancelled، ta_applications_open (پیش‌فرض false). یکتا روی (درس، ترم، استاد)، پس دو استاد می‌تونن یه درس رو توی یه ترم ارائه بدن (دو گروه).
 - `roster_entries`: id، offering_id، student_number، added_at. شماره‌های لیست کلاس که استاد چسبونده (حتی اگه هنوز حساب ندارن). یکتا روی (ارائه، شماره).
 - `ta_assignments`: id، user_id، offering_id، active، assigned_at. یکتا روی (کاربر، ارائه).
-- `announcements`: id، offering_id، author_id، title (حداکثر ۱۰۰)، body (حداکثر ۲۰۰۰)، created_at، deleted (پنهان‌شدن، برگشت‌ناپذیر از داخل برنامه).
+- `announcements`: id، offering_id، author_id، title (حداکثر ۱۰۰)، body (حداکثر ۲۰۰۰)، created_at، edited_at (اختیاری، زمان آخرین ویرایش)، deleted (پنهان‌شدن، برگشت‌ناپذیر از داخل برنامه).
 - `notifications`: id، user_id، type، title (برای اطلاعیه: «کد درس - اسم درس»)، link (مسیر داخل برنامه که سرور می‌سازه)، item_count (تعداد رویدادی که این ردیف نشون می‌ده)، seen، created_at.
 - `ta_applications`: id، student_id، offering_id، message، status (PENDING، ACCEPTED، REJECTED، WITHDRAWN)، created_at، decided_at. یکتا روی (دانشجو، ارائه).
 - `enrollments`: id، student_id، offering_id، enrolled_at، status، source (ROSTER یا JOIN_CODE). برای هر دانشجو و ارائه فقط یه ردیف. یکتا روی (دانشجو، ارائه).
@@ -114,7 +114,8 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 | `my-ta-requests` (دانشجو) | `GET /my-ta-requests` | `applications` | `/ta-applications/{id}/withdraw` |
 | `professors` | `GET /professors` | `professors` | ندارد |
 | `professor-detail` | `GET /professors/{id}` | `professor`، `courses` (هر ردیف: `offering` و `teachingAssistants`) | ندارد |
-| `announcements` | `GET /courses/{id}/announcements` | `offering`، `announcements` (هر ردیف: `announcement`، `when`، `recent`، `canDelete`)، `isCurrentSemester`، `isCancelled`، `canPost`، `canManage`، `announcementErrorKey` | `/courses/{id}/announcements` (`title`، `body`)، `/announcements/{id}/delete` |
+| `announcements` | `GET /courses/{id}/announcements` | `offering`، `announcements` (هر ردیف: `announcement`، `when`، `editedWhen`، `recent`، `canDelete`، `canEdit`)، `isCurrentSemester`، `isCancelled`، `canPost`، `canManage`، `announcementErrorKey` | `/courses/{id}/announcements` (`title`، `body`)، `/announcements/{id}/delete` |
+| `announcement-edit` | `GET /announcements/{id}/edit` | `announcement`، `offering`، `title`، `body`، `announcementErrorKey` | `/announcements/{id}/edit` (`title`، `body`) |
 | `notifications` | `GET /notifications` | `notifications` (هر ردیف: `notification`، `when`)، `unreadCount` | `/notifications/{id}/open`، `/notifications/read-all` |
 | `profile` | `GET /profile` (پارامتر `saved`) | `profileUser`، `isStudent`، `majors` | `/profile/major`: `majorId` |
 
@@ -161,6 +162,7 @@ TA Hub یه پلتفرم دانشگاهی برای دانشجو، استاد، T
 - ۳-الف: اطلاعیه‌ها برای هر ارائه. **(انجام و تست شد)**
 - ۳-ب: نوتیفیکیشن برای دانشجوها (زنگ و تعداد نخوانده توی منو، اطلاعیه‌ها اونجا هم میان). **(انجام و تست شد)**
 - ۳-ب۳: وقتی استاد (یا TA) اطلاعیه‌ای رو پاک می‌کنه، نوتیفیکیشن دانشجوها (چه خونده‌شده چه خونده‌نشده) درست می‌شه: شمارنده کم می‌شه و اگه چیزی نمونده نوتیفیکیشن حذف می‌شه (ستون اختیاری `first_event_at`، بدون نیاز به ALTER). **(کد داده شد، تست در انتظار)**
+- ۳-ب۴: ویرایش اطلاعیه. استاد/ادمین هر اطلاعیه‌ای و TA فقط مال خودش رو ویرایش می‌کنه (همون قانون حذف)، فقط توی ترم فعال و ارائه‌ی لغو‌نشده. بعد از ویرایش کنار اطلاعیه «(edited زمان)» میاد. بعد از ویرایش، به دانشجوهای فعال ارائه نوتیفیکیشن «Announcement edited in ...» می‌ره (برای هر اطلاعیه فقط یکی؛ اگه خونده‌نشده باشه فقط میاد بالا؛ اگه دانشجو نوتیفیکیشن خونده‌نشده‌ی «اطلاعیه‌ی جدید» که همین اطلاعیه رو شامل می‌شه داشته باشه، دوباره خبر داده نمی‌شه). با حذف اطلاعیه، نوتیفیکیشن‌های ویرایش اون هم حذف می‌شن. ستون‌های اختیاری `announcements.edited_at` و `notifications.announcement_id`، بدون نیاز به ALTER (نوع نوتیفیکیشن ویرایش همون `GENERAL` موجوده، چون عوض کردن enum توی دیتابیس ALTER دستی می‌خواست). **(کد داده شد، تست در انتظار)**
 - ۳-ب۲: تمیزکاری: یه نوتیفیکیشن برای هر درس به‌جای یکی برای هر اطلاعیه، برچسب «New» کنار اطلاعیه‌های تازه، حذف دکمه‌ی Restore اطلاعیه. **(انجام و تست شد؛ تغییر دیتابیس: `ALTER TABLE notifications ADD COLUMN item_count integer NOT NULL DEFAULT 1` و پاک کردن نوتیفیکیشن‌های تستی قدیمی با `DELETE FROM notifications`)**
 - ۳-پ: منوی سلف دانشگاه. سایت سلف دانشگاه **لاگین می‌خواد**، پس سرور خودش نمی‌تونه بخونتش و رمز شخصی هیچ‌کس نباید توی برنامه ذخیره بشه. اول: صفحه‌ی ادمین که منوی هفته رو دستی وارد می‌کنه (جدول منوی روزانه برای وعده‌ها) و صفحه‌ی نمایش برای دانشجوها. بعداً شاید: اسکریپت روی کامپیوتر صاحب پروژه که با حساب خودش منو رو می‌گیره و با کلید مخصوص به برنامه می‌فرسته.
 - ۳-ت: یادآوری هفتگی رزرو سلف به‌صورت نوتیفیکیشن برای همه‌ی دانشجوها (کار زمان‌بندی‌شده `@Scheduled`؛ گوشی‌ها فقط وقتی زنگ می‌خورن که بعداً ربات تلگرام، ایمیل یا PWA اضافه بشه).

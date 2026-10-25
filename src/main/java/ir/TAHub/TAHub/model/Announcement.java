@@ -13,7 +13,7 @@ import java.time.Instant;
 
 /**
  * An announcement posted in one offering by its professor or one of its TAs.
- * Announcements are never really deleted: "deleted" only hides them, and a professor can bring them back.
+ * Announcements are never really deleted: "deleted" only hides them.
  */
 @Entity
 @Table(name = "announcements")
@@ -40,6 +40,9 @@ public class Announcement {
     @Column(nullable = false)
     private Instant createdAt;
 
+    // Set when the title or message was changed after posting. Empty if it was never edited.
+    private Instant editedAt;
+
     @Column(nullable = false)
     private boolean deleted;
 
@@ -62,6 +65,9 @@ public class Announcement {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getEditedAt() { return editedAt; }
+    public void setEditedAt(Instant editedAt) { this.editedAt = editedAt; }
 
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean deleted) { this.deleted = deleted; }

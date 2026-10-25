@@ -23,8 +23,14 @@
                                 ? #{notifications.announcement.one(${n.notification.title})}
                                 : #{notifications.announcement.many(${n.notification.itemCount}, ${n.notification.title})}">
                         New announcement</button>
+                    <!-- An announcement was edited (these are GENERAL notifications that know the announcement) -->
+                    <button type="submit"
+                            th:if="${n.notification.type.name() != 'ANNOUNCEMENT' and n.notification.announcementId != null}"
+                            th:text="#{notifications.announcement.edited(${n.notification.title})}">
+                        Announcement edited</button>
                     <!-- Other kinds of notifications show their own text -->
-                    <button type="submit" th:unless="${n.notification.type.name() == 'ANNOUNCEMENT'}"
+                    <button type="submit"
+                            th:if="${n.notification.type.name() != 'ANNOUNCEMENT' and n.notification.announcementId == null}"
                             th:text="${n.notification.title}">Title</button>
                 </form>
             </li>

@@ -33,8 +33,11 @@
             </h3>
             <p>
                 <small th:text="#{announcements.by(${a.announcement.author.fullName})} + ' - ' + ${a.when}"></small>
+                <small th:if="${a.editedWhen}" th:text="'(' + #{announcements.edited(${a.editedWhen})} + ')'"></small>
             </p>
             <p class="announcement-body" th:text="${a.announcement.body}"></p>
+            <a th:if="${a.canEdit}" th:href="@{/announcements/{aid}/edit(aid=${a.announcement.id})}"
+               th:text="#{announcements.edit}">Edit</a>
             <form th:if="${a.canDelete}" method="post"
                   th:action="@{/announcements/{aid}/delete(aid=${a.announcement.id})}">
                 <button type="submit" th:text="#{announcements.delete}">Delete</button>

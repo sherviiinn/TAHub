@@ -52,6 +52,12 @@ public class Notification {
      */
     private Instant firstEventAt;
 
+    /**
+     * Only for "announcement was edited" notifications (type GENERAL): the id of the edited announcement.
+     * It lets us remove the notification if that announcement is deleted later. Empty for all other kinds.
+     */
+    private Long announcementId;
+
     @Column(nullable = false)
     private boolean seen;
 
@@ -77,6 +83,9 @@ public class Notification {
 
     public int getItemCount() { return itemCount; }
     public void setItemCount(int itemCount) { this.itemCount = itemCount; }
+
+    public Long getAnnouncementId() { return announcementId; }
+    public void setAnnouncementId(Long announcementId) { this.announcementId = announcementId; }
 
     public Instant getFirstEventAt() { return firstEventAt; }
     public void setFirstEventAt(Instant firstEventAt) { this.firstEventAt = firstEventAt; }

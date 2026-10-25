@@ -19,6 +19,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // All notifications (read or unread) of one kind and place (every student of one course).
     List<Notification> findByTypeAndLink(NotificationType type, String link);
 
+    // An unread "announcement was edited" notification of one student for one announcement.
+    Optional<Notification> findFirstByUserAndAnnouncementIdAndSeenFalse(User user, Long announcementId);
+
+    // Every "announcement was edited" notification of one announcement (read or unread).
+    List<Notification> findByAnnouncementId(Long announcementId);
+
     long countByUserAndSeenFalse(User user);
 
     List<Notification> findByUserAndSeenFalse(User user);
