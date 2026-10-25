@@ -4,7 +4,6 @@ import ir.TAHub.TAHub.model.Announcement;
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
-import ir.TAHub.TAHub.model.Notification;
 import ir.TAHub.TAHub.model.NotificationType;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
@@ -29,11 +28,15 @@ public class NotificationService {
         this.enrollmentRepository = enrollmentRepository;
     }
 
-    /** Every enrolled student of the offering (except the author, if the author is a student) gets one. */
+    /**
+     * Every enrolled student of the offering (except the author, if the author is a student) is told.
+     * To keep the notifications page short, a student gets ONE unread notification per course:
+     * a new announcement is added to it (its counter grows) instead of creating another row.
+     */
     @Transactional
     public void notifyAnnouncement(Announcement announcement) {
         CourseOffering offering = announcement.getOffering();
-        String title = offering.getCourse().getCode() + ": " + announcement.getTitle();
+        String title = offering.getCourse().getCode() + " - " + offering.getCourse().getName();
         String link = "/courses/" + offering.getId() + "/announcements";
 
         List<Notification> notifications = new ArrayList<>();
@@ -43,7 +46,16 @@ public class NotificationService {
             if (student.getId().equals(announcement.getAuthor().getId())) {
                 continue;
             }
-            notifications.add(create(student, NotificationType.ANNOUNCEMENT, title, link));
+            Notification existing = notificationRepository
+                    .findFirstByUserAndTypeAndLinkAndSeenFalse(student, NotificationType.ANNOUNCEMENT, link)
+                    .orElse(null);
+            if (existing != null) {
+                existing.setItemCount(existing.getItemCount() + 1);
+                existing.setCreatedAt(Instant.now()); // it moves to the top of the list again
+                notifications.add(existing);
+            } else {
+                notifications.add(create(student, NotificationType.ANNOUNCEMENT, title, link));
+            }
         }
         notificationRepository.saveAll(notifications);
     }
@@ -55,6 +67,7 @@ public class NotificationService {
         notification.setType(type);
         notification.setTitle(title);
         notification.setLink(link);
+        notification.setItemCount(1);
         notification.setSeen(false);
         notification.setCreatedAt(Instant.now());
         return notification;
