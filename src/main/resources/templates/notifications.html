@@ -14,10 +14,18 @@
 
         <ul class="notification-list" th:unless="${#lists.isEmpty(notifications)}">
             <li th:each="n : ${notifications}" th:classappend="${n.notification.seen} ? '' : 'notification-unread'">
-                <small th:text="#{${'notifications.type.' + n.notification.type}} + ' - ' + ${n.when}"></small>
+                <small th:text="${n.when}"></small>
                 <strong th:unless="${n.notification.seen}" th:text="#{notifications.new}">New</strong>
                 <form method="post" th:action="@{/notifications/{id}/open(id=${n.notification.id})}">
-                    <button type="submit" th:text="${n.notification.title}">Title</button>
+                    <!-- Announcements: "New announcement in CS201 - Operating Systems" -->
+                    <button type="submit" th:if="${n.notification.type.name() == 'ANNOUNCEMENT'}"
+                            th:text="${n.notification.itemCount == 1}
+                                ? #{notifications.announcement.one(${n.notification.title})}
+                                : #{notifications.announcement.many(${n.notification.itemCount}, ${n.notification.title})}">
+                        New announcement</button>
+                    <!-- Other kinds of notifications show their own text -->
+                    <button type="submit" th:unless="${n.notification.type.name() == 'ANNOUNCEMENT'}"
+                            th:text="${n.notification.title}">Title</button>
                 </form>
             </li>
         </ul>

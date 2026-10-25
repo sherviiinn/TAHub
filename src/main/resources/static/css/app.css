@@ -135,3 +135,13 @@ button:hover {
 .notification-list form {
     margin: 0;
 }
+
+/* ----- "New" tag next to recent announcements ----- */
+.tag-new {
+    margin-inline-start: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.75rem;
+}

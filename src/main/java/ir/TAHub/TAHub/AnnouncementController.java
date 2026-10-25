@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +32,7 @@ import java.util.List;
  * Who can read: the professor (and admins), the TAs, and the students who are enrolled.
  * Who can post: the professor (and admins) and the TAs.
  * Who can delete: the professor (and admins) delete any announcement, a TA only their own.
+ * A deleted announcement is only hidden (the history stays in the database) and cannot be brought back.
  */
 @Controller
 public class AnnouncementController {
@@ -38,12 +40,15 @@ public class AnnouncementController {
     private static final int TITLE_MAX = 100;
     private static final int BODY_MAX = 2000;
 
+    // Announcements newer than this many days get a "New" tag.
+    private static final long NEW_FOR_DAYS = 3;
+
     // Users are in Iran, so times are shown in Tehran time.
     private static final DateTimeFormatter WHEN =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("Asia/Tehran"));
 
     /** One announcement as the page shows it. */
-    public record AnnouncementView(Announcement announcement, String when, boolean canDelete) {
+    public record AnnouncementView(Announcement announcement, String when, boolean recent, boolean canDelete) {
     }
 
     private final UserRepository userRepository;
@@ -99,13 +104,6 @@ public class AnnouncementController {
         model.addAttribute("canPost", open && (manager || ta));
         model.addAttribute("canManage", manager);
 
-        // Only the professor sees deleted announcements, so a mistake can be undone.
-        if (manager) {
-            model.addAttribute("removedAnnouncements", announcementRepository
-                    .findByOfferingAndDeletedTrueOrderByCreatedAtDescIdDesc(offering).stream()
-                    .map(a -> view(a, current, true, open))
-                    .toList());
-        }
         return "announcements";
     }
 
@@ -162,27 +160,12 @@ public class AnnouncementController {
         return "redirect:/courses/" + offering.getId() + "/announcements";
     }
 
-    @PostMapping("/announcements/{announcementId}/restore")
-    public String restore(@PathVariable Long announcementId, Authentication authentication) {
-        User current = currentUser(authentication);
-        Announcement announcement = findAnnouncement(announcementId);
-        CourseOffering offering = announcement.getOffering();
-
-        // Only the professor (or an admin) brings announcements back.
-        if (!isOpen(offering) || !offering.isManagedBy(current)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        announcement.setDeleted(false);
-        announcementRepository.save(announcement);
-        return "redirect:/courses/" + offering.getId() + "/announcements";
-    }
-
     // ---------- helpers ----------
 
     private AnnouncementView view(Announcement a, User current, boolean manager, boolean open) {
         boolean canDelete = open && (manager || a.getAuthor().getId().equals(current.getId()));
-        return new AnnouncementView(a, WHEN.format(a.getCreatedAt()), canDelete);
+        boolean recent = Duration.between(a.getCreatedAt(), Instant.now()).toDays() < NEW_FOR_DAYS;
+        return new AnnouncementView(a, WHEN.format(a.getCreatedAt()), recent, canDelete);
     }
 
     /** Returns the message key of the first problem, in the same order as the form fields. */

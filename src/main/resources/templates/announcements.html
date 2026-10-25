@@ -27,7 +27,10 @@
         <p th:if="${#lists.isEmpty(announcements)}" th:text="#{announcements.none}">No announcements yet.</p>
 
         <article th:each="a : ${announcements}">
-            <h3 th:text="${a.announcement.title}">Title</h3>
+            <h3>
+                <span th:text="${a.announcement.title}">Title</span>
+                <strong class="tag-new" th:if="${a.recent}" th:text="#{announcements.recent}">New</strong>
+            </h3>
             <p>
                 <small th:text="#{announcements.by(${a.announcement.author.fullName})} + ' - ' + ${a.when}"></small>
             </p>
@@ -37,22 +40,6 @@
                 <button type="submit" th:text="#{announcements.delete}">Delete</button>
             </form>
         </article>
-
-        <!-- Professor only: deleted announcements, so a mistake can be undone -->
-        <th:block th:if="${canManage and !#lists.isEmpty(removedAnnouncements)}">
-            <h2 th:text="#{announcements.deleted.title(${#lists.size(removedAnnouncements)})}">Deleted announcements</h2>
-            <article th:each="a : ${removedAnnouncements}">
-                <h3 th:text="${a.announcement.title}">Title</h3>
-                <p>
-                    <small th:text="#{announcements.by(${a.announcement.author.fullName})} + ' - ' + ${a.when}"></small>
-                </p>
-                <p class="announcement-body" th:text="${a.announcement.body}"></p>
-                <form th:if="${a.canDelete}" method="post"
-                      th:action="@{/announcements/{aid}/restore(aid=${a.announcement.id})}">
-                    <button type="submit" th:text="#{announcements.restore}">Restore</button>
-                </form>
-            </article>
-        </th:block>
 
         <p><a th:href="@{/courses/{id}(id=${offering.id})}" th:text="#{announcements.backToCourse}">Back to course</a></p>
     </main>

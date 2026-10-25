@@ -1,15 +1,6 @@
 package ir.TAHub.TAHub.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.Instant;
 
@@ -41,6 +32,10 @@ public class Notification {
     @Column(nullable = false, length = 255)
     private String link;
 
+    /** How many events this notification stands for (like 3 new announcements in the same course). */
+    @Column(nullable = false)
+    private int itemCount = 1;
+
     @Column(nullable = false)
     private boolean seen;
 
@@ -63,6 +58,9 @@ public class Notification {
 
     public String getLink() { return link; }
     public void setLink(String link) { this.link = link; }
+
+    public int getItemCount() { return itemCount; }
+    public void setItemCount(int itemCount) { this.itemCount = itemCount; }
 
     public boolean isSeen() { return seen; }
     public void setSeen(boolean seen) { this.seen = seen; }

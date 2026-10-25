@@ -11,7 +11,5 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     // Newest first. The id breaks ties between announcements posted in the same moment.
     List<Announcement> findByOfferingAndDeletedFalseOrderByCreatedAtDescIdDesc(CourseOffering offering);
 
-    List<Announcement> findByOfferingAndDeletedTrueOrderByCreatedAtDescIdDesc(CourseOffering offering);
-
     long countByOfferingAndDeletedFalse(CourseOffering offering);
 }
