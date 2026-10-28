@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{cafeteria.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{cafeteria.title}">Cafeteria menu</h1>
+        <p th:text="#{cafeteria.week(${weekStart}, ${weekEnd})}">Week</p>
+
+        <p>
+            <a th:if="${isNextWeek}" th:href="@{/cafeteria}" th:text="#{cafeteria.thisWeek}">This week</a>
+            <a th:unless="${isNextWeek}" th:href="@{/cafeteria(next=true)}" th:text="#{cafeteria.nextWeek}">Next week</a>
+            <a th:if="${navIsAdmin}" th:href="@{/admin/cafeteria(next=${isNextWeek})}" th:text="#{cafeteria.edit}">Edit this week</a>
+        </p>
+
+        <p>
+            <a th:href="${reservationUrl}" target="_blank" rel="noopener noreferrer"
+               th:text="#{cafeteria.reserve}">Reserve on the university site</a>
+        </p>
+
+        <p th:unless="${hasAnyMeal}" th:text="#{cafeteria.none}">The menu of this week has not been entered yet.</p>
+
+        <table th:if="${hasAnyMeal}" class="cafeteria-table">
+            <thead>
+                <tr>
+                    <th th:text="#{cafeteria.dayColumn}">Day</th>
+                    <th th:each="m : ${mealTypes}" th:text="#{${'cafeteria.meal.' + m.name()}}">Meal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="d : ${days}" th:classappend="${d.today} ? 'cafeteria-today' : ''">
+                    <td>
+                        <strong th:text="#{${d.dayKey}}">Saturday</strong><br>
+                        <small th:text="${d.date}"></small>
+                        <strong class="tag-new" th:if="${d.today}" th:text="#{cafeteria.today}">Today</strong>
+                    </td>
+                    <td th:each="m : ${mealTypes}" th:with="meal=${d.meals.get(m)}">
+                        <th:block th:if="${meal != null}">
+                            <!-- Two choices: "Food A / Food B". Each name has its own span so it can be styled. -->
+                            <span class="food-option" th:text="${meal.option1.name}">Food A</span>
+                            <th:block th:if="${meal.option2 != null}">
+                                <span class="food-separator"> / </span>
+                                <span class="food-option" th:text="${meal.option2.name}">Food B</span>
+                            </th:block>
+                        </th:block>
+                        <span th:if="${meal == null}">-</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>

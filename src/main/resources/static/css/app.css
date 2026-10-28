@@ -145,3 +145,21 @@ button:hover {
     color: #fff;
     font-size: 0.75rem;
 }
+
+/* ----- Cafeteria menu ----- */
+.cafeteria-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.cafeteria-table th,
+.cafeteria-table td {
+    border: 1px solid #ccc;
+    padding: 0.4rem;
+    vertical-align: top;
+}
+.cafeteria-today {
+    background: #fff8e1;
+}
+.food-separator {
+    color: #888;
+}
