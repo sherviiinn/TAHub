@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Notices from the admins to everyone.
  * Everyone who is logged in reads them at /notices and can close the top bar for themselves.
- * Only admins write, edit, take off the bar and delete (all under /admin/**, which SecurityConfig
+ * Only admins write, edit, notify everyone again, take off the bar and delete (all under /admin/**, which SecurityConfig
  * already allows for admins only). Admins see the form and the buttons on the same /notices page.
  */
 @Controller
@@ -165,6 +165,21 @@ public class SiteNoticeController {
         SiteNotice notice = findNotice(id);
         notice.setShowInBanner(true);
         noticeRepository.save(notice);
+        return "redirect:/notices";
+    }
+
+    /**
+     * Tells everyone about this notice again: an unread notification at the top for every user, and if the
+     * notice is in the top bar, the bar comes back for people who had closed it.
+     */
+    @PostMapping("/admin/notices/{id}/renotify")
+    public String renotify(@PathVariable Long id, Authentication authentication, RedirectAttributes redirect) {
+        SiteNotice notice = findNotice(id);
+        notificationService.renotifySiteNotice(notice, currentUser(authentication));
+        if (notice.isShowInBanner()) {
+            dismissalRepository.deleteByNotice(notice);
+        }
+        redirect.addFlashAttribute("noticeRenotifiedId", notice.getId());
         return "redirect:/notices";
     }
 
