@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{cafeteria.edit.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{cafeteria.edit.title}">Enter the cafeteria menu</h1>
+        <p th:text="#{cafeteria.week(${weekStart}, ${weekEnd})}">Week</p>
+
+        <p>
+            <a th:if="${isNextWeek}" th:href="@{/admin/cafeteria}" th:text="#{cafeteria.thisWeek}">This week</a>
+            <a th:unless="${isNextWeek}" th:href="@{/admin/cafeteria(next=true)}" th:text="#{cafeteria.nextWeek}">Next week</a>
+            <a th:href="@{/cafeteria(next=${isNextWeek})}" th:text="#{cafeteria.view}">See it as students do</a>
+            <a th:href="@{/admin/foods}" th:text="#{cafeteria.manageFoods}">Manage foods</a>
+        </p>
+
+        <p th:if="${cafeteriaSaved}" th:text="#{cafeteria.saved}">Saved.</p>
+        <p th:if="${cafeteriaErrorKey}" th:text="#{${cafeteriaErrorKey}}"></p>
+        <p th:if="${#lists.isEmpty(activeFoods)}" th:text="#{cafeteria.edit.noFoods}">Add some foods first.</p>
+        <p th:text="#{cafeteria.edit.help}">Each meal has up to two choices.</p>
+
+        <form method="post" th:action="@{/admin/cafeteria(next=${isNextWeek})}">
+            <table class="cafeteria-table">
+                <thead>
+                    <tr>
+                        <th th:text="#{cafeteria.dayColumn}">Day</th>
+                        <th th:each="m : ${mealTypes}" th:text="#{${'cafeteria.meal.' + m.name()}}">Meal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${days}">
+                        <td>
+                            <strong th:text="#{${d.dayKey}}">Saturday</strong><br>
+                            <small th:text="${d.date}"></small>
+                        </td>
+                        <td th:each="m : ${mealTypes}">
+                            <!-- Two boxes per meal: option 1 and option 2 -->
+                            <th:block th:each="s : ${slots}" th:with="current=${d.meals.get(m)?.getOption(s)}">
+                                <select th:name="'meal_' + ${d.index} + '_' + ${m.name()} + '_' + ${s}">
+                                    <option value="" th:text="#{cafeteria.edit.noFood}">-</option>
+                                    <!-- A food that was made inactive stays in this meal until the admin changes it -->
+                                    <option th:if="${current != null and !current.active}" th:value="${current.id}" selected
+                                            th:text="${current.name} + ' ' + #{foods.inactiveTag}">Old food</option>
+                                    <option th:each="f : ${activeFoods}" th:value="${f.id}" th:text="${f.name}"
+                                            th:selected="${current != null and current.id == f.id}">Food</option>
+                                </select>
+                                <br th:if="${s == 1}">
+                            </th:block>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <button type="submit" th:text="#{cafeteria.edit.save}">Save the week</button>
+        </form>
+    </main>
+</body>
+</html>

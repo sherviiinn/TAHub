@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{foods.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{foods.title}">Foods</h1>
+        <p th:text="#{foods.help}">Only foods in this list can be chosen in the weekly menu.</p>
+        <p><a th:href="@{/admin/cafeteria}" th:text="#{foods.backToMenu}">Back to the weekly menu</a></p>
+
+        <p th:if="${foodErrorKey}" th:text="#{${foodErrorKey}}"></p>
+
+        <h2 th:text="#{foods.add}">Add a food</h2>
+        <form method="post" th:action="@{/admin/foods}">
+            <label for="name" th:text="#{foods.nameLabel}">Name</label>
+            <input type="text" id="name" name="name" maxlength="100" required autocomplete="off">
+            <button type="submit" th:text="#{foods.addButton}">Add</button>
+        </form>
+
+        <p th:if="${#lists.isEmpty(foods)}" th:text="#{foods.none}">No foods yet.</p>
+
+        <table th:unless="${#lists.isEmpty(foods)}">
+            <thead>
+                <tr>
+                    <th th:text="#{foods.nameLabel}">Name</th>
+                    <th th:text="#{foods.status}">Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="f : ${foods}">
+                    <td>
+                        <!-- Rename (for fixing typos; the new name shows in old menus too) -->
+                        <form method="post" th:action="@{/admin/foods/{id}/rename(id=${f.id})}">
+                            <input type="text" name="name" maxlength="100" required autocomplete="off" th:value="${f.name}">
+                            <button type="submit" th:text="#{foods.rename}">Rename</button>
+                        </form>
+                    </td>
+                    <td th:text="${f.active} ? #{foods.active} : #{foods.inactive}">Active</td>
+                    <td>
+                        <form th:if="${f.active}" method="post" th:action="@{/admin/foods/{id}/deactivate(id=${f.id})}">
+                            <button type="submit" th:text="#{foods.deactivate}">Deactivate</button>
+                        </form>
+                        <form th:unless="${f.active}" method="post" th:action="@{/admin/foods/{id}/activate(id=${f.id})}">
+                            <button type="submit" th:text="#{foods.activate}">Activate</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>

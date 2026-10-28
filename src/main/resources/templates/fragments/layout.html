@@ -26,6 +26,7 @@
             <a th:href="@{/courses}" th:text="#{home.courses}">Courses</a>
             <a th:if="${navIsStudent or navIsProfessor}" th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
             <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
+            <a th:href="@{/cafeteria}" th:text="#{nav.cafeteria}">Cafeteria</a>
             <a th:href="@{/notifications}" th:text="#{nav.notifications(${navUnreadCount})}">Notifications</a>
             <a th:if="${navIsStudent}" th:href="@{/my-ta-requests}" th:text="#{ta.link.mine}">My TA requests</a>
             <a th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
