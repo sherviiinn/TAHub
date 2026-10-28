@@ -49,6 +49,10 @@
                       th:action="@{/admin/notices/{id}/banner-on(id=${n.notice.id})}">
                     <button type="submit" th:text="#{notices.bannerOn}">Show in the top bar</button>
                 </form>
+                <form method="post" th:action="@{/admin/notices/{id}/renotify(id=${n.notice.id})}">
+                    <button type="submit" th:text="#{notices.renotify}">Notify everyone again</button>
+                </form>
+                <p th:if="${noticeRenotifiedId == n.notice.id}" th:text="#{notices.renotified}">Everyone was notified again.</p>
                 <form method="post" th:action="@{/admin/notices/{id}/delete(id=${n.notice.id})}">
                     <button type="submit" th:text="#{announcements.delete}">Delete</button>
                 </form>

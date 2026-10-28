@@ -250,29 +250,24 @@ public class NotificationService {
 
     /**
      * A site notice was edited. The title in its old notifications is updated. Every user except the editor
-     * gets ONE "updated" notification per notice (an unread one just moves to the top). Users who have not
-     * read the "new notice" notification yet are not told again: they will see the new text anyway.
+     * gets ONE "updated" notification per notice (an unread one just moves to the top).
      */
     @Transactional
     public void notifySiteNoticeEdited(SiteNotice notice, User editor) {
         String link = notice.getLink();
-        Map<Long, Notification> unreadNew = new HashMap<>();
         Map<Long, Notification> unreadEdited = new HashMap<>();
         List<Notification> notifications = new ArrayList<>();
 
         for (Notification old : notificationRepository.findByLink(link)) {
             old.setMessageArg(notice.getTitle());
             notifications.add(old);
-            if (!old.isSeen() && NOTICE_NEW_KEY.equals(old.getMessageKey())) {
-                unreadNew.put(old.getUser().getId(), old);
-            }
             if (!old.isSeen() && NOTICE_EDITED_KEY.equals(old.getMessageKey())) {
                 unreadEdited.put(old.getUser().getId(), old);
             }
         }
 
         for (User user : userRepository.findAll()) {
-            if (user.getId().equals(editor.getId()) || unreadNew.containsKey(user.getId())) {
+            if (user.getId().equals(editor.getId())) {
                 continue;
             }
             Notification existing = unreadEdited.get(user.getId());
@@ -284,6 +279,39 @@ public class NotificationService {
                 created.setMessageArg(notice.getTitle());
                 notifications.add(created);
             }
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    /**
+     * The admin asked to tell everyone about a notice again. Every user except that admin ends up with
+     * an UNREAD notification about it at the top of their list: an unread one moves up, otherwise a new
+     * "Site notice: title" is made.
+     */
+    @Transactional
+    public void renotifySiteNotice(SiteNotice notice, User admin) {
+        String link = notice.getLink();
+        Map<Long, Notification> unread = new HashMap<>();
+        for (Notification old : notificationRepository.findByLink(link)) {
+            if (!old.isSeen()) {
+                unread.putIfAbsent(old.getUser().getId(), old);
+            }
+        }
+
+        List<Notification> notifications = new ArrayList<>();
+        for (User user : userRepository.findAll()) {
+            if (user.getId().equals(admin.getId())) {
+                continue;
+            }
+            Notification notification = unread.get(user.getId());
+            if (notification != null) {
+                notification.setCreatedAt(Instant.now());
+            } else {
+                notification = create(user, NotificationType.GENERAL, "Site notice", link);
+                notification.setMessageKey(NOTICE_NEW_KEY);
+                notification.setMessageArg(notice.getTitle());
+            }
+            notifications.add(notification);
         }
         notificationRepository.saveAll(notifications);
     }
