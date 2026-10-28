@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{cafeteria.settings.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{cafeteria.settings.title}">Reservation times</h1>
+        <p th:text="#{cafeteria.settings.help}">When reservation for one day opens and closes (Tehran time).</p>
+        <p><a th:href="@{/admin/cafeteria}" th:text="#{foods.backToMenu}">Back to the weekly menu</a></p>
+
+        <p th:if="${settingsSaved}" th:text="#{cafeteria.settings.saved}">Saved.</p>
+        <p th:if="${settingsErrorKey}" th:text="#{${settingsErrorKey}}"></p>
+
+        <form method="post" th:action="@{/admin/cafeteria/settings}">
+            <p>
+                <span th:text="#{cafeteria.settings.opens}">Opens</span>
+                <input type="number" name="openDaysBefore" min="0" max="30" required th:value="${openDaysBefore}">
+                <span th:text="#{cafeteria.settings.daysBeforeAt}">days before, at</span>
+                <input type="time" name="openTime" required th:value="${openTime}">
+            </p>
+            <p>
+                <span th:text="#{cafeteria.settings.closes}">Closes</span>
+                <input type="number" name="closeDaysBefore" min="0" max="30" required th:value="${closeDaysBefore}">
+                <span th:text="#{cafeteria.settings.daysBeforeAt}">days before, at</span>
+                <input type="time" name="closeTime" required th:value="${closeTime}">
+            </p>
+            <button type="submit" th:text="#{cafeteria.settings.save}">Save</button>
+        </form>
+
+        <h2 th:text="#{cafeteria.reminder.title}">Weekly reminder</h2>
+        <p th:text="#{cafeteria.reminder.help}">Every Wednesday at 08:00 all students get a reminder.</p>
+        <p th:if="${reminderSentTo != null}" th:text="#{cafeteria.reminder.sent(${reminderSentTo})}">Sent.</p>
+        <form method="post" th:action="@{/admin/cafeteria/reminder}">
+            <button type="submit" th:text="#{cafeteria.reminder.sendNow}">Send the reminder now</button>
+        </form>
+    </main>
+</body>
+</html>
