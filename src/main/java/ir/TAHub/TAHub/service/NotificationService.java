@@ -7,6 +7,7 @@ import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.Notification;
 import ir.TAHub.TAHub.model.NotificationType;
 import ir.TAHub.TAHub.model.Role;
+import ir.TAHub.TAHub.model.SiteNotice;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
@@ -30,6 +31,8 @@ public class NotificationService {
 
     public static final String CAFETERIA_REMINDER_KEY = "notifications.cafeteria.reminder";
     public static final String CAFETERIA_MENU_CHANGED_KEY = "notifications.cafeteria.menuChanged";
+    public static final String NOTICE_NEW_KEY = "notifications.notice.new";
+    public static final String NOTICE_EDITED_KEY = "notifications.notice.edited";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
 
@@ -227,6 +230,68 @@ public class NotificationService {
             notifications.add(notification);
         }
         notificationRepository.saveAll(notifications);
+    }
+
+    /** A new site notice: every user except its author is told ("Site notice: title"). */
+    @Transactional
+    public void notifySiteNotice(SiteNotice notice) {
+        List<Notification> notifications = new ArrayList<>();
+        for (User user : userRepository.findAll()) {
+            if (user.getId().equals(notice.getAuthor().getId())) {
+                continue;
+            }
+            Notification notification = create(user, NotificationType.GENERAL, "Site notice", notice.getLink());
+            notification.setMessageKey(NOTICE_NEW_KEY);
+            notification.setMessageArg(notice.getTitle());
+            notifications.add(notification);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    /**
+     * A site notice was edited. The title in its old notifications is updated. Every user except the editor
+     * gets ONE "updated" notification per notice (an unread one just moves to the top). Users who have not
+     * read the "new notice" notification yet are not told again: they will see the new text anyway.
+     */
+    @Transactional
+    public void notifySiteNoticeEdited(SiteNotice notice, User editor) {
+        String link = notice.getLink();
+        Map<Long, Notification> unreadNew = new HashMap<>();
+        Map<Long, Notification> unreadEdited = new HashMap<>();
+        List<Notification> notifications = new ArrayList<>();
+
+        for (Notification old : notificationRepository.findByLink(link)) {
+            old.setMessageArg(notice.getTitle());
+            notifications.add(old);
+            if (!old.isSeen() && NOTICE_NEW_KEY.equals(old.getMessageKey())) {
+                unreadNew.put(old.getUser().getId(), old);
+            }
+            if (!old.isSeen() && NOTICE_EDITED_KEY.equals(old.getMessageKey())) {
+                unreadEdited.put(old.getUser().getId(), old);
+            }
+        }
+
+        for (User user : userRepository.findAll()) {
+            if (user.getId().equals(editor.getId()) || unreadNew.containsKey(user.getId())) {
+                continue;
+            }
+            Notification existing = unreadEdited.get(user.getId());
+            if (existing != null) {
+                existing.setCreatedAt(Instant.now());
+            } else {
+                Notification created = create(user, NotificationType.GENERAL, "Site notice updated", link);
+                created.setMessageKey(NOTICE_EDITED_KEY);
+                created.setMessageArg(notice.getTitle());
+                notifications.add(created);
+            }
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    /** A site notice was deleted: all its notifications (read or unread) are removed. */
+    @Transactional
+    public void onSiteNoticeDeleted(SiteNotice notice) {
+        notificationRepository.deleteAll(notificationRepository.findByLink(notice.getLink()));
     }
 
     private List<User> students() {

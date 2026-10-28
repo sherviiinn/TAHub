@@ -184,3 +184,28 @@ button:hover {
 .bar-yellow { background: #f9a825; }
 .bar-red    { background: #c62828; }
 .bar-grey   { background: #bdbdbd; }
+
+/* ----- Top bar with the newest site notice (inside the menu) ----- */
+.site-banner {
+    flex-basis: 100%;            /* its own line under the menu links */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    background: #fff3cd;
+    color: #664d03;
+}
+.site-banner a {
+    color: inherit;
+    font-weight: bold;
+}
+.site-banner-close button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: inherit;
+}
