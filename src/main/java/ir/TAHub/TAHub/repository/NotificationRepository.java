@@ -28,6 +28,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // Unread notifications of one kind that uses a message key (like every unread cafeteria reminder).
     List<Notification> findByMessageKeyAndSeenFalse(String messageKey);
 
+    // Every notification that points to one place (used to remove the notifications of a deleted site notice).
+    List<Notification> findByLink(String link);
+
     long countByUserAndSeenFalse(User user);
 
     List<Notification> findByUserAndSeenFalse(User user);

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{notices.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{notices.title}">Site notices</h1>
+
+        <!-- Admins: write a new notice -->
+        <div th:if="${navIsAdmin}">
+            <h2 th:text="#{notices.new}">New notice</h2>
+            <p th:if="${noticeErrorKey}" th:text="#{${noticeErrorKey}}"></p>
+            <form method="post" th:action="@{/admin/notices}">
+                <label for="title" th:text="#{notices.titleLabel}">Title</label><br>
+                <input type="text" id="title" name="title" maxlength="100" required autocomplete="off"
+                       th:value="${draftTitle}"><br>
+                <label for="body" th:text="#{notices.bodyLabel}">Message</label><br>
+                <textarea id="body" name="body" rows="6" cols="50" maxlength="2000" required
+                          th:text="${draftBody}"></textarea><br>
+                <label>
+                    <input type="checkbox" name="showInBanner" value="true" checked>
+                    <span th:text="#{notices.showInBanner}">Show in the bar at the top of every page</span>
+                </label><br>
+                <button type="submit" th:text="#{notices.post}">Post</button>
+            </form>
+        </div>
+
+        <p th:if="${#lists.isEmpty(notices)}" th:text="#{notices.none}">There are no notices.</p>
+
+        <article th:each="n : ${notices}" th:id="'notice-' + ${n.notice.id}">
+            <h3>
+                <span th:text="${n.notice.title}">Title</span>
+                <strong class="tag-new" th:if="${n.notice.showInBanner}" th:text="#{notices.inBanner}">In the top bar</strong>
+            </h3>
+            <p>
+                <small th:text="${n.when}"></small>
+                <small th:if="${n.editedWhen}" th:text="'(' + #{announcements.edited(${n.editedWhen})} + ')'"></small>
+            </p>
+            <p class="announcement-body" th:text="${n.notice.body}"></p>
+
+            <!-- Admins only -->
+            <th:block th:if="${navIsAdmin}">
+                <a th:href="@{/admin/notices/{id}/edit(id=${n.notice.id})}" th:text="#{announcements.edit}">Edit</a>
+                <form th:if="${n.notice.showInBanner}" method="post"
+                      th:action="@{/admin/notices/{id}/banner-off(id=${n.notice.id})}">
+                    <button type="submit" th:text="#{notices.bannerOff}">Take off the top bar</button>
+                </form>
+                <form th:unless="${n.notice.showInBanner}" method="post"
+                      th:action="@{/admin/notices/{id}/banner-on(id=${n.notice.id})}">
+                    <button type="submit" th:text="#{notices.bannerOn}">Show in the top bar</button>
+                </form>
+                <form method="post" th:action="@{/admin/notices/{id}/delete(id=${n.notice.id})}">
+                    <button type="submit" th:text="#{announcements.delete}">Delete</button>
+                </form>
+            </th:block>
+        </article>
+    </main>
+</body>
+</html>
