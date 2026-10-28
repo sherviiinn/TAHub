@@ -20,6 +20,13 @@
 
         <p th:unless="${hasAnyMeal}" th:text="#{cafeteria.none}">The menu of this week has not been entered yet.</p>
 
+        <!-- Texts and the server clock for static/js/cafeteria.js (it keeps the reservation bars up to date) -->
+        <div id="reservation-labels" hidden
+             th:attr="data-server-now=${serverNowMillis},
+                      data-opens-in=#{cafeteria.reservation.opensIn('{0}')},
+                      data-closes-in=#{cafeteria.reservation.closesIn('{0}')},
+                      data-closed=#{cafeteria.reservation.closed}"></div>
+
         <table th:if="${hasAnyMeal}" class="cafeteria-table">
             <thead>
                 <tr>
@@ -33,6 +40,26 @@
                         <strong th:text="#{${d.dayKey}}">Saturday</strong><br>
                         <small th:text="${d.date}"></small>
                         <strong class="tag-new" th:if="${d.today}" th:text="#{cafeteria.today}">Today</strong>
+
+                        <!-- Reservation time of this day: the bar gets shorter and green -> yellow -> red -->
+                        <div class="reservation" th:with="r=${d.reservation}"
+                             th:attr="data-opens=${r.opensMillis},data-closes=${r.closesMillis}">
+                            <div class="reservation-bar">
+                                <div class="reservation-fill" th:classappend="${r.color}"
+                                     th:style="'width: ' + ${r.percentLeft} + '%'"></div>
+                            </div>
+                            <small class="reservation-text"
+                                   th:if="${r.state.name() == 'BEFORE'}"
+                                   th:title="${r.opensText}"
+                                   th:text="#{cafeteria.reservation.opensIn(${r.remaining})}">Opens in 1d 2h 3m</small>
+                            <small class="reservation-text"
+                                   th:if="${r.state.name() == 'OPEN'}"
+                                   th:title="${r.closesText}"
+                                   th:text="#{cafeteria.reservation.closesIn(${r.remaining})}">Closes in 1d 2h 3m</small>
+                            <small class="reservation-text"
+                                   th:if="${r.state.name() == 'CLOSED'}"
+                                   th:text="#{cafeteria.reservation.closed}">Reservation closed</small>
+                        </div>
                     </td>
                     <td th:each="m : ${mealTypes}" th:with="meal=${d.meals.get(m)}">
                         <th:block th:if="${meal != null}">
@@ -49,5 +76,6 @@
             </tbody>
         </table>
     </main>
+    <script th:src="@{/js/cafeteria.js}" defer></script>
 </body>
 </html>

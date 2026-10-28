@@ -58,6 +58,16 @@ public class Notification {
      */
     private Long announcementId;
 
+    /**
+     * For notifications whose text comes from messages.properties (like the cafeteria reminder):
+     * the message key, and one optional value for {0} in it. Empty for the older kinds.
+     */
+    @Column(length = 100)
+    private String messageKey;
+
+    @Column(length = 255)
+    private String messageArg;
+
     @Column(nullable = false)
     private boolean seen;
 
@@ -83,6 +93,12 @@ public class Notification {
 
     public int getItemCount() { return itemCount; }
     public void setItemCount(int itemCount) { this.itemCount = itemCount; }
+
+    public String getMessageKey() { return messageKey; }
+    public void setMessageKey(String messageKey) { this.messageKey = messageKey; }
+
+    public String getMessageArg() { return messageArg; }
+    public void setMessageArg(String messageArg) { this.messageArg = messageArg; }
 
     public Long getAnnouncementId() { return announcementId; }
     public void setAnnouncementId(Long announcementId) { this.announcementId = announcementId; }

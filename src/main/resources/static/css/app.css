@@ -163,3 +163,24 @@ button:hover {
 .food-separator {
     color: #888;
 }
+
+/* ----- Reservation bars on the cafeteria page ----- */
+.reservation {
+    margin-block-start: 0.4rem;
+}
+.reservation-bar {
+    width: 100%;
+    max-width: 10rem;
+    height: 0.5rem;
+    border-radius: 4px;
+    background: #e0e0e0;
+    overflow: hidden;
+}
+.reservation-fill {
+    height: 100%;
+    transition: width 0.5s;
+}
+.bar-green  { background: #2e7d32; }
+.bar-yellow { background: #f9a825; }
+.bar-red    { background: #c62828; }
+.bar-grey   { background: #bdbdbd; }

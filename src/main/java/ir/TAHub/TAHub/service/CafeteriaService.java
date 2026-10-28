@@ -1,10 +1,12 @@
 package ir.TAHub.TAHub.service;
 
 import ir.TAHub.TAHub.model.CafeteriaMeal;
+import ir.TAHub.TAHub.model.CafeteriaSettings;
 import ir.TAHub.TAHub.model.Food;
 import ir.TAHub.TAHub.model.MealType;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CafeteriaMealRepository;
+import ir.TAHub.TAHub.repository.CafeteriaSettingsRepository;
 import ir.TAHub.TAHub.repository.FoodRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -24,9 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+
 /**
  * The cafeteria menu. In Iran the week starts on Saturday.
  * Only two weeks exist: the current one and the next one.
+ * It also knows when reservation for each day opens and closes (CafeteriaSettings).
  */
 @Service
 public class CafeteriaService {
@@ -35,6 +42,21 @@ public class CafeteriaService {
     public static final ZoneId TEHRAN = ZoneId.of("Asia/Tehran");
 
     private static final Logger log = LoggerFactory.getLogger(CafeteriaService.class);
+
+    private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(TEHRAN);
+
+    /** Reservation state of one day: "before" (not open yet), "open" or "closed". */
+    public enum ReservationState { BEFORE, OPEN, CLOSED }
+
+    /**
+     * Reservation of one day as the page shows it.
+     * percentLeft: how much of the open time is left (100 when it just opened, 0 when closed).
+     * color: "bar-green" (more than 2/3 left), "bar-yellow" (1/3 to 2/3), "bar-red" (less than 1/3), "bar-grey".
+     * remaining: time until it opens (BEFORE) or closes (OPEN), like "1d 4h 3m".
+     */
+    public record ReservationView(ReservationState state, long opensMillis, long closesMillis, int percentLeft,
+                                  String color, String remaining, String opensText, String closesText) {
+    }
 
     /** What the admin chose for one meal: up to two food ids (null = "-"). */
     public record MealChoice(Long option1Id, Long option2Id) {
@@ -46,10 +68,17 @@ public class CafeteriaService {
 
     private final CafeteriaMealRepository mealRepository;
     private final FoodRepository foodRepository;
+    private final CafeteriaSettingsRepository settingsRepository;
+    private final NotificationService notificationService;
 
-    public CafeteriaService(CafeteriaMealRepository mealRepository, FoodRepository foodRepository) {
+    public CafeteriaService(CafeteriaMealRepository mealRepository,
+                            FoodRepository foodRepository,
+                            CafeteriaSettingsRepository settingsRepository,
+                            NotificationService notificationService) {
         this.mealRepository = mealRepository;
         this.foodRepository = foodRepository;
+        this.settingsRepository = settingsRepository;
+        this.notificationService = notificationService;
     }
 
     /** Today in Tehran (the server may run in another time zone). */
@@ -146,6 +175,106 @@ public class CafeteriaService {
         }
         return changedDays;
     }
+
+    // ---------- reservation times ----------
+
+    /** The saved settings, or the defaults if an admin never saved them. */
+    public CafeteriaSettings settings() {
+        return settingsRepository.findById(CafeteriaSettings.SINGLE_ID).orElseGet(CafeteriaSettings::new);
+    }
+
+    @Transactional
+    public void saveSettings(int openDaysBefore, LocalTime openTime,
+                             int closeDaysBefore, LocalTime closeTime) {
+        CafeteriaSettings settings = settings();
+        settings.setOpenDaysBefore(openDaysBefore);
+        settings.setOpenTime(openTime);
+        settings.setCloseDaysBefore(closeDaysBefore);
+        settings.setCloseTime(closeTime);
+        settings.setUpdatedAt(Instant.now());
+        settingsRepository.save(settings);
+    }
+
+    public Instant opensAt(LocalDate day, CafeteriaSettings settings) {
+        return day.minusDays(settings.getOpenDaysBefore()).atTime(settings.getOpenTime()).atZone(TEHRAN).toInstant();
+    }
+
+    public Instant closesAt(LocalDate day, CafeteriaSettings settings) {
+        return day.minusDays(settings.getCloseDaysBefore()).atTime(settings.getCloseTime()).atZone(TEHRAN).toInstant();
+    }
+
+    public ReservationView reservation(LocalDate day, CafeteriaSettings settings) {
+        Instant now = Instant.now();
+        Instant opens = opensAt(day, settings);
+        Instant closes = closesAt(day, settings);
+
+        ReservationState state;
+        int percentLeft;
+        String color;
+        String remaining;
+        if (now.isBefore(opens)) {
+            state = ReservationState.BEFORE;
+            percentLeft = 100;
+            color = "bar-grey";
+            remaining = shortDuration(Duration.between(now, opens));
+        } else if (now.isBefore(closes)) {
+            state = ReservationState.OPEN;
+            double left = (double) Duration.between(now, closes).toMillis() / Duration.between(opens, closes).toMillis();
+            percentLeft = (int) Math.round(left * 100);
+            color = left > 2.0 / 3 ? "bar-green" : left > 1.0 / 3 ? "bar-yellow" : "bar-red";
+            remaining = shortDuration(Duration.between(now, closes));
+        } else {
+            state = ReservationState.CLOSED;
+            percentLeft = 0;
+            color = "bar-grey";
+            remaining = "";
+        }
+        return new ReservationView(state, opens.toEpochMilli(), closes.toEpochMilli(), percentLeft, color,
+                remaining, WHEN.format(opens), WHEN.format(closes));
+    }
+
+    /** True if "opens N days before at T1" really comes before "closes M days before at T2". */
+    public static boolean opensBeforeCloses(int openDaysBefore, LocalTime openTime,
+                                            int closeDaysBefore, LocalTime closeTime) {
+        LocalDate sample = LocalDate.of(2026, 1, 1);
+        return sample.minusDays(openDaysBefore).atTime(openTime)
+                .isBefore(sample.minusDays(closeDaysBefore).atTime(closeTime));
+    }
+
+    /** Like "1d 4h 3m" (days are left out when zero). */
+    static String shortDuration(Duration duration) {
+        long minutes = Math.max(0, duration.toMinutes());
+        long days = minutes / (24 * 60);
+        long hours = (minutes / 60) % 24;
+        long mins = minutes % 60;
+        return (days > 0 ? days + "d " : "") + hours + "h " + mins + "m";
+    }
+
+    // ---------- notifications ----------
+
+    /**
+     * After the admin changed the menu: students hear about the changed days whose reservation has already
+     * opened (they may have reserved already) and that are not over. Days not open yet need no message.
+     */
+    public void tellAboutChangedDays(List<LocalDate> changedDays) {
+        CafeteriaSettings settings = settings();
+        Instant now = Instant.now();
+        LocalDate today = today();
+        List<LocalDate> worthTelling = changedDays.stream()
+                .filter(day -> !day.isBefore(today))
+                .filter(day -> !now.isBefore(opensAt(day, settings)))
+                .toList();
+        notificationService.notifyCafeteriaMenuChanged(worthTelling);
+    }
+
+    /** Every Wednesday at 08:00 Tehran time: "do not forget to reserve" for every student. */
+    @Scheduled(cron = "0 0 8 * * WED", zone = "Asia/Tehran")
+    public void weeklyReminder() {
+        int count = notificationService.notifyCafeteriaReminder();
+        log.info("Sent the weekly cafeteria reminder to {} students", count);
+    }
+
+    // ---------- cleanup ----------
 
     /** Every night (00:10 Tehran time) the menus of finished weeks are removed. */
     @Scheduled(cron = "0 10 0 * * *", zone = "Asia/Tehran")

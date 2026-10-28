@@ -12,6 +12,7 @@
             <a th:unless="${isNextWeek}" th:href="@{/admin/cafeteria(next=true)}" th:text="#{cafeteria.nextWeek}">Next week</a>
             <a th:href="@{/cafeteria(next=${isNextWeek})}" th:text="#{cafeteria.view}">See it as students do</a>
             <a th:href="@{/admin/foods}" th:text="#{cafeteria.manageFoods}">Manage foods</a>
+            <a th:href="@{/admin/cafeteria/settings}" th:text="#{cafeteria.settings.link}">Reservation times</a>
         </p>
 
         <p th:if="${cafeteriaSaved}" th:text="#{cafeteria.saved}">Saved.</p>

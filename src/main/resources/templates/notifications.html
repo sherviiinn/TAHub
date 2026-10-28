@@ -28,9 +28,16 @@
                             th:if="${n.notification.type.name() != 'ANNOUNCEMENT' and n.notification.announcementId != null}"
                             th:text="#{notifications.announcement.edited(${n.notification.title})}">
                         Announcement edited</button>
+                    <!-- Notifications whose text is in messages.properties (like the cafeteria reminder) -->
+                    <button type="submit"
+                            th:if="${n.notification.type.name() != 'ANNOUNCEMENT' and n.notification.announcementId == null
+                                    and n.notification.messageKey != null}"
+                            th:text="#{${n.notification.messageKey}(${n.notification.messageArg})}">
+                        Reminder</button>
                     <!-- Other kinds of notifications show their own text -->
                     <button type="submit"
-                            th:if="${n.notification.type.name() != 'ANNOUNCEMENT' and n.notification.announcementId == null}"
+                            th:if="${n.notification.type.name() != 'ANNOUNCEMENT' and n.notification.announcementId == null
+                                    and n.notification.messageKey == null}"
                             th:text="${n.notification.title}">Title</button>
                 </form>
             </li>

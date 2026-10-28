@@ -25,6 +25,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // Every "announcement was edited" notification of one announcement (read or unread).
     List<Notification> findByAnnouncementId(Long announcementId);
 
+    // Unread notifications of one kind that uses a message key (like every unread cafeteria reminder).
+    List<Notification> findByMessageKeyAndSeenFalse(String messageKey);
+
     long countByUserAndSeenFalse(User user);
 
     List<Notification> findByUserAndSeenFalse(User user);
