@@ -209,3 +209,8 @@ button:hover {
     cursor: pointer;
     color: inherit;
 }
+
+/* ----- Notifications link when there is something unread (updated live) ----- */
+#nav-notifications.has-unread {
+    font-weight: bold;
+}

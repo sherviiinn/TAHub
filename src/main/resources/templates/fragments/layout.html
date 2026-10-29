@@ -16,45 +16,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${pageTitle}">TA Hub</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <!-- Live notification count in the menu -->
+    <script th:src="@{/js/live.js}" defer></script>
 </head>
 
 <body>
-<!-- The menu. The nav* variables come from GlobalModelAttributes. -->
-<nav th:fragment="nav" class="main-nav">
-    <th:block th:if="${navLoggedIn}">
-        <a th:href="@{/}" th:text="#{nav.home}">Home</a>
-        <a th:href="@{/courses}" th:text="#{home.courses}">Courses</a>
-        <a th:if="${navIsStudent or navIsProfessor}" th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
-        <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
-        <a th:href="@{/cafeteria}" th:text="#{nav.cafeteria}">Cafeteria</a>
-        <a th:href="@{/notices}" th:text="#{nav.notices}">Site notices</a>
-        <a th:if="${navIsStudent}" th:href="@{/my-ta-requests}" th:text="#{ta.link.mine}">My TA requests</a>
-        <a th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
-        <a th:href="@{/notifications}" th:text="#{nav.notifications(${navUnreadCount})}">Notifications</a>
+    <!-- The menu. The nav* variables come from GlobalModelAttributes. -->
+    <nav th:fragment="nav" class="main-nav">
+        <th:block th:if="${navLoggedIn}">
+            <a th:href="@{/}" th:text="#{nav.home}">Home</a>
+            <a th:href="@{/courses}" th:text="#{home.courses}">Courses</a>
+            <a th:if="${navIsStudent or navIsProfessor}" th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
+            <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
+            <a th:href="@{/cafeteria}" th:text="#{nav.cafeteria}">Cafeteria</a>
+            <a th:href="@{/notices}" th:text="#{nav.notices}">Site notices</a>
+            <a th:if="${navIsStudent}" th:href="@{/my-ta-requests}" th:text="#{ta.link.mine}">My TA requests</a>
+            <a th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
+            <!-- id and data-* are used by static/js/live.js to update the number without reloading -->
+            <a id="nav-notifications" th:href="@{/notifications}"
+               th:attr="data-label=#{nav.notifications('{0}')},data-stream=@{/notifications/stream}"
+               th:classappend="${navUnreadCount > 0} ? 'has-unread' : ''"
+               th:text="#{nav.notifications(${navUnreadCount})}">Notifications</a>
 
-        <th:block th:if="${navIsAdmin}">
-            <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
-            <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
-            <a th:href="@{/admin/majors}" th:text="#{home.majors}">Manage fields of study</a>
-            <a th:href="@{/admin/foods}" th:text="#{cafeteria.manageFoods}">Manage foods</a>
-        </th:block>
+            <th:block th:if="${navIsAdmin}">
+                <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
+                <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
+                <a th:href="@{/admin/majors}" th:text="#{home.majors}">Manage fields of study</a>
+                <a th:href="@{/admin/foods}" th:text="#{cafeteria.manageFoods}">Manage foods</a>
+            </th:block>
 
-        <a th:href="@{/profile}" th:text="#{home.profile}">My profile</a>
-        <span class="nav-user" th:text="${navFullName}"></span>
-        <form method="post" th:action="@{/logout}" class="nav-logout">
-            <button type="submit" th:text="#{home.logout}">Sign out</button>
-        </form>
-
-        <!-- The top bar: the newest site notice from the admins (navBannerNotice), until the user closes it -->
-        <div class="site-banner" th:if="${navBannerNotice != null}">
-            <a th:href="@{'/notices#notice-' + ${navBannerNotice.id}}"
-               th:text="${navBannerNotice.title}">Notice</a>
-            <form method="post" th:action="@{/notices/{id}/dismiss(id=${navBannerNotice.id})}" class="site-banner-close">
-                <input type="hidden" name="back" th:value="${navCurrentPath}">
-                <button type="submit" th:title="#{notices.close}" th:attr="aria-label=#{notices.close}">&times;</button>
+            <a th:href="@{/profile}" th:text="#{home.profile}">My profile</a>
+            <span class="nav-user" th:text="${navFullName}"></span>
+            <form method="post" th:action="@{/logout}" class="nav-logout">
+                <button type="submit" th:text="#{home.logout}">Sign out</button>
             </form>
-        </div>
-    </th:block>
-</nav>
+
+            <!-- The top bar: the newest site notice from the admins (navBannerNotice), until the user closes it -->
+            <div class="site-banner" th:if="${navBannerNotice != null}">
+                <a th:href="@{'/notices#notice-' + ${navBannerNotice.id}}"
+                   th:text="${navBannerNotice.title}">Notice</a>
+                <form method="post" th:action="@{/notices/{id}/dismiss(id=${navBannerNotice.id})}" class="site-banner-close">
+                    <input type="hidden" name="back" th:value="${navCurrentPath}">
+                    <button type="submit" th:title="#{notices.close}" th:attr="aria-label=#{notices.close}">&times;</button>
+                </form>
+            </div>
+        </th:block>
+    </nav>
 </body>
 </html>
