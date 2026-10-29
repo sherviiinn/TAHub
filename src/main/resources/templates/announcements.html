@@ -7,6 +7,12 @@
         <h1 th:text="#{announcements.title}">Announcements</h1>
         <h2 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h2>
 
+        <!-- The course's Telegram group (everyone who can read this page may see it) -->
+        <p th:if="${offering.telegramLink != null}">
+            <a th:href="${offering.telegramLink}" target="_blank" rel="noopener noreferrer"
+               th:text="#{telegram.link}">Telegram group</a>
+        </p>
+
         <p th:if="${!isCurrentSemester}" th:text="#{announcements.archivedNote}"></p>
         <p th:if="${isCancelled}" th:text="#{course.detail.cancelledBanner}"></p>
 
