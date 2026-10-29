@@ -24,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Live unread counts with Server-Sent Events (SSE).
  * Every open page (tab) of a logged-in user keeps one connection here. When that user's notifications change,
  * the new unread count is pushed to all their tabs, so the menu updates without reloading the page.
+ * The same connection also carries "changed" events (live pages): which topic changed, like "offering:5"
+ * (see LiveTopicListener). A page showing that topic quietly reloads its content.
  * A connection is idle almost all the time: it costs a few KB and no thread while nothing happens.
  */
 @Service
@@ -105,6 +107,18 @@ public class NotificationStream {
         pending.add(userId);
     }
 
+    /**
+     * Tells every open tab that a topic changed. Only the topic name is sent (like "offering:5"),
+     * never data: each page then reloads itself with its own permissions.
+     */
+    public void broadcast(String topic) {
+        connections.forEach((userId, emitters) -> {
+            for (SseEmitter emitter : emitters) {
+                sendChanged(userId, emitter, topic);
+            }
+        });
+    }
+
     /** Every 25 seconds a tiny comment keeps idle connections open (some networks close silent ones). */
     @Scheduled(fixedRate = 25_000)
     public void heartbeat() {
@@ -131,6 +145,8 @@ public class NotificationStream {
                 long count = notificationRepository.countByUserAndSeenFalse(user);
                 for (SseEmitter emitter : emitters) {
                     send(userId, emitter, count);
+                    // The user's notifications page (if open) reloads its list too.
+                    sendChanged(userId, emitter, "notifications");
                 }
             });
         }
@@ -141,6 +157,14 @@ public class NotificationStream {
             emitter.send(SseEmitter.event().name("unread").data(count));
         } catch (IOException | IllegalStateException e) {
             forget(userId, emitter); // the tab was closed
+        }
+    }
+
+    private void sendChanged(Long userId, SseEmitter emitter, String topic) {
+        try {
+            emitter.send(SseEmitter.event().name("changed").data(topic));
+        } catch (IOException | IllegalStateException e) {
+            forget(userId, emitter);
         }
     }
 

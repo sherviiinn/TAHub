@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head(#{notifications.title})}"></head>
 <body>
     <nav th:replace="~{fragments/layout :: nav}"></nav>
-    <main>
+    <main data-live-topics="notifications">
         <h1 th:text="#{notifications.title}">Notifications</h1>
 
         <p th:if="${#lists.isEmpty(notifications)}" th:text="#{notifications.none}">You have no notifications.</p>

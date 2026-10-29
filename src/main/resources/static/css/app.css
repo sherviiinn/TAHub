@@ -214,3 +214,13 @@ button:hover {
 #nav-notifications.has-unread {
     font-weight: bold;
 }
+
+/* ----- Live pages ----- */
+#site-banner-slot {
+    flex-basis: 100%;   /* the top bar takes its own line under the menu links */
+}
+.live-note {
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    background: #e3f2fd;
+}

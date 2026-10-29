@@ -34,7 +34,7 @@
             <a th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
             <!-- id and data-* are used by static/js/live.js to update the number without reloading -->
             <a id="nav-notifications" th:href="@{/notifications}"
-               th:attr="data-label=#{nav.notifications('{0}')},data-stream=@{/notifications/stream}"
+               th:attr="data-label=#{nav.notifications('{0}')},data-stream=@{/notifications/stream},data-form-gone=#{live.formGone}"
                th:classappend="${navUnreadCount > 0} ? 'has-unread' : ''"
                th:text="#{nav.notifications(${navUnreadCount})}">Notifications</a>
 
@@ -51,16 +51,21 @@
                 <button type="submit" th:text="#{home.logout}">Sign out</button>
             </form>
 
-            <!-- The top bar: the newest site notice from the admins (navBannerNotice), until the user closes it -->
-            <div class="site-banner" th:if="${navBannerNotice != null}">
-                <a th:href="@{'/notices#notice-' + ${navBannerNotice.id}}"
-                   th:text="${navBannerNotice.title}">Notice</a>
-                <form method="post" th:action="@{/notices/{id}/dismiss(id=${navBannerNotice.id})}" class="site-banner-close">
-                    <input type="hidden" name="back" th:value="${navCurrentPath}">
-                    <button type="submit" th:title="#{notices.close}" th:attr="aria-label=#{notices.close}">&times;</button>
-                </form>
-            </div>
+            <!-- The top bar (newest site notice). live.js reloads it from /live/banner when it changes. -->
+            <div th:replace="~{fragments/layout :: banner}"></div>
         </th:block>
     </nav>
+
+    <!-- The top bar alone. The slot is always there (empty when there is no notice), so live.js can fill it. -->
+    <div th:fragment="banner" id="site-banner-slot" th:attr="data-url=@{/live/banner}">
+        <div class="site-banner" th:if="${navBannerNotice != null}">
+            <a th:href="@{'/notices#notice-' + ${navBannerNotice.id}}"
+               th:text="${navBannerNotice.title}">Notice</a>
+            <form method="post" th:action="@{/notices/{id}/dismiss(id=${navBannerNotice.id})}" class="site-banner-close">
+                <input type="hidden" name="back" th:value="${navCurrentPath}">
+                <button type="submit" th:title="#{notices.close}" th:attr="aria-label=#{notices.close}">&times;</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

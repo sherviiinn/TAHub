@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head(#{notices.title})}"></head>
 <body>
     <nav th:replace="~{fragments/layout :: nav}"></nav>
-    <main>
+    <main data-live-topics="notices">
         <h1 th:text="#{notices.title}">Site notices</h1>
 
         <!-- Admins: write a new notice -->

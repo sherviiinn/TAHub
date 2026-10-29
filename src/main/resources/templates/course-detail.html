@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${offering.course.code}">Course</title>
-</head>
+<head th:replace="~{fragments/layout :: head(${offering.course.code})}"></head>
 <body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <!-- data-live-topics: this page reloads itself (static/js/live.js) when this offering changes -->
+    <main th:attr="data-live-topics='offering:' + ${offering.id}">
     <h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
 
     <p th:text="#{course.detail.semester(${offering.semester.code})}"></p>
@@ -276,5 +275,6 @@
     </div>
 
     <p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
+    </main>
 </body>
 </html>

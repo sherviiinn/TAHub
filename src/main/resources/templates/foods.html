@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head(#{foods.title})}"></head>
 <body>
     <nav th:replace="~{fragments/layout :: nav}"></nav>
-    <main>
+    <main data-live-topics="cafeteria">
         <h1 th:text="#{foods.title}">Foods</h1>
         <p th:text="#{foods.help}">Only foods in this list can be chosen in the weekly menu.</p>
         <p><a th:href="@{/admin/cafeteria}" th:text="#{foods.backToMenu}">Back to the weekly menu</a></p>
