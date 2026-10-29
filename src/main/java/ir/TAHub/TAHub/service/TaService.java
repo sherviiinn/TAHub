@@ -3,11 +3,17 @@ package ir.TAHub.TAHub.service;
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.Role;
+import ir.TAHub.TAHub.model.TaApplication;
+import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.TaInvitation;
+import ir.TAHub.TAHub.model.TaInvitationStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
+import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
+import ir.TAHub.TAHub.repository.TaInvitationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +30,20 @@ public class TaService {
 
     private final EnrollmentRepository enrollmentRepository;
     private final TaAssignmentRepository taRepository;
+    private final TaInvitationRepository invitationRepository;
+    private final TaApplicationRepository applicationRepository;
+    private final NotificationService notificationService;
 
-    public TaService(EnrollmentRepository enrollmentRepository, TaAssignmentRepository taRepository) {
+    public TaService(EnrollmentRepository enrollmentRepository,
+                     TaAssignmentRepository taRepository,
+                     TaInvitationRepository invitationRepository,
+                     TaApplicationRepository applicationRepository,
+                     NotificationService notificationService) {
         this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
+        this.invitationRepository = invitationRepository;
+        this.applicationRepository = applicationRepository;
+        this.notificationService = notificationService;
     }
 
     /** Returns the message key of the first problem, or null if this person can become a TA of the offering. */
@@ -50,6 +66,45 @@ public class TaService {
             return "ta.error.already";
         }
         return null;
+    }
+
+    /**
+     * Call this whenever someone becomes an active student of an offering (join code, class list,
+     * registration, or the professor bringing them back). A student cannot be a TA of the same course,
+     * so their waiting TA invitations and TA requests for ANY group of this course this semester are closed:
+     * invitations become CANCELLED (the inviter is told), requests become WITHDRAWN.
+     */
+    @Transactional
+    public void onBecameStudent(User student, CourseOffering offering) {
+        for (TaInvitation invitation : invitationRepository
+                .findByInviteeAndStatusOrderByCreatedAtDesc(student, TaInvitationStatus.PENDING)) {
+            if (sameCourseAndSemester(invitation.getOffering(), offering)) {
+                closeInvitation(invitation);
+            }
+        }
+        for (TaApplication application : applicationRepository.findByStudentOrderByIdDesc(student)) {
+            if (application.getStatus() == TaApplicationStatus.PENDING
+                    && sameCourseAndSemester(application.getOffering(), offering)) {
+                application.setStatus(TaApplicationStatus.WITHDRAWN);
+                application.setDecidedAt(Instant.now());
+                applicationRepository.save(application);
+            }
+        }
+    }
+
+    /** Closes a waiting invitation that can no longer be accepted, and tells the people who sent it. */
+    @Transactional
+    public void closeInvitation(TaInvitation invitation) {
+        invitation.setStatus(TaInvitationStatus.CANCELLED);
+        invitation.setDecidedAt(Instant.now());
+        invitationRepository.save(invitation);
+        notificationService.onTaInvitationCancelled(invitation);
+        notificationService.notifyTaInvitationClosed(invitation);
+    }
+
+    private boolean sameCourseAndSemester(CourseOffering a, CourseOffering b) {
+        return a.getCourse().getId().equals(b.getCourse().getId())
+                && a.getSemester().getId().equals(b.getSemester().getId());
     }
 
     /** Is this person an active student of any group (offering) of this course in this semester? */

@@ -85,12 +85,29 @@
             </li>
         </ul>
 
+        <!-- Waiting invitations (the professor and TAs who manage the team) -->
+        <th:block th:if="${pendingInvitations != null and !#lists.isEmpty(pendingInvitations)}">
+            <h3 th:text="#{ta.invitations.pending(${#lists.size(pendingInvitations)})}">Waiting invitations</h3>
+            <ul>
+                <li th:each="r : ${pendingInvitations}">
+                    <span th:text="${r.invitation.invitee.fullName} + ' (' + ${r.invitation.invitee.studentNumber} + ')'"></span>
+                    <small th:text="#{ta.invitations.by(${r.invitation.invitedBy.fullName})}">invited by</small>
+                    <form th:if="${r.canCancel}" method="post"
+                          th:action="@{/ta-invitations/{iid}/cancel(iid=${r.invitation.id})}">
+                        <button type="submit" th:text="#{ta.invitations.cancel}">Cancel invitation</button>
+                    </form>
+                </li>
+            </ul>
+        </th:block>
+
+        <!-- Invite a TA: they become a TA only after they accept -->
         <th:block th:if="${(canManage or canManageTeam) and isCurrentSemester and !isCancelled}">
             <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
+            <p th:if="${taInvitedName}" th:text="#{ta.invitations.sent(${taInvitedName})}">Invitation sent.</p>
             <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
                 <label for="taNumber" th:text="#{ta.studentNumber}">Student number</label>
                 <input type="text" id="taNumber" name="studentNumber" maxlength="20" required autocomplete="off">
-                <button type="submit" th:text="#{ta.add}">Add TA</button>
+                <button type="submit" th:text="#{ta.invite}">Invite as TA</button>
             </form>
         </th:block>
     </div>

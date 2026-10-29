@@ -8,6 +8,7 @@ import ir.TAHub.TAHub.model.Notification;
 import ir.TAHub.TAHub.model.NotificationType;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.SiteNotice;
+import ir.TAHub.TAHub.model.TaInvitation;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
@@ -37,6 +38,11 @@ public class NotificationService {
     public static final String TA_ADDED_KEY = "notifications.ta.added";
     public static final String TA_PERMISSIONS_KEY = "notifications.ta.permissions";
     public static final String TA_REQUEST_KEY = "notifications.ta.request";
+    public static final String TA_INVITED_KEY = "notifications.ta.invited";
+    public static final String TA_INVITATION_ACCEPTED_KEY = "notifications.ta.invitationAccepted";
+    public static final String TA_INVITATION_DECLINED_KEY = "notifications.ta.invitationDeclined";
+    public static final String TA_INVITATION_CLOSED_KEY = "notifications.ta.invitationClosed";
+    private static final String MY_TA_REQUESTS_LINK = "/my-ta-requests";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
 
@@ -408,6 +414,69 @@ public class NotificationService {
             notification.setMessageArg(course);
         }
         notificationRepository.save(notification);
+    }
+
+    /** A student was invited to be a TA: "You were invited to be a TA of CS201 - ...". */
+    @Transactional
+    public void notifyTaInvited(TaInvitation invitation) {
+        Notification notification = create(invitation.getInvitee(), NotificationType.GENERAL,
+                "TA invitation", MY_TA_REQUESTS_LINK);
+        notification.setMessageKey(TA_INVITED_KEY);
+        notification.setMessageArg(courseName(invitation.getOffering()));
+        notificationRepository.save(notification);
+    }
+
+    /** An invitation was cancelled: its unread "you were invited" notification is removed. */
+    @Transactional
+    public void onTaInvitationCancelled(TaInvitation invitation) {
+        String course = courseName(invitation.getOffering());
+        notificationRepository.deleteAll(notificationRepository
+                .findByMessageKeyAndLinkAndSeenFalse(TA_INVITED_KEY, MY_TA_REQUESTS_LINK).stream()
+                .filter(n -> n.getUser().getId().equals(invitation.getInvitee().getId())
+                        && course.equals(n.getMessageArg()))
+                .toList());
+    }
+
+    /**
+     * The student answered an invitation. The person who invited is told; if that was a TA,
+     * the professor of the offering is told too. Text like "TA invitation accepted: Sara Ahmadi - CS201 - ...".
+     */
+    @Transactional
+    public void notifyTaInvitationAnswered(TaInvitation invitation, boolean accepted) {
+        notifyInviters(invitation, accepted ? TA_INVITATION_ACCEPTED_KEY : TA_INVITATION_DECLINED_KEY);
+    }
+
+    /**
+     * An invitation was closed because the student can no longer be a TA of this course (for example they
+     * became one of its students). The person who invited, and the professor if a TA invited, are told.
+     */
+    @Transactional
+    public void notifyTaInvitationClosed(TaInvitation invitation) {
+        notifyInviters(invitation, TA_INVITATION_CLOSED_KEY);
+    }
+
+    private void notifyInviters(TaInvitation invitation, String key) {
+        String arg = invitation.getInvitee().getFullName() + " - " + courseName(invitation.getOffering());
+        String link = "/courses/" + invitation.getOffering().getId();
+
+        List<User> told = new ArrayList<>();
+        told.add(invitation.getInvitedBy());
+        User professor = invitation.getOffering().getProfessor();
+        if (!professor.getId().equals(invitation.getInvitedBy().getId())) {
+            told.add(professor);
+        }
+        List<Notification> notifications = new ArrayList<>();
+        for (User user : told) {
+            Notification notification = create(user, NotificationType.GENERAL, "TA invitation answered", link);
+            notification.setMessageKey(key);
+            notification.setMessageArg(arg);
+            notifications.add(notification);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    private String courseName(CourseOffering offering) {
+        return offering.getCourse().getCode() + " - " + offering.getCourse().getName();
     }
 
     private List<User> students() {
