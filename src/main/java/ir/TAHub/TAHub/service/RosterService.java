@@ -87,8 +87,8 @@ public class RosterService {
                 waiting++; // enrolled automatically when they register
                 continue;
             }
-            // Only students are enrolled, and never a TA of this same offering.
-            if (user.getRole() != Role.STUDENT || taRepository.existsByUserAndOfferingAndActiveTrue(user, offering)) {
+            // Only students are enrolled, and never a TA of this course (any of its groups this semester).
+            if (user.getRole() != Role.STUDENT || isTaOfAnyGroup(user, offering)) {
                 skipped++;
                 continue;
             }
@@ -120,10 +120,18 @@ public class RosterService {
             if (!offering.getSemester().isActive() || offering.isCancelled()) {
                 continue;
             }
+            if (isTaOfAnyGroup(student, offering)) {
+                continue; // a TA of this course is not made one of its students
+            }
             if (enrollmentRepository.findByStudentAndOffering(student, offering).isEmpty()) {
                 enrollmentRepository.save(newRosterEnrollment(student, offering));
             }
         }
+    }
+
+    private boolean isTaOfAnyGroup(User user, CourseOffering offering) {
+        return taRepository.existsByUserAndOfferingCourseAndOfferingSemesterAndActiveTrue(
+                user, offering.getCourse(), offering.getSemester());
     }
 
     private Enrollment newRosterEnrollment(User student, CourseOffering offering) {

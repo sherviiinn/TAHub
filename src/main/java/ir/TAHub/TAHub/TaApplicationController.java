@@ -118,6 +118,9 @@ public class TaApplicationController {
         application.setCreatedAt(Instant.now());
         application.setDecidedAt(null);
         applicationRepository.save(application);
+
+        // The professor of the course is told (with a link to the TA requests page).
+        notificationService.notifyTaRequest(offering);
         return "redirect:/courses/" + id;
     }
 

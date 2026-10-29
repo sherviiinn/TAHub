@@ -147,6 +147,15 @@ public class CourseController {
         model.addAttribute("teachingAssistants", taRows);
         boolean isTa = taRepository.existsByUserAndOfferingAndActiveTrue(current, offering);
         model.addAttribute("isTa", isTa);
+        // The same course can have several groups (offerings) this semester. A student of one group
+        // cannot be a TA of another, and a TA of one group cannot be a student of another.
+        boolean taOfOtherGroup = !isTa && isStudent && taRepository
+                .existsByUserAndOfferingCourseAndOfferingSemesterAndActiveTrue(current, offering.getCourse(), offering.getSemester());
+        boolean studentOfOtherGroup = isStudent && myStatus != EnrollmentStatus.ACTIVE && enrollmentRepository
+                .existsByStudentAndOfferingCourseAndOfferingSemesterAndStatus(
+                        current, offering.getCourse(), offering.getSemester(), EnrollmentStatus.ACTIVE);
+        model.addAttribute("isTaOfOtherGroup", taOfOtherGroup);
+        model.addAttribute("isStudentOfOtherGroup", studentOfOtherGroup);
         if (isTa) {
             // A TA sees what they are allowed to do here.
             model.addAttribute("myTaPermissions", permissions);

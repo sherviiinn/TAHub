@@ -43,7 +43,8 @@
                 </ul>
                 <p th:if="${#sets.isEmpty(myTaPermissions)}" th:text="#{ta.myPermissions.none}">Nothing yet.</p>
             </th:block>
-            <th:block th:if="${!isEnrolled and !wasRemoved and !isTa}">
+            <p th:if="${isTaOfOtherGroup}" th:text="#{course.detail.taOfOtherGroup}"></p>
+            <th:block th:if="${!isEnrolled and !wasRemoved and !isTa and !isTaOfOtherGroup}">
                 <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
                 <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
 
@@ -99,8 +100,11 @@
         <h2 th:text="#{ta.apply.title}">Become a TA</h2>
         <p th:if="${taApplyErrorKey}" th:text="#{${taApplyErrorKey}}"></p>
 
+        <!-- A student of another group of this course cannot be a TA here -->
+        <p th:if="${isStudentOfOtherGroup}" th:text="#{ta.apply.error.otherGroup}">You are a student of another group.</p>
+
         <!-- No request yet, or the student took the old one back -->
-        <form th:if="${myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN'}" method="post"
+        <form th:if="${!isStudentOfOtherGroup and (myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN')}" method="post"
               th:action="@{/courses/{id}/ta-applications(id=${offering.id})}">
             <label for="taMessage" th:text="#{ta.apply.messageLabel}">Message</label><br>
             <textarea id="taMessage" name="message" rows="4" cols="40" maxlength="500"></textarea><br>
