@@ -31,6 +31,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // Every notification that points to one place (used to remove the notifications of a deleted site notice).
     List<Notification> findByLink(String link);
 
+    // Unread notifications of one kind about one place (like the "Telegram link updated" ones of one course).
+    List<Notification> findByMessageKeyAndLinkAndSeenFalse(String messageKey, String link);
+
     long countByUserAndSeenFalse(User user);
 
     List<Notification> findByUserAndSeenFalse(User user);

@@ -18,7 +18,10 @@
         <a th:href="@{/courses/{id}/announcements(id=${offering.id})}"
            th:text="#{announcements.link(${announcementCount})}">Announcements</a>
     </p>
-
+    <p th:if="${canSeeAnnouncements and offering.telegramLink != null}">
+        <a th:href="${offering.telegramLink}" target="_blank" rel="noopener noreferrer"
+           th:text="#{telegram.link}">Telegram group</a>
+    </p>
     <!-- What a student sees about their own enrollment -->
     <div th:if="${isStudent}">
 
@@ -151,6 +154,18 @@
               th:action="@{/courses/{id}/uncancel(id=${offering.id})}">
             <button type="submit" th:text="#{course.detail.uncancel}">Restore this offering</button>
         </form>
+    </div>
+
+    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+        <h2 th:text="#{telegram.title}">Telegram group</h2>
+        <p th:if="${telegramSaved}" th:text="#{telegram.saved}">Saved.</p>
+        <p th:if="${telegramErrorKey}" th:text="#{${telegramErrorKey}}"></p>
+        <form method="post" th:action="@{/courses/{id}/telegram(id=${offering.id})}">
+            <input type="url" name="link" maxlength="200" placeholder="https://t.me/..." autocomplete="off"
+                   th:value="${offering.telegramLink}">
+            <button type="submit" th:text="#{telegram.save}">Save</button>
+        </form>
+        <small th:text="#{telegram.help}">Leave the box empty to remove the link.</small>
     </div>
 
     <!-- Professor and admin: join code (not for cancelled offerings) -->

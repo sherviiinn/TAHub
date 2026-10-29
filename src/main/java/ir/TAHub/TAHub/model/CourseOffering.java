@@ -40,6 +40,14 @@ public class CourseOffering {
     @Column(nullable = false)
     private boolean taApplicationsOpen;
 
+    // Add these to CourseOffering.java (model). Put the field next to the other fields
+// (for example under taApplicationsOpen), and the two methods next to the other getters and setters.
+// The column is optional (nullable), so Hibernate adds it by itself: no ALTER needed.
+
+    /** Link to the course's Telegram group (https://t.me/...). Empty if the professor has not set one. */
+    @Column(length = 200)
+    private String telegramLink;
+
     public CourseOffering() {
     }
 
@@ -70,4 +78,8 @@ public class CourseOffering {
 
     public boolean isTaApplicationsOpen() { return taApplicationsOpen; }
     public void setTaApplicationsOpen(boolean taApplicationsOpen) { this.taApplicationsOpen = taApplicationsOpen; }
+
+    public String getTelegramLink() { return telegramLink; }
+    public void setTelegramLink(String telegramLink) { this.telegramLink = telegramLink; }
+
 }

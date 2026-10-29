@@ -33,6 +33,7 @@ public class NotificationService {
     public static final String CAFETERIA_MENU_CHANGED_KEY = "notifications.cafeteria.menuChanged";
     public static final String NOTICE_NEW_KEY = "notifications.notice.new";
     public static final String NOTICE_EDITED_KEY = "notifications.notice.edited";
+    public static final String TELEGRAM_KEY = "notifications.telegram.updated";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
 
@@ -320,6 +321,37 @@ public class NotificationService {
     @Transactional
     public void onSiteNoticeDeleted(SiteNotice notice) {
         notificationRepository.deleteAll(notificationRepository.findByLink(notice.getLink()));
+    }
+
+    /**
+     * The Telegram link of an offering was set or changed: every enrolled student is told
+     * ("Telegram group link updated in CS201 - ..."). One unread notification per course: it just moves up.
+     */
+    @Transactional
+    public void notifyTelegramLink(CourseOffering offering) {
+        String title = offering.getCourse().getCode() + " - " + offering.getCourse().getName();
+        String link = "/courses/" + offering.getId();
+
+        Map<Long, Notification> unread = new HashMap<>();
+        for (Notification old : notificationRepository.findByMessageKeyAndLinkAndSeenFalse(TELEGRAM_KEY, link)) {
+            unread.putIfAbsent(old.getUser().getId(), old);
+        }
+
+        List<Notification> notifications = new ArrayList<>();
+        for (Enrollment enrollment : enrollmentRepository
+                .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.ACTIVE)) {
+            User student = enrollment.getStudent();
+            Notification notification = unread.get(student.getId());
+            if (notification != null) {
+                notification.setCreatedAt(Instant.now());
+            } else {
+                notification = create(student, NotificationType.GENERAL, "Telegram link updated", link);
+                notification.setMessageKey(TELEGRAM_KEY);
+                notification.setMessageArg(title);
+            }
+            notifications.add(notification);
+        }
+        notificationRepository.saveAll(notifications);
     }
 
     private List<User> students() {
