@@ -3,6 +3,7 @@ package ir.TAHub.TAHub.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,6 +21,8 @@ import java.time.Instant;
  */
 @Entity
 @Table(name = "notifications")
+// Every time a notification is created, changed or removed, its owner's open pages are told (live count).
+@EntityListeners(NotificationLiveListener.class)
 public class Notification {
 
     @Id
