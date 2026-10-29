@@ -100,6 +100,8 @@ public class EnrollmentController {
         boolean onList = rosterRepository.existsByOfferingAndStudentNumber(offering, student.getStudentNumber());
         enrollment.setSource(onList ? EnrollmentSource.ROSTER : EnrollmentSource.JOIN_CODE);
         changeStatus(enrollment, EnrollmentStatus.ACTIVE);
+        // A student of this course cannot be its TA: waiting TA invitations and requests are closed.
+        taService.onBecameStudent(student, offering);
         return "redirect:/courses/" + id;
     }
 
@@ -139,7 +141,10 @@ public class EnrollmentController {
 
         findEnrollment(studentId, offering)
                 .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.REMOVED)
-                .ifPresent(enrollment -> changeStatus(enrollment, EnrollmentStatus.ACTIVE));
+                .ifPresent(enrollment -> {
+                    changeStatus(enrollment, EnrollmentStatus.ACTIVE);
+                    taService.onBecameStudent(enrollment.getStudent(), offering);
+                });
         return "redirect:/courses/" + id;
     }
 

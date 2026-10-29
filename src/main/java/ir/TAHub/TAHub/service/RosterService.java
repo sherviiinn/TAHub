@@ -38,15 +38,18 @@ public class RosterService {
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final TaAssignmentRepository taRepository;
+    private final TaService taService;
 
     public RosterService(RosterEntryRepository rosterRepository,
                          UserRepository userRepository,
                          EnrollmentRepository enrollmentRepository,
-                         TaAssignmentRepository taRepository) {
+                         TaAssignmentRepository taRepository,
+                         TaService taService) {
         this.rosterRepository = rosterRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
+        this.taService = taService;
     }
 
     /** Splits the text on spaces, new lines, commas and semicolons. Duplicates are removed. */
@@ -96,6 +99,7 @@ public class RosterService {
             Enrollment enrollment = enrollmentRepository.findByStudentAndOffering(user, offering).orElse(null);
             if (enrollment == null) {
                 enrollmentRepository.save(newRosterEnrollment(user, offering));
+                taService.onBecameStudent(user, offering); // waiting TA invitations and requests are closed
                 enrolled++;
             } else if (enrollment.getStatus() == EnrollmentStatus.ACTIVE) {
                 // Already in the course (maybe with the join code): now confirmed by the official list.
@@ -125,6 +129,7 @@ public class RosterService {
             }
             if (enrollmentRepository.findByStudentAndOffering(student, offering).isEmpty()) {
                 enrollmentRepository.save(newRosterEnrollment(student, offering));
+                taService.onBecameStudent(student, offering);
             }
         }
     }

@@ -59,6 +59,9 @@ public class TaInvitationController {
         Set<TaPermission> start = invitation.isByManager() ? TaPermission.defaults() : EnumSet.noneOf(TaPermission.class);
         String problem = taService.assign(current, offering, start);
         if (problem != null && !problem.equals("ta.error.already")) {
+            // It can never work now (for example they became a student of this course): close it, so it
+            // does not stay "waiting" forever, and tell the people who sent it.
+            taService.closeInvitation(invitation);
             redirect.addFlashAttribute("invitationErrorKey", problem.replace("ta.error.", "ta.apply.error."));
             return "redirect:/my-ta-requests";
         }

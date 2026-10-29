@@ -41,6 +41,7 @@ public class NotificationService {
     public static final String TA_INVITED_KEY = "notifications.ta.invited";
     public static final String TA_INVITATION_ACCEPTED_KEY = "notifications.ta.invitationAccepted";
     public static final String TA_INVITATION_DECLINED_KEY = "notifications.ta.invitationDeclined";
+    public static final String TA_INVITATION_CLOSED_KEY = "notifications.ta.invitationClosed";
     private static final String MY_TA_REQUESTS_LINK = "/my-ta-requests";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
@@ -442,7 +443,19 @@ public class NotificationService {
      */
     @Transactional
     public void notifyTaInvitationAnswered(TaInvitation invitation, boolean accepted) {
-        String key = accepted ? TA_INVITATION_ACCEPTED_KEY : TA_INVITATION_DECLINED_KEY;
+        notifyInviters(invitation, accepted ? TA_INVITATION_ACCEPTED_KEY : TA_INVITATION_DECLINED_KEY);
+    }
+
+    /**
+     * An invitation was closed because the student can no longer be a TA of this course (for example they
+     * became one of its students). The person who invited, and the professor if a TA invited, are told.
+     */
+    @Transactional
+    public void notifyTaInvitationClosed(TaInvitation invitation) {
+        notifyInviters(invitation, TA_INVITATION_CLOSED_KEY);
+    }
+
+    private void notifyInviters(TaInvitation invitation, String key) {
         String arg = invitation.getInvitee().getFullName() + " - " + courseName(invitation.getOffering());
         String link = "/courses/" + invitation.getOffering().getId();
 
