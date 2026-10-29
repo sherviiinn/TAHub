@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{ta.permissions.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+        <h1 th:text="#{ta.permissions.title}">TA permissions</h1>
+        <h2 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h2>
+        <p th:text="#{ta.permissions.for(${target.user.fullName}, ${target.user.studentNumber})}">For</p>
+
+        <!-- A TA who gives permissions can only change the ones they have themselves -->
+        <p th:unless="${isManager}" th:text="#{ta.permissions.onlyYours}">You can only change what you have.</p>
+
+        <form method="post"
+              th:action="@{/courses/{id}/tas/{uid}/permissions(id=${offering.id},uid=${target.user.id})}">
+            <ul class="permission-list">
+                <li th:each="r : ${rows}">
+                    <label>
+                        <input type="checkbox" name="permission" th:value="${r.permission.name()}"
+                               th:checked="${r.checked}" th:disabled="${!r.editable}">
+                        <span th:text="#{${'ta.permission.' + r.permission.name()}}">Permission</span>
+                    </label>
+                </li>
+            </ul>
+            <button type="submit" th:text="#{ta.permissions.save}">Save</button>
+        </form>
+
+        <p><a th:href="@{/courses/{id}(id=${offering.id})}" th:text="#{announcements.backToCourse}">Back to the course</a></p>
+    </main>
+</body>
+</html>
