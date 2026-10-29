@@ -2,10 +2,13 @@ package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.TaInvitation;
+import ir.TAHub.TAHub.model.TaInvitationStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
+import ir.TAHub.TAHub.repository.TaInvitationRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
 import ir.TAHub.TAHub.service.NotificationStream;
@@ -23,14 +26,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Adding and removing the TAs of an offering, and choosing what each TA may do.
- * Who may add and remove TAs: the professor (and admins), and TAs with "Manage TA team".
+ * Inviting and removing the TAs of an offering, and choosing what each TA may do.
+ * Nobody becomes a TA without saying yes: "Add TA" sends an invitation (see TaInvitationController).
+ * Who may invite and remove TAs: the professor (and admins), and TAs with "Manage TA team".
  *   A TA cannot remove themselves or another TA who also has "Manage TA team" (only the professor can).
  * Who may change a TA's permissions: the professor (and admins), and TAs with "Give permissions".
  *   Such a TA only changes the permissions they have themselves, never their own permissions, and never
@@ -47,6 +52,7 @@ public class TaController {
     private final UserRepository userRepository;
     private final CourseOfferingRepository offeringRepository;
     private final TaAssignmentRepository taRepository;
+    private final TaInvitationRepository invitationRepository;
     private final TaService taService;
     private final OfferingAccess access;
     private final NotificationService notificationService;
@@ -55,6 +61,7 @@ public class TaController {
     public TaController(UserRepository userRepository,
                         CourseOfferingRepository offeringRepository,
                         TaAssignmentRepository taRepository,
+                        TaInvitationRepository invitationRepository,
                         TaService taService,
                         OfferingAccess access,
                         NotificationService notificationService,
@@ -62,6 +69,7 @@ public class TaController {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.taRepository = taRepository;
+        this.invitationRepository = invitationRepository;
         this.taService = taService;
         this.access = access;
         this.notificationService = notificationService;
@@ -84,20 +92,28 @@ public class TaController {
         String number = Digits.toAscii(studentNumber).trim();
         User candidate = number.isEmpty() ? null : userRepository.findByStudentNumber(number).orElse(null);
 
-        // The professor's new TA starts with the defaults; a TA's new teammate starts with nothing,
-        // and then gets permissions from someone who may give them.
-        Set<TaPermission> start = manager ? TaPermission.defaults() : EnumSet.noneOf(TaPermission.class);
-        String errorKey = candidate == null ? "ta.error.notFound" : taService.assign(candidate, offering, start);
+        // The same rules as for becoming a TA are checked now (and again when the student accepts).
+        String errorKey = candidate == null ? "ta.error.notFound" : taService.findProblem(candidate, offering);
+        if (errorKey == null
+                && invitationRepository.existsByInviteeAndOfferingAndStatus(candidate, offering, TaInvitationStatus.PENDING)) {
+            errorKey = "ta.error.alreadyInvited";
+        }
         if (errorKey != null) {
             redirect.addFlashAttribute("taErrorKey", errorKey);
             return "redirect:/courses/" + id;
         }
 
-        notificationService.notifyTaAdded(offering, candidate);
-        // The professor goes straight to the permissions of the new TA, to change the defaults if needed.
-        if (manager) {
-            return "redirect:/courses/" + id + "/tas/" + candidate.getId() + "/permissions";
-        }
+        TaInvitation invitation = new TaInvitation();
+        invitation.setOffering(offering);
+        invitation.setInvitee(candidate);
+        invitation.setInvitedBy(current);
+        invitation.setByManager(manager); // the professor's invitations start with the default permissions
+        invitation.setStatus(TaInvitationStatus.PENDING);
+        invitation.setCreatedAt(Instant.now());
+        invitationRepository.save(invitation);
+
+        notificationService.notifyTaInvited(invitation);
+        redirect.addFlashAttribute("taInvitedName", candidate.getFullName());
         return "redirect:/courses/" + id;
     }
 

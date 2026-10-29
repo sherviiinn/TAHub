@@ -7,6 +7,8 @@ import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.TaInvitation;
+import ir.TAHub.TAHub.model.TaInvitationStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.Role;
@@ -19,6 +21,7 @@ import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
+import ir.TAHub.TAHub.repository.TaInvitationRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.OfferingAccess;
@@ -47,6 +50,10 @@ public class CourseController {
     public record TaRow(TaAssignment assignment, boolean canRemove, boolean canEditPermissions) {
     }
 
+    /** A waiting TA invitation, and whether the current user may take it back. */
+    public record InvitationRow(TaInvitation invitation, boolean canCancel) {
+    }
+
     private final CourseOfferingRepository offeringRepository;
     private final CourseRepository courseRepository;
     private final SemesterRepository semesterRepository;
@@ -57,6 +64,7 @@ public class CourseController {
     private final TaApplicationRepository applicationRepository;
     private final AnnouncementRepository announcementRepository;
     private final OfferingAccess access;
+    private final TaInvitationRepository invitationRepository;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -67,7 +75,8 @@ public class CourseController {
                             TaAssignmentRepository taRepository,
                             TaApplicationRepository applicationRepository,
                             AnnouncementRepository announcementRepository,
-                            OfferingAccess access) {
+                            OfferingAccess access,
+                            TaInvitationRepository invitationRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -78,6 +87,7 @@ public class CourseController {
         this.applicationRepository = applicationRepository;
         this.announcementRepository = announcementRepository;
         this.access = access;
+        this.invitationRepository = invitationRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -145,6 +155,16 @@ public class CourseController {
                         open && access.canEditTaPermissions(current, offering, ta)))
                 .toList();
         model.addAttribute("teachingAssistants", taRows);
+
+        // Waiting invitations: seen by the professor and by TAs who manage the team.
+        // The professor cancels any; a TA only the ones they sent.
+        if (canManage || canManageTeam) {
+            model.addAttribute("pendingInvitations", invitationRepository
+                    .findByOfferingAndStatusOrderByCreatedAtAsc(offering, TaInvitationStatus.PENDING).stream()
+                    .map(i -> new InvitationRow(i, open
+                            && (canManage || i.getInvitedBy().getId().equals(current.getId()))))
+                    .toList());
+        }
         boolean isTa = taRepository.existsByUserAndOfferingAndActiveTrue(current, offering);
         model.addAttribute("isTa", isTa);
         // The same course can have several groups (offerings) this semester. A student of one group

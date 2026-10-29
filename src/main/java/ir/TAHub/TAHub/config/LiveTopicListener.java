@@ -11,6 +11,7 @@ import ir.TAHub.TAHub.model.SiteNotice;
 import ir.TAHub.TAHub.model.SiteNoticeDismissal;
 import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.TaInvitation;
 import ir.TAHub.TAHub.service.NotificationStream;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
@@ -35,7 +36,7 @@ import java.util.Set;
  * This listens to Hibernate for all tables at once, so no controller has to remember to do it.
  *
  * Topics:  offering:<id>  course page and its announcements
- *          ta-requests    the TA request pages
+ *          ta-requests    the TA request pages (requests and invitations)
  *          notices        site notices page;  banner  the yellow top bar
  *          cafeteria      cafeteria pages
  *          (notifications pages are told separately, only to their owner, by NotificationStream)
@@ -108,6 +109,9 @@ public class LiveTopicListener
             topics.add("ta-requests");
         } else if (entity instanceof TaApplication application) {
             topics.add(offeringTopic(application.getOffering()));
+            topics.add("ta-requests");
+        } else if (entity instanceof TaInvitation invitation) {
+            topics.add(offeringTopic(invitation.getOffering()));
             topics.add("ta-requests");
         } else if (entity instanceof Announcement announcement) {
             topics.add(offeringTopic(announcement.getOffering()));

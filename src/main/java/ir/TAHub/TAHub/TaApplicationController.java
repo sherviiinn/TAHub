@@ -4,9 +4,11 @@ import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaApplicationStatus;
+import ir.TAHub.TAHub.model.TaInvitationStatus;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
+import ir.TAHub.TAHub.repository.TaInvitationRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
 import ir.TAHub.TAHub.service.TaService;
@@ -34,17 +36,20 @@ public class TaApplicationController {
     private final UserRepository userRepository;
     private final CourseOfferingRepository offeringRepository;
     private final TaApplicationRepository applicationRepository;
+    private final TaInvitationRepository invitationRepository;
     private final TaService taService;
     private final NotificationService notificationService;
 
     public TaApplicationController(UserRepository userRepository,
                                    CourseOfferingRepository offeringRepository,
                                    TaApplicationRepository applicationRepository,
+                                   TaInvitationRepository invitationRepository,
                                    TaService taService,
                                    NotificationService notificationService) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.applicationRepository = applicationRepository;
+        this.invitationRepository = invitationRepository;
         this.taService = taService;
         this.notificationService = notificationService;
     }
@@ -148,6 +153,11 @@ public class TaApplicationController {
             return "redirect:/";
         }
         model.addAttribute("applications", applicationRepository.findByStudentOrderByIdDesc(student));
+        // Invitations still waiting for an answer, only for offerings that are still open.
+        model.addAttribute("invitations", invitationRepository
+                .findByInviteeAndStatusOrderByCreatedAtDesc(student, TaInvitationStatus.PENDING).stream()
+                .filter(i -> i.getOffering().getSemester().isActive() && !i.getOffering().isCancelled())
+                .toList());
         return "my-ta-requests";
     }
 

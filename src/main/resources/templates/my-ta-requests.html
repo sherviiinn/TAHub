@@ -6,6 +6,26 @@
     <main data-live-topics="ta-requests">
     <h1 th:text="#{ta.mine.title}">My TA requests</h1>
 
+    <!-- Invitations: someone wants this student as a TA -->
+    <h2 th:text="#{ta.invitations.title}">Invitations</h2>
+    <p th:if="${invitationErrorKey}" th:text="#{${invitationErrorKey}}"></p>
+    <p th:if="${#lists.isEmpty(invitations)}" th:text="#{ta.invitations.none}">No invitations.</p>
+    <ul th:unless="${#lists.isEmpty(invitations)}">
+        <li th:each="i : ${invitations}">
+            <a th:href="@{/courses/{id}(id=${i.offering.id})}"
+               th:text="${i.offering.course.code} + ' - ' + ${i.offering.course.name}"></a>
+            <small th:text="#{ta.invitations.by(${i.invitedBy.fullName})}">invited by</small>
+            <form method="post" th:action="@{/ta-invitations/{id}/accept(id=${i.id})}">
+                <button type="submit" th:text="#{ta.invitations.accept}">Accept</button>
+            </form>
+            <form method="post" th:action="@{/ta-invitations/{id}/decline(id=${i.id})}">
+                <button type="submit" th:text="#{ta.invitations.decline}">Decline</button>
+            </form>
+        </li>
+    </ul>
+
+    <h2 th:text="#{ta.mine.requestsTitle}">My requests</h2>
+
     <p th:if="${#lists.isEmpty(applications)}" th:text="#{ta.mine.none}">You have not sent any TA request.</p>
 
     <table border="1" th:unless="${#lists.isEmpty(applications)}">
