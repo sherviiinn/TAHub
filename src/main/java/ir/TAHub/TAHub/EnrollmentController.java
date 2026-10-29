@@ -5,12 +5,14 @@ import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.EnrollmentSource;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.Role;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.OfferingAccess;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -23,7 +25,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.Optional;
 
-/** Enrolling, dropping, removing and restoring students, and managing the join code. */
+/**
+ * Enrolling, dropping, removing and restoring students, and managing the join code.
+ * Removing, restoring and the join code: the professor (and admins) or a TA with "Manage students".
+ */
 @Controller
 public class EnrollmentController {
 
@@ -32,17 +37,20 @@ public class EnrollmentController {
     private final EnrollmentRepository enrollmentRepository;
     private final RosterEntryRepository rosterRepository;
     private final TaAssignmentRepository taRepository;
+    private final OfferingAccess access;
 
     public EnrollmentController(UserRepository userRepository,
                                 CourseOfferingRepository offeringRepository,
                                 EnrollmentRepository enrollmentRepository,
                                 RosterEntryRepository rosterRepository,
-                                TaAssignmentRepository taRepository) {
+                                TaAssignmentRepository taRepository,
+                                OfferingAccess access) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.rosterRepository = rosterRepository;
         this.taRepository = taRepository;
+        this.access = access;
     }
 
     @PostMapping("/courses/{id}/enroll")
@@ -159,13 +167,16 @@ public class EnrollmentController {
     }
 
     /**
-     * Loads the offering and checks that the current user may manage it.
+     * Loads the offering and checks that the current user may manage its students:
+     * the professor (and admins), or a TA with "Manage students" (TAs only in an uncancelled offering).
      * URL rules cannot know who owns an offering, so we check it here.
      */
     private CourseOffering findManagedOffering(Long id, Authentication authentication) {
         User current = currentUser(authentication);
         CourseOffering offering = findOffering(id);
-        if (!offering.isManagedBy(current) || !offering.getSemester().isActive()) {
+        boolean allowed = offering.isManagedBy(current)
+                || (!offering.isCancelled() && access.can(current, offering, TaPermission.MANAGE_STUDENTS));
+        if (!allowed || !offering.getSemester().isActive()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         return offering;

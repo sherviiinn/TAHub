@@ -4,6 +4,7 @@ import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Set;
 
 /** The rules for making someone a TA. Used both when a professor adds a TA and when a request is accepted. */
 @Service
@@ -42,9 +44,12 @@ public class TaService {
         return null;
     }
 
-    /** Makes the person a TA (or activates their old assignment). Returns a problem key, or null on success. */
+    /**
+     * Makes the person a TA (or activates their old assignment) with these permissions.
+     * Returns a problem key, or null on success.
+     */
     @Transactional
-    public String assign(User candidate, CourseOffering offering) {
+    public String assign(User candidate, CourseOffering offering, Set<TaPermission> permissions) {
         String problem = findProblem(candidate, offering);
         if (problem != null) {
             return problem;
@@ -54,10 +59,17 @@ public class TaService {
             assignment = new TaAssignment();
             assignment.setUser(candidate);
             assignment.setOffering(offering);
-            assignment.setAssignedAt(Instant.now());
         }
+        assignment.setAssignedAt(Instant.now());
         assignment.setActive(true); // new, or coming back after being removed
+        assignment.replacePermissions(permissions); // a returning TA does not keep old permissions
         taRepository.save(assignment);
         return null;
+    }
+
+    /** Same, with the default permissions (used when the professor makes someone a TA). */
+    @Transactional
+    public String assign(User candidate, CourseOffering offering) {
+        return assign(candidate, offering, TaPermission.defaults());
     }
 }

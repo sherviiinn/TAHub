@@ -37,6 +37,13 @@
 
             <!-- Not enrolled and not removed: the student may enroll with the join code -->
             <p th:if="${isTa}" th:text="#{course.detail.youAreTa}"></p>
+            <th:block th:if="${isTa}">
+                <p th:text="#{ta.myPermissions}">What you may do here:</p>
+                <ul>
+                    <li th:each="p : ${myTaPermissions}" th:text="#{${'ta.permission.' + p.name()}}">Permission</li>
+                </ul>
+                <p th:if="${#sets.isEmpty(myTaPermissions)}" th:text="#{ta.myPermissions.none}">Nothing yet.</p>
+            </th:block>
             <th:block th:if="${!isEnrolled and !wasRemoved and !isTa}">
                 <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
                 <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
@@ -57,38 +64,28 @@
         </th:block>
     </div>
 
-    <!-- Teaching assistants: everybody sees the names, managers can add and remove -->
+    <!-- Teaching assistants: everybody sees the names.
+         The professor and TAs with "Manage TA team" add and remove; who may change permissions is per row. -->
     <div>
         <h2 th:text="#{ta.title}">Teaching assistants</h2>
+        <p th:if="${taPermissionsSavedFor}" th:text="#{ta.permissions.saved(${taPermissionsSavedFor})}">Saved.</p>
         <p th:if="${#lists.isEmpty(teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</p>
 
         <ul th:unless="${#lists.isEmpty(teachingAssistants)}">
             <li th:each="t : ${teachingAssistants}">
-                <span th:text="${t.user.fullName}"></span>
-                <span th:if="${canManage}" th:text="'(' + ${t.user.studentNumber} + ')'"></span>
-                <form th:if="${canManage and isCurrentSemester and !isCancelled}" method="post"
-                      th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.user.id})}">
+                <span th:text="${t.assignment.user.fullName}"></span>
+                <span th:if="${canManage or canManageTeam}" th:text="'(' + ${t.assignment.user.studentNumber} + ')'"></span>
+                <a th:if="${t.canEditPermissions}"
+                   th:href="@{/courses/{id}/tas/{uid}/permissions(id=${offering.id},uid=${t.assignment.user.id})}"
+                   th:text="#{ta.permissions.link}">Permissions</a>
+                <form th:if="${t.canRemove}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.assignment.user.id})}">
                     <button type="submit" th:text="#{ta.remove}">Remove</button>
                 </form>
             </li>
         </ul>
 
-        <!-- TAs removed by the professor. Shown only if there are any, so a mistake can be undone. -->
-        <th:block th:if="${canManage and !#lists.isEmpty(removedTeachingAssistants)}">
-            <h3 th:text="#{ta.removed.title(${#lists.size(removedTeachingAssistants)})}">Removed TAs</h3>
-            <ul>
-                <li th:each="t : ${removedTeachingAssistants}">
-                    <span th:text="${t.user.fullName}"></span>
-                    <span th:text="'(' + ${t.user.studentNumber} + ')'"></span>
-                    <form th:if="${isCurrentSemester and !isCancelled}" method="post"
-                          th:action="@{/courses/{id}/tas/{uid}/restore(id=${offering.id},uid=${t.user.id})}">
-                        <button type="submit" th:text="#{ta.restore}">Restore</button>
-                    </form>
-                </li>
-            </ul>
-        </th:block>
-
-        <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
+        <th:block th:if="${(canManage or canManageTeam) and isCurrentSemester and !isCancelled}">
             <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
             <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
                 <label for="taNumber" th:text="#{ta.studentNumber}">Student number</label>
@@ -120,6 +117,10 @@
 
         <p th:if="${myTaApplication != null and myTaApplication.status.name() == 'REJECTED'}"
            th:text="#{ta.apply.rejected}">Your request was not accepted.</p>
+
+        <!-- Accepted before, but removed as a TA later -->
+        <p th:if="${myTaApplication != null and myTaApplication.status.name() == 'ACCEPTED'}"
+           th:text="#{ta.apply.acceptedButRemoved}">Your request was accepted before, but you are no longer a TA.</p>
     </div>
 
     <!-- Professor and admin: open or close TA requests -->
@@ -156,7 +157,8 @@
         </form>
     </div>
 
-    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+    <!-- Professor and TAs with "Edit Telegram link" -->
+    <div th:if="${canEditTelegram and isCurrentSemester and !isCancelled}">
         <h2 th:text="#{telegram.title}">Telegram group</h2>
         <p th:if="${telegramSaved}" th:text="#{telegram.saved}">Saved.</p>
         <p th:if="${telegramErrorKey}" th:text="#{${telegramErrorKey}}"></p>
@@ -168,8 +170,8 @@
         <small th:text="#{telegram.help}">Leave the box empty to remove the link.</small>
     </div>
 
-    <!-- Professor and admin: join code (not for cancelled offerings) -->
-    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+    <!-- Professor and TAs with "Manage students": join code (not for cancelled offerings) -->
+    <div th:if="${canManageStudents and isCurrentSemester and !isCancelled}">
         <h2 th:text="#{course.detail.joinCode.title}">Join code</h2>
 
         <p th:if="${joinCode != null}">
@@ -191,8 +193,8 @@
         </form>
     </div>
 
-    <!-- Professor and admin: paste the official class list -->
-    <div th:if="${canManage and isCurrentSemester and !isCancelled}">
+    <!-- Professor and TAs with "Manage students": paste the official class list -->
+    <div th:if="${canManageStudents and isCurrentSemester and !isCancelled}">
         <h2 th:text="#{roster.title}">Class list</h2>
         <p th:text="#{roster.help}"></p>
 
@@ -214,8 +216,9 @@
         </th:block>
     </div>
 
-    <!-- Professor and admin: the list of students -->
-    <div th:if="${canManage}">
+    <!-- Professor and TAs with "View student list" or "Manage students": the list of students.
+         Remove and restore buttons only with "Manage students". -->
+    <div th:if="${canSeeStudents}">
         <h2 th:text="${isCurrentSemester}
                 ? #{course.detail.students(${#lists.size(enrollments)})}
                 : #{course.detail.students.past(${#lists.size(enrollments)})}">Enrolled students</h2>
@@ -230,14 +233,14 @@
                 <th th:text="#{course.detail.studentNumber}">Student number</th>
                 <th th:text="#{course.detail.major}">Field of study</th>
                 <th th:text="#{course.detail.source}">Source</th>
-                <th th:if="${isCurrentSemester}"></th>
+                <th th:if="${isCurrentSemester and canManageStudents}"></th>
             </tr>
             <tr th:each="e : ${enrollments}">
                 <td th:text="${e.student.fullName}"></td>
                 <td th:text="${e.student.studentNumber}"></td>
                 <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
                 <td th:text="#{${'course.detail.source.' + e.source}}"></td>
-                <td th:if="${isCurrentSemester}">
+                <td th:if="${isCurrentSemester and canManageStudents}">
                     <form method="post"
                           th:action="@{/courses/{id}/students/{sid}/remove(id=${offering.id},sid=${e.student.id})}">
                         <button type="submit" th:text="#{course.detail.remove}">Remove</button>
@@ -255,13 +258,13 @@
                     <th th:text="#{course.detail.studentName}">Name</th>
                     <th th:text="#{course.detail.studentNumber}">Student number</th>
                     <th th:text="#{course.detail.major}">Field of study</th>
-                    <th th:if="${isCurrentSemester}"></th>
+                    <th th:if="${isCurrentSemester and canManageStudents}"></th>
                 </tr>
                 <tr th:each="e : ${removedEnrollments}">
                     <td th:text="${e.student.fullName}"></td>
                     <td th:text="${e.student.studentNumber}"></td>
                     <td th:text="${e.student.major != null} ? ${e.student.major.name} : #{course.detail.majorNotSet}"></td>
-                    <td th:if="${isCurrentSemester}">
+                    <td th:if="${isCurrentSemester and canManageStudents}">
                         <form method="post"
                               th:action="@{/courses/{id}/students/{sid}/restore(id=${offering.id},sid=${e.student.id})}">
                             <button type="submit" th:text="#{course.detail.restore}">Restore</button>

@@ -8,6 +8,7 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.NotificationService;
 import ir.TAHub.TAHub.service.TaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -34,15 +35,18 @@ public class TaApplicationController {
     private final CourseOfferingRepository offeringRepository;
     private final TaApplicationRepository applicationRepository;
     private final TaService taService;
+    private final NotificationService notificationService;
 
     public TaApplicationController(UserRepository userRepository,
                                    CourseOfferingRepository offeringRepository,
                                    TaApplicationRepository applicationRepository,
-                                   TaService taService) {
+                                   TaService taService,
+                                   NotificationService notificationService) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.applicationRepository = applicationRepository;
         this.taService = taService;
+        this.notificationService = notificationService;
     }
 
     // ---------- The professor opens or closes requests for an offering ----------
@@ -167,6 +171,12 @@ public class TaApplicationController {
                 redirect.addFlashAttribute("requestErrorKey", problem);
             } else {
                 decide(application, TaApplicationStatus.ACCEPTED);
+                if (problem == null) {
+                    notificationService.notifyTaAdded(application.getOffering(), application.getStudent());
+                }
+                // Straight to the new TA's permissions, so the professor can change the defaults.
+                return "redirect:/courses/" + application.getOffering().getId()
+                        + "/tas/" + application.getStudent().getId() + "/permissions";
             }
         }
         return "redirect:/ta-requests";

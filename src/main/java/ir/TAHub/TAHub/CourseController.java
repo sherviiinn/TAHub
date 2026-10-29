@@ -6,6 +6,8 @@ import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
 import ir.TAHub.TAHub.model.TaApplication;
+import ir.TAHub.TAHub.model.TaAssignment;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.Semester;
@@ -19,6 +21,7 @@ import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.OfferingAccess;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -33,11 +36,16 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 @Controller
 public class CourseController {
 
     private static final int MAX_LENGTH = 100;
+
+    /** One TA as the course page shows it, with the buttons the current user may use. */
+    public record TaRow(TaAssignment assignment, boolean canRemove, boolean canEditPermissions) {
+    }
 
     private final CourseOfferingRepository offeringRepository;
     private final CourseRepository courseRepository;
@@ -48,6 +56,7 @@ public class CourseController {
     private final TaAssignmentRepository taRepository;
     private final TaApplicationRepository applicationRepository;
     private final AnnouncementRepository announcementRepository;
+    private final OfferingAccess access;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -57,7 +66,8 @@ public class CourseController {
                             RosterEntryRepository rosterRepository,
                             TaAssignmentRepository taRepository,
                             TaApplicationRepository applicationRepository,
-                            AnnouncementRepository announcementRepository) {
+                            AnnouncementRepository announcementRepository,
+                            OfferingAccess access) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -67,6 +77,7 @@ public class CourseController {
         this.taRepository = taRepository;
         this.applicationRepository = applicationRepository;
         this.announcementRepository = announcementRepository;
+        this.access = access;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -116,11 +127,30 @@ public class CourseController {
         model.addAttribute("wasRemoved", myStatus == EnrollmentStatus.REMOVED);
         model.addAttribute("canManage", canManage);
 
+        // What this user may do here: everything for the professor, a TA's own permissions, else nothing.
+        Set<TaPermission> permissions = access.permissions(current, offering);
+        boolean canManageStudents = permissions.contains(TaPermission.MANAGE_STUDENTS);
+        boolean canSeeStudents = canManageStudents || permissions.contains(TaPermission.VIEW_STUDENTS);
+        boolean canManageTeam = permissions.contains(TaPermission.MANAGE_TEAM);
+        model.addAttribute("canManageStudents", canManageStudents);
+        model.addAttribute("canSeeStudents", canSeeStudents);
+        model.addAttribute("canManageTeam", canManageTeam);
+        model.addAttribute("canEditTelegram", permissions.contains(TaPermission.EDIT_TELEGRAM));
+
         // Everybody can see who the TAs are. A TA cannot enroll as a student in the same offering.
-        model.addAttribute("teachingAssistants",
-                taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering));
+        boolean open = access.isOpen(offering);
+        List<TaRow> taRows = taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering).stream()
+                .map(ta -> new TaRow(ta,
+                        open && access.canRemoveTa(current, offering, ta),
+                        open && access.canEditTaPermissions(current, offering, ta)))
+                .toList();
+        model.addAttribute("teachingAssistants", taRows);
         boolean isTa = taRepository.existsByUserAndOfferingAndActiveTrue(current, offering);
         model.addAttribute("isTa", isTa);
+        if (isTa) {
+            // A TA sees what they are allowed to do here.
+            model.addAttribute("myTaPermissions", permissions);
+        }
 
         // Announcements are for the people of this offering: its managers, its TAs and its enrolled students.
         boolean canSeeAnnouncements = canManage || isTa || myStatus == EnrollmentStatus.ACTIVE;
@@ -136,23 +166,23 @@ public class CourseController {
                 : null;
         model.addAttribute("myTaApplication", myApplication);
         if (canManage) {
-            model.addAttribute("removedTeachingAssistants",
-                    taRepository.findByOfferingAndActiveFalseOrderByUserFullNameAsc(offering));
             model.addAttribute("pendingTaRequests",
                     applicationRepository.countByOfferingAndStatus(offering, TaApplicationStatus.PENDING));
         }
 
         // Students only learn whether enrollment is open. The code itself goes only to people who manage the offering.
         model.addAttribute("enrollmentOpen", offering.getJoinCode() != null);
-        model.addAttribute("joinCode", canManage ? offering.getJoinCode() : null);
+        model.addAttribute("joinCode", canManageStudents ? offering.getJoinCode() : null);
 
-        // Only the professor and admins see who is enrolled. Students do not see their classmates.
-        if (canManage) {
+        // Only the professor, admins and TAs with "View student list" or "Manage students" see who is enrolled.
+        // Students do not see their classmates.
+        if (canSeeStudents) {
             model.addAttribute("enrollments", enrollmentRepository
                     .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.ACTIVE));
             model.addAttribute("removedEnrollments", enrollmentRepository
                     .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.REMOVED));
-
+        }
+        if (canManageStudents) {
             // Numbers on the class list that have no account yet.
             model.addAttribute("pendingRoster", rosterRepository.findByOfferingOrderByStudentNumberAsc(offering).stream()
                     .filter(entry -> !userRepository.existsByStudentNumber(entry.getStudentNumber()))

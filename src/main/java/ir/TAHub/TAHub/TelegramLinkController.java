@@ -1,10 +1,12 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
+import ir.TAHub.TAHub.service.OfferingAccess;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -19,8 +21,8 @@ import java.util.regex.Pattern;
 
 /**
  * The Telegram group link of an offering.
- * Only the professor (and admins) set, change or remove it, and only in an uncancelled offering of the
- * active semester. The link is shown to the same people who can read the announcements
+ * The professor (and admins) and TAs with "Edit Telegram link" set, change or remove it, only in an
+ * uncancelled offering of the active semester. The link is shown to the same people who can read the announcements
  * (the professor, the TAs and the enrolled students), because group links are usually private.
  */
 @Controller
@@ -36,13 +38,16 @@ public class TelegramLinkController {
     private final CourseOfferingRepository offeringRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final OfferingAccess access;
 
     public TelegramLinkController(CourseOfferingRepository offeringRepository,
                                   UserRepository userRepository,
-                                  NotificationService notificationService) {
+                                  NotificationService notificationService,
+                                  OfferingAccess access) {
         this.offeringRepository = offeringRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.access = access;
     }
 
     /** Saves the link. An empty box removes it. */
@@ -55,8 +60,7 @@ public class TelegramLinkController {
         CourseOffering offering = offeringRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        boolean open = offering.getSemester().isActive() && !offering.isCancelled();
-        if (!open || !offering.isManagedBy(current)) {
+        if (!access.isOpen(offering) || !access.can(current, offering, TaPermission.EDIT_TELEGRAM)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 

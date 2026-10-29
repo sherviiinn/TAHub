@@ -34,6 +34,8 @@ public class NotificationService {
     public static final String NOTICE_NEW_KEY = "notifications.notice.new";
     public static final String NOTICE_EDITED_KEY = "notifications.notice.edited";
     public static final String TELEGRAM_KEY = "notifications.telegram.updated";
+    public static final String TA_ADDED_KEY = "notifications.ta.added";
+    public static final String TA_PERMISSIONS_KEY = "notifications.ta.permissions";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
 
@@ -352,6 +354,35 @@ public class NotificationService {
             notifications.add(notification);
         }
         notificationRepository.saveAll(notifications);
+    }
+
+    /** Someone was made a TA of an offering: "You are now a TA of CS201 - ...". */
+    @Transactional
+    public void notifyTaAdded(CourseOffering offering, User ta) {
+        Notification notification = create(ta, NotificationType.GENERAL, "You are now a TA",
+                "/courses/" + offering.getId());
+        notification.setMessageKey(TA_ADDED_KEY);
+        notification.setMessageArg(offering.getCourse().getCode() + " - " + offering.getCourse().getName());
+        notificationRepository.save(notification);
+    }
+
+    /** A TA's permissions changed. One unread notification per course: it just moves up. */
+    @Transactional
+    public void notifyTaPermissionsChanged(CourseOffering offering, User ta) {
+        String link = "/courses/" + offering.getId();
+        Notification notification = notificationRepository
+                .findByMessageKeyAndLinkAndSeenFalse(TA_PERMISSIONS_KEY, link).stream()
+                .filter(n -> n.getUser().getId().equals(ta.getId()))
+                .findFirst()
+                .orElse(null);
+        if (notification != null) {
+            notification.setCreatedAt(Instant.now());
+        } else {
+            notification = create(ta, NotificationType.GENERAL, "Your TA permissions changed", link);
+            notification.setMessageKey(TA_PERMISSIONS_KEY);
+            notification.setMessageArg(offering.getCourse().getCode() + " - " + offering.getCourse().getName());
+        }
+        notificationRepository.save(notification);
     }
 
     private List<User> students() {

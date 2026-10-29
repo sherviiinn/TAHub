@@ -1,9 +1,11 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
+import ir.TAHub.TAHub.service.OfferingAccess;
 import ir.TAHub.TAHub.service.RosterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -14,21 +16,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/** The professor pastes the class list of an offering. */
+/** The professor (or a TA with "Manage students") pastes the class list of an offering. */
 @Controller
 public class RosterController {
 
     private final UserRepository userRepository;
     private final CourseOfferingRepository offeringRepository;
     private final RosterService rosterService;
+    private final OfferingAccess access;
 
     public RosterController(UserRepository userRepository,
                             CourseOfferingRepository offeringRepository,
-                            RosterService rosterService) {
+                            RosterService rosterService,
+                            OfferingAccess access) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.rosterService = rosterService;
+        this.access = access;
     }
+
     @PostMapping("/courses/{id}/roster")
     public String importRoster(@PathVariable Long id,
                                @RequestParam(defaultValue = "") String numbers,
@@ -39,7 +45,7 @@ public class RosterController {
         CourseOffering offering = offeringRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (!offering.isManagedBy(current) || !offering.getSemester().isActive() || offering.isCancelled()) {
+        if (!access.isOpen(offering) || !access.can(current, offering, TaPermission.MANAGE_STUDENTS)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 

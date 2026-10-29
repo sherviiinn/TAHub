@@ -3,6 +3,7 @@ package ir.TAHub.TAHub;
 import ir.TAHub.TAHub.model.Announcement;
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
@@ -10,6 +11,7 @@ import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
+import ir.TAHub.TAHub.service.OfferingAccess;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -30,8 +32,9 @@ import java.util.List;
 /**
  * Announcements of an offering.
  * Who can read: the professor (and admins), the TAs, and the students who are enrolled.
- * Who can post: the professor (and admins) and the TAs.
- * Who can delete or edit: the professor (and admins) any announcement, a TA only their own.
+ * Who can post: the professor (and admins), and TAs with "Post announcements".
+ * Who can delete or edit: the professor (and admins) and TAs with "Manage all announcements" any announcement,
+ * TAs with "Post announcements" only their own.
  * An edited announcement shows an "edited" time. Editing tells the students again (one notification per announcement).
  * A deleted announcement is only hidden (the history stays in the database) and cannot be brought back.
  */
@@ -59,19 +62,22 @@ public class AnnouncementController {
     private final EnrollmentRepository enrollmentRepository;
     private final TaAssignmentRepository taRepository;
     private final NotificationService notificationService;
+    private final OfferingAccess access;
 
     public AnnouncementController(UserRepository userRepository,
                                   CourseOfferingRepository offeringRepository,
                                   AnnouncementRepository announcementRepository,
                                   EnrollmentRepository enrollmentRepository,
                                   TaAssignmentRepository taRepository,
-                                  NotificationService notificationService) {
+                                  NotificationService notificationService,
+                                  OfferingAccess access) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.announcementRepository = announcementRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
         this.notificationService = notificationService;
+        this.access = access;
     }
 
     @GetMapping("/courses/{id}/announcements")
@@ -96,14 +102,14 @@ public class AnnouncementController {
 
         List<AnnouncementView> announcements = announcementRepository
                 .findByOfferingAndDeletedFalseOrderByCreatedAtDescIdDesc(offering).stream()
-                .map(a -> view(a, current, manager, open))
+                .map(a -> view(a, current, open))
                 .toList();
 
         model.addAttribute("offering", offering);
         model.addAttribute("announcements", announcements);
         model.addAttribute("isCurrentSemester", offering.getSemester().isActive());
         model.addAttribute("isCancelled", offering.isCancelled());
-        model.addAttribute("canPost", open && (manager || ta));
+        model.addAttribute("canPost", open && access.can(current, offering, TaPermission.POST_ANNOUNCEMENTS));
         model.addAttribute("canManage", manager);
 
         return "announcements";
@@ -119,7 +125,7 @@ public class AnnouncementController {
         CourseOffering offering = findOffering(id);
 
         // Only the professor and the TAs of an open offering can post.
-        if (!isOpen(offering) || !(offering.isManagedBy(current) || isTa(current, offering))) {
+        if (!isOpen(offering) || !access.can(current, offering, TaPermission.POST_ANNOUNCEMENTS)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
@@ -150,10 +156,7 @@ public class AnnouncementController {
         Announcement announcement = findAnnouncement(announcementId);
         CourseOffering offering = announcement.getOffering();
 
-        // The professor deletes any announcement. A TA (or anyone else) only their own.
-        boolean allowed = offering.isManagedBy(current)
-                || announcement.getAuthor().getId().equals(current.getId());
-        if (!isOpen(offering) || !allowed) {
+        if (!isOpen(offering) || !mayChange(announcement, current)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
@@ -214,9 +217,21 @@ public class AnnouncementController {
 
     // ---------- helpers ----------
 
-    private AnnouncementView view(Announcement a, User current, boolean manager, boolean open) {
-        // Delete and edit have the same rule: the professor any, others only their own.
-        boolean canChange = open && (manager || a.getAuthor().getId().equals(current.getId()));
+    /**
+     * Edit and delete have the same rule: the professor and TAs with "Manage all announcements" any,
+     * TAs with "Post announcements" only their own.
+     */
+    private boolean mayChange(Announcement announcement, User current) {
+        CourseOffering offering = announcement.getOffering();
+        if (access.can(current, offering, TaPermission.MANAGE_ANNOUNCEMENTS)) {
+            return true;
+        }
+        return announcement.getAuthor().getId().equals(current.getId())
+                && access.can(current, offering, TaPermission.POST_ANNOUNCEMENTS);
+    }
+
+    private AnnouncementView view(Announcement a, User current, boolean open) {
+        boolean canChange = open && mayChange(a, current);
         boolean recent = Duration.between(a.getCreatedAt(), Instant.now()).toDays() < NEW_FOR_DAYS;
         String editedWhen = a.getEditedAt() == null ? null : WHEN.format(a.getEditedAt());
         return new AnnouncementView(a, WHEN.format(a.getCreatedAt()), editedWhen, recent, canChange, canChange);
@@ -258,12 +273,10 @@ public class AnnouncementController {
     private Announcement findEditable(Long announcementId, User current) {
         Announcement announcement = findAnnouncement(announcementId);
         CourseOffering offering = announcement.getOffering();
-        boolean allowed = offering.isManagedBy(current)
-                || announcement.getAuthor().getId().equals(current.getId());
         if (announcement.isDeleted()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        if (!isOpen(offering) || !allowed) {
+        if (!isOpen(offering) || !mayChange(announcement, current)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         return announcement;
