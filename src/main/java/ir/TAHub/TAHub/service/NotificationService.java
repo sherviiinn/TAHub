@@ -36,6 +36,7 @@ public class NotificationService {
     public static final String TELEGRAM_KEY = "notifications.telegram.updated";
     public static final String TA_ADDED_KEY = "notifications.ta.added";
     public static final String TA_PERMISSIONS_KEY = "notifications.ta.permissions";
+    public static final String TA_REQUEST_KEY = "notifications.ta.request";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
 
@@ -381,6 +382,30 @@ public class NotificationService {
             notification = create(ta, NotificationType.GENERAL, "Your TA permissions changed", link);
             notification.setMessageKey(TA_PERMISSIONS_KEY);
             notification.setMessageArg(offering.getCourse().getCode() + " - " + offering.getCourse().getName());
+        }
+        notificationRepository.save(notification);
+    }
+
+    /**
+     * A student asked to be a TA: the professor of the offering is told, with a link to the TA requests page.
+     * One unread notification per course: another request just moves it up.
+     */
+    @Transactional
+    public void notifyTaRequest(CourseOffering offering) {
+        User professor = offering.getProfessor();
+        String course = offering.getCourse().getCode() + " - " + offering.getCourse().getName();
+        String link = "/ta-requests";
+        Notification notification = notificationRepository
+                .findByMessageKeyAndLinkAndSeenFalse(TA_REQUEST_KEY, link).stream()
+                .filter(n -> n.getUser().getId().equals(professor.getId()) && course.equals(n.getMessageArg()))
+                .findFirst()
+                .orElse(null);
+        if (notification != null) {
+            notification.setCreatedAt(Instant.now());
+        } else {
+            notification = create(professor, NotificationType.GENERAL, "New TA request", link);
+            notification.setMessageKey(TA_REQUEST_KEY);
+            notification.setMessageArg(course);
         }
         notificationRepository.save(notification);
     }

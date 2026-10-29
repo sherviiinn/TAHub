@@ -1,6 +1,8 @@
 package ir.TAHub.TAHub.repository;
 
+import ir.TAHub.TAHub.model.Course;
 import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.Semester;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +16,11 @@ public interface TaAssignmentRepository extends JpaRepository<TaAssignment, Long
 
     boolean existsByUserAndOfferingAndActiveTrue(User user, CourseOffering offering);
 
+    // Is this user an active TA of ANY group (offering) of this course in this semester?
+    boolean existsByUserAndOfferingCourseAndOfferingSemesterAndActiveTrue(User user, Course course, Semester semester);
+
     List<TaAssignment> findByOfferingAndActiveTrueOrderByUserFullNameAsc(CourseOffering offering);
 
-    // TAs the professor removed. They stay listed so the professor can bring them back.
+    // TAs that were removed (the rows stay for history).
     List<TaAssignment> findByOfferingAndActiveFalseOrderByUserFullNameAsc(CourseOffering offering);
 }

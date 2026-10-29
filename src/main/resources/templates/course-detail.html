@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${offering.course.code}">Course</title>
-</head>
+<head th:replace="~{fragments/layout :: head(${offering.course.code})}"></head>
 <body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <!-- data-live-topics: this page reloads itself (static/js/live.js) when this offering changes -->
+    <main th:attr="data-live-topics='offering:' + ${offering.id}">
     <h1 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h1>
 
     <p th:text="#{course.detail.semester(${offering.semester.code})}"></p>
@@ -44,7 +43,8 @@
                 </ul>
                 <p th:if="${#sets.isEmpty(myTaPermissions)}" th:text="#{ta.myPermissions.none}">Nothing yet.</p>
             </th:block>
-            <th:block th:if="${!isEnrolled and !wasRemoved and !isTa}">
+            <p th:if="${isTaOfOtherGroup}" th:text="#{course.detail.taOfOtherGroup}"></p>
+            <th:block th:if="${!isEnrolled and !wasRemoved and !isTa and !isTaOfOtherGroup}">
                 <p th:if="${param.joinError}" th:text="#{course.detail.joinError}"></p>
                 <p th:if="${!enrollmentOpen}" th:text="#{course.detail.enrollmentClosed}"></p>
 
@@ -100,8 +100,11 @@
         <h2 th:text="#{ta.apply.title}">Become a TA</h2>
         <p th:if="${taApplyErrorKey}" th:text="#{${taApplyErrorKey}}"></p>
 
+        <!-- A student of another group of this course cannot be a TA here -->
+        <p th:if="${isStudentOfOtherGroup}" th:text="#{ta.apply.error.otherGroup}">You are a student of another group.</p>
+
         <!-- No request yet, or the student took the old one back -->
-        <form th:if="${myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN'}" method="post"
+        <form th:if="${!isStudentOfOtherGroup and (myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN')}" method="post"
               th:action="@{/courses/{id}/ta-applications(id=${offering.id})}">
             <label for="taMessage" th:text="#{ta.apply.messageLabel}">Message</label><br>
             <textarea id="taMessage" name="message" rows="4" cols="40" maxlength="500"></textarea><br>
@@ -276,5 +279,6 @@
     </div>
 
     <p><a th:href="@{/courses}" th:text="#{courses.back}">Back</a></p>
+    </main>
 </body>
 </html>

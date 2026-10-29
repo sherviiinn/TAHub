@@ -13,6 +13,7 @@ import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.OfferingAccess;
+import ir.TAHub.TAHub.service.TaService;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -38,19 +39,22 @@ public class EnrollmentController {
     private final RosterEntryRepository rosterRepository;
     private final TaAssignmentRepository taRepository;
     private final OfferingAccess access;
+    private final TaService taService;
 
     public EnrollmentController(UserRepository userRepository,
                                 CourseOfferingRepository offeringRepository,
                                 EnrollmentRepository enrollmentRepository,
                                 RosterEntryRepository rosterRepository,
                                 TaAssignmentRepository taRepository,
-                                OfferingAccess access) {
+                                OfferingAccess access,
+                                TaService taService) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.rosterRepository = rosterRepository;
         this.taRepository = taRepository;
         this.access = access;
+        this.taService = taService;
     }
 
     @PostMapping("/courses/{id}/enroll")
@@ -65,8 +69,8 @@ public class EnrollmentController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        // A TA of this offering cannot also be one of its students.
-        if (taRepository.existsByUserAndOfferingAndActiveTrue(student, offering)) {
+        // A TA of this course (any of its groups this semester) cannot also be one of its students.
+        if (taService.isTaOfAnyGroup(student, offering)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 

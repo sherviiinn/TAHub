@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head(#{ta.mine.title})}"></head>
 <body>
     <nav th:replace="~{fragments/layout :: nav}"></nav>
-    <main>
+    <main data-live-topics="ta-requests">
     <h1 th:text="#{ta.mine.title}">My TA requests</h1>
 
     <p th:if="${#lists.isEmpty(applications)}" th:text="#{ta.mine.none}">You have not sent any TA request.</p>

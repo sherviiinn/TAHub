@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head(#{cafeteria.title})}"></head>
 <body>
     <nav th:replace="~{fragments/layout :: nav}"></nav>
-    <main>
+    <main data-live-topics="cafeteria">
         <h1 th:text="#{cafeteria.title}">Cafeteria menu</h1>
         <p th:text="#{cafeteria.week(${weekStart}, ${weekEnd})}">Week</p>
 

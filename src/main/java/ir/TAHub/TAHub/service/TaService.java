@@ -14,7 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Set;
 
-/** The rules for making someone a TA. Used both when a professor adds a TA and when a request is accepted. */
+/**
+ * The rules for making someone a TA. Used when a TA is added by hand and when a request is accepted.
+ * A course can have several groups (offerings) in one semester. A person cannot be a student of one group
+ * and a TA of another group of the same course. Being a TA of two groups is fine.
+ */
 @Service
 public class TaService {
 
@@ -38,10 +42,26 @@ public class TaService {
         if (activeStudent) {
             return "ta.error.enrolled";
         }
+        // Nor a student of another group of the same course in the same semester.
+        if (isStudentOfAnyGroup(candidate, offering)) {
+            return "ta.error.otherGroup";
+        }
         if (taRepository.existsByUserAndOfferingAndActiveTrue(candidate, offering)) {
             return "ta.error.already";
         }
         return null;
+    }
+
+    /** Is this person an active student of any group (offering) of this course in this semester? */
+    public boolean isStudentOfAnyGroup(User user, CourseOffering offering) {
+        return enrollmentRepository.existsByStudentAndOfferingCourseAndOfferingSemesterAndStatus(
+                user, offering.getCourse(), offering.getSemester(), EnrollmentStatus.ACTIVE);
+    }
+
+    /** Is this person an active TA of any group (offering) of this course in this semester? */
+    public boolean isTaOfAnyGroup(User user, CourseOffering offering) {
+        return taRepository.existsByUserAndOfferingCourseAndOfferingSemesterAndActiveTrue(
+                user, offering.getCourse(), offering.getSemester());
     }
 
     /**

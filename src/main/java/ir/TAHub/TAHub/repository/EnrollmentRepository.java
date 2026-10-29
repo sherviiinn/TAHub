@@ -1,9 +1,6 @@
 package ir.TAHub.TAHub.repository;
 
-import ir.TAHub.TAHub.model.CourseOffering;
-import ir.TAHub.TAHub.model.Enrollment;
-import ir.TAHub.TAHub.model.EnrollmentStatus;
-import ir.TAHub.TAHub.model.User;
+import ir.TAHub.TAHub.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -20,4 +17,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByStudentAndStatus(User student, EnrollmentStatus status);
 
     long countByOfferingAndStatus(CourseOffering offering, EnrollmentStatus status);
+
+    boolean existsByStudentAndOfferingCourseAndOfferingSemesterAndStatus(
+            User student, Course course, Semester semester, EnrollmentStatus status);
 }

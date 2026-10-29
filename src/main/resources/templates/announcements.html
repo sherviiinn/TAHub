@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head(#{announcements.title})}"></head>
 <body>
     <nav th:replace="~{fragments/layout :: nav}"></nav>
-    <main>
+    <main th:attr="data-live-topics='offering:' + ${offering.id}">
         <h1 th:text="#{announcements.title}">Announcements</h1>
         <h2 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h2>
 

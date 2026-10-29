@@ -8,6 +8,7 @@ import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
+import ir.TAHub.TAHub.service.NotificationStream;
 import ir.TAHub.TAHub.service.OfferingAccess;
 import ir.TAHub.TAHub.service.TaService;
 import ir.TAHub.TAHub.util.Digits;
@@ -49,19 +50,22 @@ public class TaController {
     private final TaService taService;
     private final OfferingAccess access;
     private final NotificationService notificationService;
+    private final NotificationStream stream;
 
     public TaController(UserRepository userRepository,
                         CourseOfferingRepository offeringRepository,
                         TaAssignmentRepository taRepository,
                         TaService taService,
                         OfferingAccess access,
-                        NotificationService notificationService) {
+                        NotificationService notificationService,
+                        NotificationStream stream) {
         this.userRepository = userRepository;
         this.offeringRepository = offeringRepository;
         this.taRepository = taRepository;
         this.taService = taService;
         this.access = access;
         this.notificationService = notificationService;
+        this.stream = stream;
     }
 
     @PostMapping("/courses/{id}/tas")
@@ -166,6 +170,9 @@ public class TaController {
 
         target.replacePermissions(after);
         taRepository.save(target);
+        // Only the permission list changed, which Hibernate does not report as a change of the TA row,
+        // so the open course pages are told here (the save above is already committed).
+        stream.broadcast("offering:" + offering.getId());
         if (!after.equals(before)) {
             notificationService.notifyTaPermissionsChanged(offering, target.getUser());
         }
