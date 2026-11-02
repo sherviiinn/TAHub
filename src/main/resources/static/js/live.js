@@ -13,9 +13,26 @@
     var source = new EventSource(link.dataset.stream);
 
     // ---------- 1. unread count ----------
+    // If the link has a small number pill (.nav-badge), only the pill changes; otherwise the whole text.
+    var badge = link.querySelector('.nav-badge');
     source.addEventListener('unread', function (event) {
-        link.textContent = link.dataset.label.replace('{0}', event.data);
-        link.classList.toggle('has-unread', event.data !== '0');
+        var count = event.data;
+        var label = link.dataset.label.replace('{0}', count);
+        if (badge) {
+            var shown = Number(count) > 99 ? '99+' : count;
+            if (badge.textContent !== shown && count !== '0') {
+                // A short "bump" when the number changes
+                badge.classList.remove('bump');
+                void badge.offsetWidth;
+                badge.classList.add('bump');
+            }
+            badge.textContent = shown;
+            badge.hidden = count === '0';
+            link.setAttribute('aria-label', label);
+        } else {
+            link.textContent = label;
+        }
+        link.classList.toggle('has-unread', count !== '0');
     });
 
     // ---------- 2 and 3. changed topics ----------
@@ -51,8 +68,16 @@
         fetch(slot.dataset.url + '?back=' + encodeURIComponent(currentPath()), {credentials: 'same-origin'})
             .then(function (response) { return response.ok ? response.text() : null; })
             .then(function (html) {
-                if (html !== null) {
-                    slot.outerHTML = html;
+                if (html === null) {
+                    return;
+                }
+                // Someone else closing the bar also sends "banner". If nothing changed for this user,
+                // keep the bar as it is, so its animation does not play again.
+                var holder = document.createElement('div');
+                holder.innerHTML = html.trim();
+                var fresh = holder.firstElementChild;
+                if (fresh && !fresh.isEqualNode(slot)) {
+                    slot.replaceWith(fresh);
                 }
             })
             .catch(function () { /* the next change will try again */ });
