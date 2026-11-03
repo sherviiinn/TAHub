@@ -6,6 +6,50 @@
     <main>
     <h1 th:text="${professor.fullName}">Professor</h1>
 
+    <p th:if="${officeSaved}" class="alert alert-success" th:text="#{office.saved}">Saved.</p>
+
+    <!-- Office information: every part is optional, only what the professor filled in is shown -->
+    <div class="card" th:if="${profile != null}">
+        <h2 th:text="#{office.title}">Office</h2>
+        <p th:if="${profile.building != null or profile.room != null}">
+            <strong th:text="#{office.place}">Where</strong>:
+            <span th:text="${profile.building}"></span>
+            <span th:if="${profile.building != null and profile.room != null}"> - </span>
+            <span th:if="${profile.room != null}" th:text="#{office.roomValue(${profile.room})}">Room</span>
+        </p>
+        <th:block th:if="${profile.availability != null}">
+            <p><strong th:text="#{office.availability}">Usually in the office</strong>:</p>
+            <p class="announcement-body" th:text="${profile.availability}"></p>
+            <p><small th:text="#{office.availabilityNote}">This may change.</small></p>
+        </th:block>
+        <p th:if="${profile.email != null}">
+            <strong th:text="#{office.email}">Email</strong>:
+            <a th:href="'mailto:' + ${profile.email}" th:text="${profile.email}"></a>
+        </p>
+        <p th:if="${profile.phone != null}">
+            <strong th:text="#{office.phone}">Phone</strong>:
+            <span dir="ltr" th:text="${profile.phone}"></span>
+        </p>
+        <p th:if="${profile.telegram != null}">
+            <strong th:text="#{office.telegram}">Telegram</strong>:
+            <a th:href="'https://t.me/' + ${profile.telegram}" target="_blank" rel="noopener noreferrer"
+               th:text="'@' + ${profile.telegram}"></a>
+        </p>
+        <p th:if="${profile.website != null}">
+            <strong th:text="#{office.website}">Web page</strong>:
+            <a th:href="${profile.website}" target="_blank" rel="noopener noreferrer" th:text="${profile.website}"></a>
+        </p>
+        <p th:if="${profile.note != null}" class="announcement-body" th:text="${profile.note}"></p>
+        <p th:if="${profileUpdated != null}">
+            <small th:text="#{office.updated(${profileUpdated})}">Updated</small>
+            <span class="tag tag-muted" th:if="${profileOld}" th:text="#{office.mayBeOld}">may be out of date</span>
+        </p>
+    </div>
+    <p th:if="${profile == null}" class="muted" th:text="#{office.none}">No office information yet.</p>
+    <p th:if="${canEditProfile}">
+        <a class="btn btn-small" th:href="@{/professors/{id}/office(id=${professor.id})}" th:text="#{office.edit}">Edit office information</a>
+    </p>
+
     <h2 th:text="#{professors.courses}">Courses this semester</h2>
     <p th:if="${#lists.isEmpty(courses)}" th:text="#{professors.noCourses}">No courses this semester.</p>
 
