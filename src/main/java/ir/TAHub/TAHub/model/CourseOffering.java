@@ -46,9 +46,13 @@ public class CourseOffering {
 
     /**
      * The most TAs the team may have (head TAs included, waiting invitations counted too).
-     * Only head TAs are held to it; the professor can always invite. Empty means no limit.
+     * When it is reached nobody new can join (not even through the professor) until the professor raises it;
+     * head TAs can ask for more. A new offering starts with 1. Empty means no limit
+     * (offerings made before this rule existed are empty).
      */
-    private Integer taTeamLimit;
+    private Integer taTeamLimit = DEFAULT_TA_TEAM_LIMIT;
+
+    public static final int DEFAULT_TA_TEAM_LIMIT = 1;
 
     public CourseOffering() {
     }
