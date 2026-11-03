@@ -44,6 +44,7 @@ public class NotificationService {
     public static final String TA_INVITATION_DECLINED_KEY = "notifications.ta.invitationDeclined";
     public static final String TA_INVITATION_CLOSED_KEY = "notifications.ta.invitationClosed";
     public static final String TA_HEAD_KEY = "notifications.ta.head";
+    public static final String RESOURCES_KEY = "notifications.resources.new";
     public static final String TA_INVITATION_EXPIRED_KEY = "notifications.ta.invitationExpired";
     public static final String TA_LIMIT_REQUEST_KEY = "notifications.ta.limitRequest";
     public static final String TA_LIMIT_APPROVED_KEY = "notifications.ta.limitApproved";
@@ -541,6 +542,34 @@ public class NotificationService {
                 .findByLink("/courses/" + request.getOffering().getId()).stream()
                 .filter(n -> TA_LIMIT_REQUEST_KEY.equals(n.getMessageKey()) && n.getUser().getId().equals(professorId))
                 .toList());
+    }
+
+    /**
+     * New resources were added to an offering: every enrolled student is told ("New resources in CS201 - ...").
+     * One unread notification per course: more resources just move it up.
+     */
+    @Transactional
+    public void notifyNewResources(CourseOffering offering) {
+        String link = "/courses/" + offering.getId() + "/resources";
+        Map<Long, Notification> unread = new HashMap<>();
+        for (Notification old : notificationRepository.findByMessageKeyAndLinkAndSeenFalse(RESOURCES_KEY, link)) {
+            unread.putIfAbsent(old.getUser().getId(), old);
+        }
+        List<Notification> notifications = new ArrayList<>();
+        for (Enrollment enrollment : enrollmentRepository
+                .findByOfferingAndStatusOrderByStudentFullNameAsc(offering, EnrollmentStatus.ACTIVE)) {
+            User student = enrollment.getStudent();
+            Notification notification = unread.get(student.getId());
+            if (notification != null) {
+                notification.setCreatedAt(Instant.now());
+            } else {
+                notification = create(student, NotificationType.GENERAL, "New resources", link);
+                notification.setMessageKey(RESOURCES_KEY);
+                notification.setMessageArg(courseName(offering));
+            }
+            notifications.add(notification);
+        }
+        notificationRepository.saveAll(notifications);
     }
 
     private String courseName(CourseOffering offering) {

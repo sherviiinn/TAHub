@@ -21,6 +21,11 @@
         <a th:href="${offering.telegramLink}" target="_blank" rel="noopener noreferrer"
            th:text="#{telegram.link}">Telegram group</a>
     </p>
+    <!-- Resources: everyone who is logged in -->
+    <p>
+        <a th:href="@{/courses/{id}/resources(id=${offering.id})}"
+           th:text="#{resources.link(${resourceCount})}">Resources</a>
+    </p>
     <!-- What a student sees about their own enrollment -->
     <div th:if="${isStudent}">
 

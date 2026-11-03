@@ -2,7 +2,6 @@ package ir.TAHub.TAHub.model;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,7 +16,6 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -49,12 +47,15 @@ public class TaAssignment {
     @Column(nullable = false)
     private Instant assignedAt;
 
-    /** Stored in its own table ta_assignment_permissions (one row per permission). */
+    /**
+     * Stored in its own table ta_assignment_permissions (one row per permission), as PLAIN TEXT on purpose:
+     * if this were a Set<TaPermission>, Hibernate would put a check on the column listing today's names,
+     * and every new permission would then need a manual ALTER. Unknown names are ignored when reading.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "ta_assignment_permissions", joinColumns = @JoinColumn(name = "ta_assignment_id"))
     @Column(name = "permission", length = 40)
-    @Convert(converter = TaPermissionConverter.class)
-    private Set<TaPermission> permissions = new HashSet<>();
+    private Set<String> permissions = new HashSet<>();
 
     /**
      * Empty for TAs made before permissions existed: they get the defaults until someone saves their
@@ -71,14 +72,20 @@ public class TaAssignment {
             return TaPermission.defaults();
         }
         Set<TaPermission> result = EnumSet.noneOf(TaPermission.class);
-        permissions.stream().filter(Objects::nonNull).forEach(result::add);
+        for (String name : permissions) {
+            try {
+                result.add(TaPermission.valueOf(name));
+            } catch (IllegalArgumentException | NullPointerException e) {
+                // A permission that no longer exists: ignore it.
+            }
+        }
         return result;
     }
 
     /** Replaces the permissions (and marks them as chosen). */
     public void replacePermissions(Set<TaPermission> newPermissions) {
         permissions.clear();
-        permissions.addAll(newPermissions);
+        newPermissions.forEach(permission -> permissions.add(permission.name()));
         permissionsSet = true;
     }
 
