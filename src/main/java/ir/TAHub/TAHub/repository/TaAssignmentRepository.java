@@ -21,6 +21,9 @@ public interface TaAssignmentRepository extends JpaRepository<TaAssignment, Long
 
     List<TaAssignment> findByOfferingAndActiveTrueOrderByUserFullNameAsc(CourseOffering offering);
 
+    // How many TAs the team has now (for the team limit).
+    long countByOfferingAndActiveTrue(CourseOffering offering);
+
     // TAs that were removed (the rows stay for history).
     List<TaAssignment> findByOfferingAndActiveFalseOrderByUserFullNameAsc(CourseOffering offering);
 }

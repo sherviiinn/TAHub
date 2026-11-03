@@ -5,6 +5,7 @@ import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.TaInvitationStatus;
+import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
@@ -24,9 +25,15 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
-/** Students ask to become a TA, and the professor accepts, rejects or reconsiders the requests. */
+/**
+ * Students ask to become a HEAD TA of an offering, and the professor accepts, rejects or reconsiders the
+ * requests. The professor may accept several (a course can have several head TAs) and closes the requests
+ * when there are enough. Head TAs then invite the rest of the team.
+ */
 @Controller
 public class TaApplicationController {
 
@@ -178,14 +185,18 @@ public class TaApplicationController {
     public String accept(@PathVariable Long appId, Authentication authentication, RedirectAttributes redirect) {
         TaApplication application = findManagedApplication(appId, authentication);
         if (application.getStatus() == TaApplicationStatus.PENDING) {
-            // The same rules as when the professor adds a TA by hand.
-            String problem = taService.assign(application.getStudent(), application.getOffering());
+            // Students apply to be a HEAD TA: an accepted request gives the default permissions plus
+            // "Manage TA team" and "Give permissions". The professor can change them right after.
+            // The same rules as for any TA are checked.
+            Set<TaPermission> start = EnumSet.copyOf(TaPermission.defaults());
+            start.addAll(TaPermission.headOnly());
+            String problem = taService.assign(application.getStudent(), application.getOffering(), start);
             if (problem != null && !problem.equals(ALREADY_TA)) {
                 redirect.addFlashAttribute("requestErrorKey", problem);
             } else {
                 decide(application, TaApplicationStatus.ACCEPTED);
                 if (problem == null) {
-                    notificationService.notifyTaAdded(application.getOffering(), application.getStudent());
+                    notificationService.notifyHeadTa(application.getOffering(), application.getStudent(), true);
                 }
                 // Straight to the new TA's permissions, so the professor can change the defaults.
                 return "redirect:/courses/" + application.getOffering().getId()

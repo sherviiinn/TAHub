@@ -73,6 +73,20 @@ public class OfferingAccess {
                 && !target.has(TaPermission.GRANT_PERMISSIONS);
     }
 
+    /**
+     * The permissions this user may give or take away from other TAs: the professor all of them;
+     * a TA with "Give permissions" only their own, and never the two head-TA permissions
+     * (only the professor makes head TAs).
+     */
+    public Set<TaPermission> grantable(User current, CourseOffering offering) {
+        Set<TaPermission> result = EnumSet.noneOf(TaPermission.class);
+        result.addAll(permissions(current, offering));
+        if (!isManager(current, offering)) {
+            result.removeAll(TaPermission.headOnly());
+        }
+        return result;
+    }
+
     /** Changes are only allowed in an uncancelled offering of the active semester. */
     public boolean isOpen(CourseOffering offering) {
         return offering.getSemester().isActive() && !offering.isCancelled();

@@ -42,6 +42,8 @@ public class NotificationService {
     public static final String TA_INVITATION_ACCEPTED_KEY = "notifications.ta.invitationAccepted";
     public static final String TA_INVITATION_DECLINED_KEY = "notifications.ta.invitationDeclined";
     public static final String TA_INVITATION_CLOSED_KEY = "notifications.ta.invitationClosed";
+    public static final String TA_HEAD_KEY = "notifications.ta.head";
+    public static final String TA_NOT_HEAD_KEY = "notifications.ta.notHead";
     private static final String MY_TA_REQUESTS_LINK = "/my-ta-requests";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
@@ -473,6 +475,16 @@ public class NotificationService {
             notifications.add(notification);
         }
         notificationRepository.saveAll(notifications);
+    }
+
+    /** Someone was made a head TA ("You are now a head TA of ...") or stopped being one. */
+    @Transactional
+    public void notifyHeadTa(CourseOffering offering, User ta, boolean head) {
+        Notification notification = create(ta, NotificationType.GENERAL,
+                head ? "You are now a head TA" : "You are no longer a head TA", "/courses/" + offering.getId());
+        notification.setMessageKey(head ? TA_HEAD_KEY : TA_NOT_HEAD_KEY);
+        notification.setMessageArg(courseName(offering));
+        notificationRepository.save(notification);
     }
 
     private String courseName(CourseOffering offering) {

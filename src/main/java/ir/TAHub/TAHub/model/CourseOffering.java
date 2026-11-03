@@ -40,13 +40,15 @@ public class CourseOffering {
     @Column(nullable = false)
     private boolean taApplicationsOpen;
 
-    // Add these to CourseOffering.java (model). Put the field next to the other fields
-// (for example under taApplicationsOpen), and the two methods next to the other getters and setters.
-// The column is optional (nullable), so Hibernate adds it by itself: no ALTER needed.
-
     /** Link to the course's Telegram group (https://t.me/...). Empty if the professor has not set one. */
     @Column(length = 200)
     private String telegramLink;
+
+    /**
+     * The most TAs the team may have (head TAs included, waiting invitations counted too).
+     * Only head TAs are held to it; the professor can always invite. Empty means no limit.
+     */
+    private Integer taTeamLimit;
 
     public CourseOffering() {
     }
@@ -71,8 +73,8 @@ public class CourseOffering {
             return true;
         }
         return user.getRole() == Role.PROFESSOR && professor.getId().equals(user.getId());
-
     }
+
     public boolean isCancelled() { return cancelled; }
     public void setCancelled(boolean cancelled) { this.cancelled = cancelled; }
 
@@ -81,5 +83,8 @@ public class CourseOffering {
 
     public String getTelegramLink() { return telegramLink; }
     public void setTelegramLink(String telegramLink) { this.telegramLink = telegramLink; }
+
+    public Integer getTaTeamLimit() { return taTeamLimit; }
+    public void setTaTeamLimit(Integer taTeamLimit) { this.taTeamLimit = taTeamLimit; }
 
 }

@@ -47,7 +47,8 @@ public class CourseController {
     private static final int MAX_LENGTH = 100;
 
     /** One TA as the course page shows it, with the buttons the current user may use. */
-    public record TaRow(TaAssignment assignment, boolean canRemove, boolean canEditPermissions) {
+    public record TaRow(TaAssignment assignment, boolean head, boolean canRemove, boolean canEditPermissions,
+                        boolean canChangeHead) {
     }
 
     /** A waiting TA invitation, and whether the current user may take it back. */
@@ -150,11 +151,20 @@ public class CourseController {
         // Everybody can see who the TAs are. A TA cannot enroll as a student in the same offering.
         boolean open = access.isOpen(offering);
         List<TaRow> taRows = taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering).stream()
-                .map(ta -> new TaRow(ta,
+                .map(ta -> new TaRow(ta, ta.isHead(),
                         open && access.canRemoveTa(current, offering, ta),
-                        open && access.canEditTaPermissions(current, offering, ta)))
+                        open && access.canEditTaPermissions(current, offering, ta),
+                        open && canManage))
                 .toList();
         model.addAttribute("teachingAssistants", taRows);
+
+        // The team limit (for head TAs' invitations): the professor and TAs who manage the team see it.
+        if (canManage || canManageTeam) {
+            long teamSize = taRows.size()
+                    + invitationRepository.countByOfferingAndStatus(offering, TaInvitationStatus.PENDING);
+            model.addAttribute("taTeamSize", teamSize);
+            model.addAttribute("taTeamLimit", offering.getTaTeamLimit());
+        }
 
         // Waiting invitations: seen by the professor and by TAs who manage the team.
         // The professor cancels any; a TA only the ones they sent.

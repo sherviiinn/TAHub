@@ -74,13 +74,23 @@
         <ul th:unless="${#lists.isEmpty(teachingAssistants)}">
             <li th:each="t : ${teachingAssistants}">
                 <span th:text="${t.assignment.user.fullName}"></span>
+                <span class="tag" th:if="${t.head}" th:text="#{ta.head.tag}">Head TA</span>
                 <span th:if="${canManage or canManageTeam}" th:text="'(' + ${t.assignment.user.studentNumber} + ')'"></span>
                 <a th:if="${t.canEditPermissions}"
                    th:href="@{/courses/{id}/tas/{uid}/permissions(id=${offering.id},uid=${t.assignment.user.id})}"
                    th:text="#{ta.permissions.link}">Permissions</a>
+                <!-- Only the professor makes or unmakes head TAs -->
+                <form th:if="${t.canChangeHead and !t.head}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/head(id=${offering.id},uid=${t.assignment.user.id})}">
+                    <button type="submit" class="btn-small" th:text="#{ta.head.make}">Make head TA</button>
+                </form>
+                <form th:if="${t.canChangeHead and t.head}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/unhead(id=${offering.id},uid=${t.assignment.user.id})}">
+                    <button type="submit" class="btn-small" th:text="#{ta.head.remove}">Remove head TA</button>
+                </form>
                 <form th:if="${t.canRemove}" method="post"
                       th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.assignment.user.id})}">
-                    <button type="submit" th:text="#{ta.remove}">Remove</button>
+                    <button type="submit" class="btn-small btn-danger" th:text="#{ta.remove}">Remove</button>
                 </form>
             </li>
         </ul>
@@ -98,6 +108,23 @@
                     </form>
                 </li>
             </ul>
+        </th:block>
+
+        <!-- Team limit: how many TAs head TAs may have in the team (the professor is not held to it) -->
+        <th:block th:if="${taTeamSize != null}">
+            <p th:text="${taTeamLimit != null}
+                    ? #{ta.teamLimit.status(${taTeamSize}, ${taTeamLimit})}
+                    : #{ta.teamLimit.statusNoLimit(${taTeamSize})}">Team: 3 of 5</p>
+            <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
+                <p th:if="${teamLimitSaved}" th:text="#{ta.teamLimit.saved}">Saved.</p>
+                <p th:if="${teamLimitErrorKey}" th:text="#{${teamLimitErrorKey}}"></p>
+                <form method="post" th:action="@{/courses/{id}/ta-team-limit(id=${offering.id})}">
+                    <label for="teamLimit" th:text="#{ta.teamLimit.label}">Team limit</label>
+                    <input type="number" id="teamLimit" name="limit" min="1" max="50" th:value="${taTeamLimit}">
+                    <button type="submit" class="btn-small" th:text="#{ta.teamLimit.save}">Save</button>
+                </form>
+                <small th:text="#{ta.teamLimit.help}">Empty means no limit.</small>
+            </th:block>
         </th:block>
 
         <!-- Invite a TA: they become a TA only after they accept -->

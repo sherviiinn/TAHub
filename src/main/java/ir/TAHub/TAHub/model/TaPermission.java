@@ -24,6 +24,11 @@ public enum TaPermission {
     /** Give other TAs the permissions they have themselves (the head TA has this). */
     GRANT_PERMISSIONS;
 
+    /** A head TA is a TA with these two. Only the professor (or an admin) can give or take them. */
+    public static Set<TaPermission> headOnly() {
+        return EnumSet.of(MANAGE_TEAM, GRANT_PERMISSIONS);
+    }
+
     /** What a TA gets when the professor makes them a TA (the professor can change it right after). */
     public static Set<TaPermission> defaults() {
         return EnumSet.of(POST_ANNOUNCEMENTS, EDIT_TELEGRAM);
