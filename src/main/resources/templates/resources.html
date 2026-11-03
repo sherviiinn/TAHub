@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{resources.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <!-- data-live-topics: this page reloads itself (static/js/live.js) when this offering changes -->
+    <main th:attr="data-live-topics='offering:' + ${offering.id}">
+
+    <!-- Icons for the kinds of links (ResourceKind). The frontend can replace them in app.css / here. -->
+    <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:none">
+        <symbol id="r-youtube" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></symbol>
+        <symbol id="r-aparat" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></symbol>
+        <symbol id="r-drive" viewBox="0 0 24 24"><path d="M3.5 7a1.5 1.5 0 0 1 1.5-1.5h4.5l2 2.5h7.5A1.5 1.5 0 0 1 20.5 9.5V18a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></symbol>
+        <symbol id="r-telegram" viewBox="0 0 24 24"><path d="M21 4 3 11l6 2.5L11.5 20l3-4.5 5 3.5z"/><path d="M9 13.5 21 4"/></symbol>
+        <symbol id="r-github" viewBox="0 0 24 24"><path d="M8.5 8 4.5 12l4 4"/><path d="M15.5 8l4 4-4 4"/><path d="M13.5 5.5l-3 13"/></symbol>
+        <symbol id="r-pdf" viewBox="0 0 24 24"><path d="M6.5 3h8l4 4v13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14.5 3v4h4"/><path d="M8.5 13h7"/><path d="M8.5 16.5h5"/></symbol>
+        <symbol id="r-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+    </svg>
+
+    <h1 th:text="#{resources.title}">Resources</h1>
+    <h2 th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</h2>
+    <p th:unless="${isCurrentSemester}" th:text="#{resources.archivedNote}">This semester is archived.</p>
+
+    <!-- Professor and TAs with "Manage resources": add a resource -->
+    <div th:if="${canManage}" class="card">
+        <h2 th:text="#{resources.add}">Add a resource</h2>
+        <p th:if="${resourceErrorKey}" class="alert alert-error" th:text="#{${resourceErrorKey}}"></p>
+        <form method="post" th:action="@{/courses/{id}/resources(id=${offering.id})}">
+            <div class="field">
+                <label for="title" th:text="#{resources.titleLabel}">Title</label>
+                <input type="text" id="title" name="title" maxlength="150" required autocomplete="off" th:value="${draftTitle}">
+            </div>
+            <div class="field">
+                <label for="url" th:text="#{resources.urlLabel}">Link</label>
+                <input type="url" id="url" name="url" maxlength="500" required placeholder="https://..." autocomplete="off" th:value="${draftUrl}">
+            </div>
+            <div class="field">
+                <label for="category" th:text="#{resources.categoryLabel}">Group (optional)</label>
+                <input type="text" id="category" name="category" maxlength="100" list="resource-categories" autocomplete="off" th:value="${draftCategory}">
+                <datalist id="resource-categories">
+                    <option th:each="c : ${categories}" th:value="${c}"></option>
+                </datalist>
+            </div>
+            <div class="field">
+                <label for="description" th:text="#{resources.descriptionLabel}">Description (optional)</label>
+                <input type="text" id="description" name="description" maxlength="300" autocomplete="off" th:value="${draftDescription}">
+            </div>
+            <button type="submit" class="btn-primary" th:text="#{resources.addButton}">Add</button>
+        </form>
+    </div>
+
+    <!-- Suggestions from the last semester (only the professor and TAs who manage resources see them) -->
+    <div th:if="${canManage and !#lists.isEmpty(suggestions)}" class="card-soft">
+        <h2 th:text="#{resources.suggestions.title}">From last semester</h2>
+        <p th:text="#{resources.suggestions.help}">These were the resources last semester.</p>
+        <form method="post" th:action="@{/courses/{id}/resources/copy(id=${offering.id})}">
+            <ul class="resource-list">
+                <li th:each="s : ${suggestions}" th:classappend="'resource-' + ${s.kind}">
+                    <label>
+                        <input type="checkbox" name="resourceId" th:value="${s.id}">
+                        <svg class="icon"><use th:attr="href='#r-' + ${s.kind}"/></svg>
+                        <strong th:text="${s.title}">Title</strong>
+                        <small th:if="${s.category}" th:text="'(' + ${s.category} + ')'"></small>
+                    </label>
+                    <small class="resource-url" th:text="${s.url}"></small>
+                    <small th:if="${s.description}" th:text="${s.description}"></small>
+                </li>
+            </ul>
+            <button type="submit" class="btn-primary" th:text="#{resources.suggestions.copy}">Add selected to this semester</button>
+        </form>
+        <form method="post" th:action="@{/courses/{id}/resources/hide-suggestions(id=${offering.id})}">
+            <button type="submit" class="btn-ghost" th:text="#{resources.suggestions.hide}">Hide suggestions</button>
+        </form>
+    </div>
+
+    <!-- The resources, grouped by category when there are categories -->
+    <p th:if="${isEmpty}" class="empty" th:text="#{resources.none}">No resources yet.</p>
+
+    <section th:each="g : ${groups}">
+        <h3 th:if="${g.category}" th:text="${g.category}">Category</h3>
+        <ul class="resource-list">
+            <li th:each="r : ${g.resources}" th:classappend="'resource-' + ${r.kind}">
+                <svg class="icon" aria-hidden="true"><use th:attr="href='#r-' + ${r.kind}"/></svg>
+                <a th:href="${r.url}" target="_blank" rel="noopener noreferrer" th:text="${r.title}">Title</a>
+                <small th:if="${r.description}" th:text="${r.description}"></small>
+                <th:block th:if="${canManage}">
+                    <a class="btn btn-small btn-ghost" th:href="@{/resources/{rid}/edit(rid=${r.id})}" th:text="#{resources.edit}">Edit</a>
+                    <form method="post" th:action="@{/resources/{rid}/delete(rid=${r.id})}">
+                        <button type="submit" class="btn-small btn-danger" th:text="#{resources.delete}">Delete</button>
+                    </form>
+                </th:block>
+            </li>
+        </ul>
+    </section>
+
+    <p><a th:href="@{/courses/{id}(id=${offering.id})}" th:text="#{announcements.backToCourse}">Back to the course</a></p>
+    </main>
+</body>
+</html>

@@ -18,6 +18,7 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
+import ir.TAHub.TAHub.repository.CourseResourceRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
@@ -70,6 +71,7 @@ public class CourseController {
     private final OfferingAccess access;
     private final TaInvitationRepository invitationRepository;
     private final TaLimitRequestRepository limitRequestRepository;
+    private final CourseResourceRepository resourceRepository;
     private final TaService taService;
 
     public CourseController(CourseOfferingRepository offeringRepository,
@@ -84,6 +86,7 @@ public class CourseController {
                             OfferingAccess access,
                             TaInvitationRepository invitationRepository,
                             TaLimitRequestRepository limitRequestRepository,
+                            CourseResourceRepository resourceRepository,
                             TaService taService) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
@@ -97,6 +100,7 @@ public class CourseController {
         this.access = access;
         this.invitationRepository = invitationRepository;
         this.limitRequestRepository = limitRequestRepository;
+        this.resourceRepository = resourceRepository;
         this.taService = taService;
     }
 
@@ -213,6 +217,8 @@ public class CourseController {
         if (canSeeAnnouncements) {
             model.addAttribute("announcementCount", announcementRepository.countByOfferingAndDeletedFalse(offering));
         }
+        // Resources are for everyone who is logged in.
+        model.addAttribute("resourceCount", resourceRepository.countByOfferingAndDeletedFalse(offering));
 
         // TA applications: is the offering taking them, and what is this student's own request (if any).
         model.addAttribute("taApplicationsOpen", offering.isTaApplicationsOpen());

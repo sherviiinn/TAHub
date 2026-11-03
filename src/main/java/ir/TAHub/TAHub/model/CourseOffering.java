@@ -54,6 +54,9 @@ public class CourseOffering {
 
     public static final int DEFAULT_TA_TEAM_LIMIT = 1;
 
+    /** True when the professor or a TA chose "Hide suggestions" on the resources page (last semester's links). */
+    private Boolean resourceSuggestionsHidden;
+
     public CourseOffering() {
     }
 
@@ -87,6 +90,9 @@ public class CourseOffering {
 
     public String getTelegramLink() { return telegramLink; }
     public void setTelegramLink(String telegramLink) { this.telegramLink = telegramLink; }
+
+    public Boolean getResourceSuggestionsHidden() { return resourceSuggestionsHidden; }
+    public void setResourceSuggestionsHidden(Boolean resourceSuggestionsHidden) { this.resourceSuggestionsHidden = resourceSuggestionsHidden; }
 
     public Integer getTaTeamLimit() { return taTeamLimit; }
     public void setTaTeamLimit(Integer taTeamLimit) { this.taTeamLimit = taTeamLimit; }
