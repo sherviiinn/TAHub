@@ -4,11 +4,13 @@ import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.TaInvitation;
 import ir.TAHub.TAHub.model.TaInvitationStatus;
+import ir.TAHub.TAHub.model.TaLimitRequestStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.TaInvitationRepository;
+import ir.TAHub.TAHub.repository.TaLimitRequestRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
 import ir.TAHub.TAHub.service.NotificationStream;
@@ -42,8 +44,9 @@ import java.util.Set;
  *   those of another TA who also has "Give permissions".
  * Head TAs: a head TA has "Manage TA team" and "Give permissions". There can be several. Only the professor
  *   makes or unmakes head TAs, and only the professor gives or takes those two permissions.
- * Team limit (offering.taTeamLimit): head TAs cannot invite when active TAs + waiting invitations reach it.
- *   The professor is never held to it.
+ * Team limit (offering.taTeamLimit): when active TAs + waiting invitations reach it, nobody can be invited
+ *   (the professor included) and no TA request can be sent or accepted, until the professor raises it.
+ *   Head TAs can ask for a higher limit (TaLimitRequestController).
  * There is no "restore" for removed TAs: they are simply added again (with new permissions).
  */
 @Controller
@@ -59,6 +62,7 @@ public class TaController {
     private final CourseOfferingRepository offeringRepository;
     private final TaAssignmentRepository taRepository;
     private final TaInvitationRepository invitationRepository;
+    private final TaLimitRequestRepository limitRequestRepository;
     private final TaService taService;
     private final OfferingAccess access;
     private final NotificationService notificationService;
@@ -68,6 +72,7 @@ public class TaController {
                         CourseOfferingRepository offeringRepository,
                         TaAssignmentRepository taRepository,
                         TaInvitationRepository invitationRepository,
+                        TaLimitRequestRepository limitRequestRepository,
                         TaService taService,
                         OfferingAccess access,
                         NotificationService notificationService,
@@ -76,6 +81,7 @@ public class TaController {
         this.offeringRepository = offeringRepository;
         this.taRepository = taRepository;
         this.invitationRepository = invitationRepository;
+        this.limitRequestRepository = limitRequestRepository;
         this.taService = taService;
         this.access = access;
         this.notificationService = notificationService;
@@ -104,7 +110,8 @@ public class TaController {
                 && invitationRepository.existsByInviteeAndOfferingAndStatus(candidate, offering, TaInvitationStatus.PENDING)) {
             errorKey = "ta.error.alreadyInvited";
         }
-        if (errorKey == null && !manager && isTeamFull(offering)) {
+        // A full team takes nobody new, not even from the professor, until the limit is raised.
+        if (errorKey == null && taService.isTeamFull(offering)) {
             errorKey = "ta.error.teamFull";
         }
         if (errorKey != null) {
@@ -247,13 +254,24 @@ public class TaController {
                 return "redirect:/courses/" + id;
             }
             // Not below the team the course already has (TAs and waiting invitations).
-            if (value < teamSize(offering)) {
+            if (value < taService.teamSize(offering)) {
                 redirect.addFlashAttribute("teamLimitErrorKey", "ta.teamLimit.error.belowCurrent");
                 return "redirect:/courses/" + id;
             }
         }
         offering.setTaTeamLimit(value);
         offeringRepository.save(offering);
+
+        // A head TA's waiting request is answered by this if the new limit is high enough (or there is none).
+        Integer newLimit = value;
+        limitRequestRepository.findFirstByOfferingAndStatus(offering, TaLimitRequestStatus.PENDING)
+                .filter(request -> newLimit == null || newLimit >= request.getRequestedLimit())
+                .ifPresent(request -> {
+                    request.setStatus(TaLimitRequestStatus.APPROVED);
+                    request.setDecidedAt(Instant.now());
+                    limitRequestRepository.save(request);
+                    notificationService.notifyLimitRequestAnswered(request, NotificationService.TA_LIMIT_APPROVED_KEY);
+                });
         redirect.addFlashAttribute("teamLimitSaved", true);
         return "redirect:/courses/" + id;
     }
@@ -280,17 +298,6 @@ public class TaController {
         stream.broadcast("offering:" + offering.getId()); // only the permission list changed (see savePermissions)
         notificationService.notifyHeadTa(offering, target.getUser(), head);
         return "redirect:/courses/" + id;
-    }
-
-    /** Active TAs plus waiting invitations: the places the team already uses. */
-    private long teamSize(CourseOffering offering) {
-        return taRepository.countByOfferingAndActiveTrue(offering)
-                + invitationRepository.countByOfferingAndStatus(offering, TaInvitationStatus.PENDING);
-    }
-
-    private boolean isTeamFull(CourseOffering offering) {
-        Integer limit = offering.getTaTeamLimit();
-        return limit != null && teamSize(offering) >= limit;
     }
 
     // ---------- helpers ----------

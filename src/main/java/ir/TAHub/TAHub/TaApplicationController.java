@@ -101,6 +101,8 @@ public class TaApplicationController {
         String errorKey = null;
         if (!offering.isTaApplicationsOpen()) {
             errorKey = "ta.apply.error.closed";
+        } else if (taService.isTeamFull(offering)) {
+            errorKey = "ta.apply.error.teamFull";
         } else if (text.length() > MAX_MESSAGE) {
             errorKey = "ta.apply.error.tooLong";
         } else {
@@ -149,6 +151,7 @@ public class TaApplicationController {
             application.setStatus(TaApplicationStatus.WITHDRAWN);
             application.setDecidedAt(Instant.now());
             applicationRepository.save(application);
+            taService.afterRequestHandled(application.getOffering());
         }
         return "redirect:/my-ta-requests";
     }
@@ -184,6 +187,11 @@ public class TaApplicationController {
     @PostMapping("/ta-applications/{appId}/accept")
     public String accept(@PathVariable Long appId, Authentication authentication, RedirectAttributes redirect) {
         TaApplication application = findManagedApplication(appId, authentication);
+        if (application.getStatus() == TaApplicationStatus.PENDING && taService.isTeamFull(application.getOffering())) {
+            // A full team takes nobody new, not even from the professor, until the limit is raised.
+            redirect.addFlashAttribute("requestErrorKey", "ta.error.teamFull");
+            return "redirect:/ta-requests";
+        }
         if (application.getStatus() == TaApplicationStatus.PENDING) {
             // Students apply to be a HEAD TA: an accepted request gives the default permissions plus
             // "Manage TA team" and "Give permissions". The professor can change them right after.
@@ -195,6 +203,7 @@ public class TaApplicationController {
                 redirect.addFlashAttribute("requestErrorKey", problem);
             } else {
                 decide(application, TaApplicationStatus.ACCEPTED);
+                taService.afterRequestHandled(application.getOffering());
                 if (problem == null) {
                     notificationService.notifyHeadTa(application.getOffering(), application.getStudent(), true);
                 }
@@ -211,6 +220,7 @@ public class TaApplicationController {
         TaApplication application = findManagedApplication(appId, authentication);
         if (application.getStatus() == TaApplicationStatus.PENDING) {
             decide(application, TaApplicationStatus.REJECTED);
+            taService.afterRequestHandled(application.getOffering());
         }
         return "redirect:/ta-requests";
     }

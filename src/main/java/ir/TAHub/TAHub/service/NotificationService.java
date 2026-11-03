@@ -9,6 +9,7 @@ import ir.TAHub.TAHub.model.NotificationType;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.SiteNotice;
 import ir.TAHub.TAHub.model.TaInvitation;
+import ir.TAHub.TAHub.model.TaLimitRequest;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
@@ -43,6 +44,11 @@ public class NotificationService {
     public static final String TA_INVITATION_DECLINED_KEY = "notifications.ta.invitationDeclined";
     public static final String TA_INVITATION_CLOSED_KEY = "notifications.ta.invitationClosed";
     public static final String TA_HEAD_KEY = "notifications.ta.head";
+    public static final String TA_INVITATION_EXPIRED_KEY = "notifications.ta.invitationExpired";
+    public static final String TA_LIMIT_REQUEST_KEY = "notifications.ta.limitRequest";
+    public static final String TA_LIMIT_APPROVED_KEY = "notifications.ta.limitApproved";
+    public static final String TA_LIMIT_REJECTED_KEY = "notifications.ta.limitRejected";
+    public static final String TA_LIMIT_EXPIRED_KEY = "notifications.ta.limitExpired";
     public static final String TA_NOT_HEAD_KEY = "notifications.ta.notHead";
     private static final String MY_TA_REQUESTS_LINK = "/my-ta-requests";
     private static final String CAFETERIA_LINK = "/cafeteria";
@@ -485,6 +491,56 @@ public class NotificationService {
         notification.setMessageKey(head ? TA_HEAD_KEY : TA_NOT_HEAD_KEY);
         notification.setMessageArg(courseName(offering));
         notificationRepository.save(notification);
+    }
+
+    /** Every TA request of this offering was handled: the professor's "New TA request" notification goes away. */
+    @Transactional
+    public void clearTaRequestNotifications(CourseOffering offering) {
+        Long professorId = offering.getProfessor().getId();
+        String course = courseName(offering);
+        notificationRepository.deleteAll(notificationRepository.findByLink("/ta-requests").stream()
+                .filter(n -> TA_REQUEST_KEY.equals(n.getMessageKey())
+                        && n.getUser().getId().equals(professorId)
+                        && course.equals(n.getMessageArg()))
+                .toList());
+    }
+
+    /** An invitation was not answered in time: the people who sent it are told. */
+    @Transactional
+    public void notifyTaInvitationExpired(TaInvitation invitation) {
+        notifyInviters(invitation, TA_INVITATION_EXPIRED_KEY);
+    }
+
+    /** A head TA asks to raise the team limit: the professor is told ("Ali Rezaei: CS201 - ..., to 6"). */
+    @Transactional
+    public void notifyLimitRequest(TaLimitRequest request) {
+        Notification notification = create(request.getOffering().getProfessor(), NotificationType.GENERAL,
+                "Team limit request", "/courses/" + request.getOffering().getId());
+        notification.setMessageKey(TA_LIMIT_REQUEST_KEY);
+        notification.setMessageArg(request.getRequestedBy().getFullName() + ": "
+                + courseName(request.getOffering()) + ", " + request.getRequestedLimit());
+        notificationRepository.save(notification);
+    }
+
+    /** The answer (approved, rejected or expired) goes to the head TA who asked; the professor's notice goes away. */
+    @Transactional
+    public void notifyLimitRequestAnswered(TaLimitRequest request, String key) {
+        Notification notification = create(request.getRequestedBy(), NotificationType.GENERAL,
+                "Team limit request answered", "/courses/" + request.getOffering().getId());
+        notification.setMessageKey(key);
+        notification.setMessageArg(courseName(request.getOffering()) + ": " + request.getRequestedLimit());
+        notificationRepository.save(notification);
+        clearLimitRequestNotification(request);
+    }
+
+    /** Removes the professor's notification about a limit request (when it is answered or closed). */
+    @Transactional
+    public void clearLimitRequestNotification(TaLimitRequest request) {
+        Long professorId = request.getOffering().getProfessor().getId();
+        notificationRepository.deleteAll(notificationRepository
+                .findByLink("/courses/" + request.getOffering().getId()).stream()
+                .filter(n -> TA_LIMIT_REQUEST_KEY.equals(n.getMessageKey()) && n.getUser().getId().equals(professorId))
+                .toList());
     }
 
     private String courseName(CourseOffering offering) {

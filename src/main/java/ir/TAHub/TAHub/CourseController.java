@@ -9,6 +9,7 @@ import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.TaInvitation;
 import ir.TAHub.TAHub.model.TaInvitationStatus;
+import ir.TAHub.TAHub.model.TaLimitRequestStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.Role;
@@ -22,9 +23,11 @@ import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.TaInvitationRepository;
+import ir.TAHub.TAHub.repository.TaLimitRequestRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.OfferingAccess;
+import ir.TAHub.TAHub.service.TaService;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -66,6 +69,8 @@ public class CourseController {
     private final AnnouncementRepository announcementRepository;
     private final OfferingAccess access;
     private final TaInvitationRepository invitationRepository;
+    private final TaLimitRequestRepository limitRequestRepository;
+    private final TaService taService;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -77,7 +82,9 @@ public class CourseController {
                             TaApplicationRepository applicationRepository,
                             AnnouncementRepository announcementRepository,
                             OfferingAccess access,
-                            TaInvitationRepository invitationRepository) {
+                            TaInvitationRepository invitationRepository,
+                            TaLimitRequestRepository limitRequestRepository,
+                            TaService taService) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -89,6 +96,8 @@ public class CourseController {
         this.announcementRepository = announcementRepository;
         this.access = access;
         this.invitationRepository = invitationRepository;
+        this.limitRequestRepository = limitRequestRepository;
+        this.taService = taService;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -158,12 +167,19 @@ public class CourseController {
                 .toList();
         model.addAttribute("teachingAssistants", taRows);
 
-        // The team limit (for head TAs' invitations): the professor and TAs who manage the team see it.
+        // A full team takes nobody new: the "Become a head TA" form is replaced by a message.
+        model.addAttribute("taTeamFull", taService.isTeamFull(offering));
+
+        // The team limit: the professor and TAs who manage the team see it.
         if (canManage || canManageTeam) {
-            long teamSize = taRows.size()
-                    + invitationRepository.countByOfferingAndStatus(offering, TaInvitationStatus.PENDING);
-            model.addAttribute("taTeamSize", teamSize);
+            model.addAttribute("taTeamSize", taService.teamSize(offering));
             model.addAttribute("taTeamLimit", offering.getTaTeamLimit());
+
+            // A head TA's waiting request to raise the limit (the professor answers it; head TAs see it).
+            model.addAttribute("pendingLimitRequest", limitRequestRepository
+                    .findFirstByOfferingAndStatus(offering, TaLimitRequestStatus.PENDING).orElse(null));
+            boolean iAmHead = access.activeTa(current, offering).map(TaAssignment::isHead).orElse(false);
+            model.addAttribute("canRequestLimit", iAmHead && open && offering.getTaTeamLimit() != null);
         }
 
         // Waiting invitations: seen by the professor and by TAs who manage the team.
