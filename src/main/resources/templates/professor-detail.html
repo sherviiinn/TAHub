@@ -22,7 +22,10 @@
             <td>
                 <span th:if="${#lists.isEmpty(c.teachingAssistants)}" th:text="#{ta.none}">No TAs yet.</span>
                 <ul th:unless="${#lists.isEmpty(c.teachingAssistants)}">
-                    <li th:each="t : ${c.teachingAssistants}" th:text="${t.user.fullName}"></li>
+                    <li th:each="t : ${c.teachingAssistants}">
+                        <span th:text="${t.user.fullName}"></span>
+                        <span class="tag" th:if="${t.head}" th:text="#{ta.head.tag}">Head TA</span>
+                    </li>
                 </ul>
             </td>
         </tr>

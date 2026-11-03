@@ -12,6 +12,7 @@ import ir.TAHub.TAHub.model.SiteNoticeDismissal;
 import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.TaInvitation;
+import ir.TAHub.TAHub.model.TaLimitRequest;
 import ir.TAHub.TAHub.service.NotificationStream;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
@@ -113,6 +114,8 @@ public class LiveTopicListener
         } else if (entity instanceof TaInvitation invitation) {
             topics.add(offeringTopic(invitation.getOffering()));
             topics.add("ta-requests");
+        } else if (entity instanceof TaLimitRequest request) {
+            topics.add(offeringTopic(request.getOffering()));
         } else if (entity instanceof Announcement announcement) {
             topics.add(offeringTopic(announcement.getOffering()));
         } else if (entity instanceof SiteNotice) {

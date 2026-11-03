@@ -6,6 +6,7 @@ import ir.TAHub.TAHub.model.TaInvitationStatus;
 import ir.TAHub.TAHub.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface TaInvitationRepository extends JpaRepository<TaInvitation, Long> {
@@ -18,6 +19,11 @@ public interface TaInvitationRepository extends JpaRepository<TaInvitation, Long
 
     boolean existsByInviteeAndOfferingAndStatus(User invitee, CourseOffering offering, TaInvitationStatus status);
 
-    // Used later by the head TA team limit: waiting invitations count as places taken.
+    // For the nightly job (invitations expire after 7 days) and for closing a finished semester.
+    List<TaInvitation> findByStatusAndCreatedAtBefore(TaInvitationStatus status, Instant before);
+
+    List<TaInvitation> findByStatus(TaInvitationStatus status);
+
+    // For the team limit: waiting invitations count as places taken.
     long countByOfferingAndStatus(CourseOffering offering, TaInvitationStatus status);
 }

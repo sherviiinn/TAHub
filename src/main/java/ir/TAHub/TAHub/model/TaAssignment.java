@@ -86,6 +86,11 @@ public class TaAssignment {
         return getEffectivePermissions().contains(permission);
     }
 
+    /** A head TA has both "Manage TA team" and "Give permissions". There can be several in one offering. */
+    public boolean isHead() {
+        return getEffectivePermissions().containsAll(TaPermission.headOnly());
+    }
+
     public Long getId() { return id; }
 
     public User getUser() { return user; }

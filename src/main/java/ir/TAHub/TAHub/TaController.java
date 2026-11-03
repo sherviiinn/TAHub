@@ -4,11 +4,13 @@ import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.TaInvitation;
 import ir.TAHub.TAHub.model.TaInvitationStatus;
+import ir.TAHub.TAHub.model.TaLimitRequestStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.TaInvitationRepository;
+import ir.TAHub.TAHub.repository.TaLimitRequestRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.NotificationService;
 import ir.TAHub.TAHub.service.NotificationStream;
@@ -40,6 +42,11 @@ import java.util.Set;
  * Who may change a TA's permissions: the professor (and admins), and TAs with "Give permissions".
  *   Such a TA only changes the permissions they have themselves, never their own permissions, and never
  *   those of another TA who also has "Give permissions".
+ * Head TAs: a head TA has "Manage TA team" and "Give permissions". There can be several. Only the professor
+ *   makes or unmakes head TAs, and only the professor gives or takes those two permissions.
+ * Team limit (offering.taTeamLimit): when active TAs + waiting invitations reach it, nobody can be invited
+ *   (the professor included) and no TA request can be sent or accepted, until the professor raises it.
+ *   Head TAs can ask for a higher limit (TaLimitRequestController).
  * There is no "restore" for removed TAs: they are simply added again (with new permissions).
  */
 @Controller
@@ -49,10 +56,13 @@ public class TaController {
     public record PermissionRow(TaPermission permission, boolean checked, boolean editable) {
     }
 
+    private static final int TEAM_LIMIT_MAX = 50;
+
     private final UserRepository userRepository;
     private final CourseOfferingRepository offeringRepository;
     private final TaAssignmentRepository taRepository;
     private final TaInvitationRepository invitationRepository;
+    private final TaLimitRequestRepository limitRequestRepository;
     private final TaService taService;
     private final OfferingAccess access;
     private final NotificationService notificationService;
@@ -62,6 +72,7 @@ public class TaController {
                         CourseOfferingRepository offeringRepository,
                         TaAssignmentRepository taRepository,
                         TaInvitationRepository invitationRepository,
+                        TaLimitRequestRepository limitRequestRepository,
                         TaService taService,
                         OfferingAccess access,
                         NotificationService notificationService,
@@ -70,6 +81,7 @@ public class TaController {
         this.offeringRepository = offeringRepository;
         this.taRepository = taRepository;
         this.invitationRepository = invitationRepository;
+        this.limitRequestRepository = limitRequestRepository;
         this.taService = taService;
         this.access = access;
         this.notificationService = notificationService;
@@ -97,6 +109,10 @@ public class TaController {
         if (errorKey == null
                 && invitationRepository.existsByInviteeAndOfferingAndStatus(candidate, offering, TaInvitationStatus.PENDING)) {
             errorKey = "ta.error.alreadyInvited";
+        }
+        // A full team takes nobody new, not even from the professor, until the limit is raised.
+        if (errorKey == null && taService.isTeamFull(offering)) {
+            errorKey = "ta.error.teamFull";
         }
         if (errorKey != null) {
             redirect.addFlashAttribute("taErrorKey", errorKey);
@@ -145,7 +161,7 @@ public class TaController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        Set<TaPermission> editable = access.permissions(current, offering);
+        Set<TaPermission> editable = access.grantable(current, offering);
         Set<TaPermission> now = target.getEffectivePermissions();
         List<PermissionRow> rows = new ArrayList<>();
         for (TaPermission permission : TaPermission.values()) {
@@ -172,7 +188,7 @@ public class TaController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        Set<TaPermission> editable = access.permissions(current, offering);
+        Set<TaPermission> editable = access.grantable(current, offering);
         Set<TaPermission> before = target.getEffectivePermissions();
         Set<TaPermission> after = EnumSet.noneOf(TaPermission.class);
         for (TaPermission permission : TaPermission.values()) {
@@ -191,8 +207,96 @@ public class TaController {
         stream.broadcast("offering:" + offering.getId());
         if (!after.equals(before)) {
             notificationService.notifyTaPermissionsChanged(offering, target.getUser());
+            boolean wasHead = before.containsAll(TaPermission.headOnly());
+            boolean isHead = after.containsAll(TaPermission.headOnly());
+            if (wasHead != isHead) {
+                notificationService.notifyHeadTa(offering, target.getUser(), isHead);
+            }
         }
         redirect.addFlashAttribute("taPermissionsSavedFor", target.getUser().getFullName());
+        return "redirect:/courses/" + id;
+    }
+
+    /** The professor makes a TA a head TA (gives "Manage TA team" and "Give permissions"). */
+    @PostMapping("/courses/{id}/tas/{userId}/head")
+    public String makeHead(@PathVariable Long id, @PathVariable Long userId, Authentication authentication) {
+        return setHead(id, userId, true, authentication);
+    }
+
+    /** The professor takes the head TA role away (the person stays a TA with their other permissions). */
+    @PostMapping("/courses/{id}/tas/{userId}/unhead")
+    public String removeHead(@PathVariable Long id, @PathVariable Long userId, Authentication authentication) {
+        return setHead(id, userId, false, authentication);
+    }
+
+    /** The professor sets the most TAs head TAs may have in the team. An empty box means no limit. */
+    @PostMapping("/courses/{id}/ta-team-limit")
+    public String setTeamLimit(@PathVariable Long id,
+                               @RequestParam(defaultValue = "") String limit,
+                               Authentication authentication,
+                               RedirectAttributes redirect) {
+        User current = currentUser(authentication);
+        CourseOffering offering = findOpenOffering(id);
+        if (!access.isManager(current, offering)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        String text = Digits.toAscii(limit).trim();
+        Integer value = null;
+        if (!text.isEmpty()) {
+            try {
+                value = Integer.parseInt(text);
+            } catch (NumberFormatException e) {
+                value = -1;
+            }
+            if (value < 1 || value > TEAM_LIMIT_MAX) {
+                redirect.addFlashAttribute("teamLimitErrorKey", "ta.teamLimit.error.range");
+                return "redirect:/courses/" + id;
+            }
+            // Not below the team the course already has (TAs and waiting invitations).
+            if (value < taService.teamSize(offering)) {
+                redirect.addFlashAttribute("teamLimitErrorKey", "ta.teamLimit.error.belowCurrent");
+                return "redirect:/courses/" + id;
+            }
+        }
+        offering.setTaTeamLimit(value);
+        offeringRepository.save(offering);
+
+        // A head TA's waiting request is answered by this if the new limit is high enough (or there is none).
+        Integer newLimit = value;
+        limitRequestRepository.findFirstByOfferingAndStatus(offering, TaLimitRequestStatus.PENDING)
+                .filter(request -> newLimit == null || newLimit >= request.getRequestedLimit())
+                .ifPresent(request -> {
+                    request.setStatus(TaLimitRequestStatus.APPROVED);
+                    request.setDecidedAt(Instant.now());
+                    limitRequestRepository.save(request);
+                    notificationService.notifyLimitRequestAnswered(request, NotificationService.TA_LIMIT_APPROVED_KEY);
+                });
+        redirect.addFlashAttribute("teamLimitSaved", true);
+        return "redirect:/courses/" + id;
+    }
+
+    private String setHead(Long id, Long userId, boolean head, Authentication authentication) {
+        User current = currentUser(authentication);
+        CourseOffering offering = findOpenOffering(id);
+        if (!access.isManager(current, offering)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        TaAssignment target = findActiveTa(userId, offering);
+        if (target.isHead() == head) {
+            return "redirect:/courses/" + id;
+        }
+
+        Set<TaPermission> permissions = target.getEffectivePermissions();
+        if (head) {
+            permissions.addAll(TaPermission.headOnly());
+        } else {
+            permissions.removeAll(TaPermission.headOnly());
+        }
+        target.replacePermissions(permissions);
+        taRepository.save(target);
+        stream.broadcast("offering:" + offering.getId()); // only the permission list changed (see savePermissions)
+        notificationService.notifyHeadTa(offering, target.getUser(), head);
         return "redirect:/courses/" + id;
     }
 
