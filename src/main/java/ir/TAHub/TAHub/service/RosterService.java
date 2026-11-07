@@ -11,7 +11,6 @@ import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
-import ir.TAHub.TAHub.util.Digits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,28 +38,34 @@ public class RosterService {
     private final EnrollmentRepository enrollmentRepository;
     private final TaAssignmentRepository taRepository;
     private final TaService taService;
+    private final StudentNumberRules numberRules;
 
     public RosterService(RosterEntryRepository rosterRepository,
                          UserRepository userRepository,
                          EnrollmentRepository enrollmentRepository,
                          TaAssignmentRepository taRepository,
-                         TaService taService) {
+                         TaService taService,
+                         StudentNumberRules numberRules) {
         this.rosterRepository = rosterRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
         this.taService = taService;
+        this.numberRules = numberRules;
     }
 
-    /** Splits the text on spaces, new lines, commas and semicolons. Duplicates are removed. */
+    /**
+     * Splits the text on spaces, new lines, commas and semicolons. Duplicates are removed.
+     * Numbers that do not follow the student number format (StudentNumberRules) are counted as not valid.
+     */
     public ParsedList parse(String text) {
         Set<String> numbers = new LinkedHashSet<>();
         int invalid = 0;
-        for (String token : Digits.toAscii(text == null ? "" : text).split("[\\s,;]+")) {
+        for (String token : numberRules.clean(text).split("[\\s,;]+")) {
             if (token.isEmpty()) {
                 continue;
             }
-            if (token.matches("\\d{4,20}")) {
+            if (numberRules.isValid(token)) {
                 numbers.add(token);
             } else {
                 invalid++;

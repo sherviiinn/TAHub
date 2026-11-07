@@ -20,4 +20,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     boolean existsByStudentAndOfferingCourseAndOfferingSemesterAndStatus(
             User student, Course course, Semester semester, EnrollmentStatus status);
-}
+
+    // Admin accounts panel: in how many courses a student is now.
+    long countByStudentAndStatus(User student, EnrollmentStatus status);
+}

@@ -21,7 +21,12 @@
         </div>
         <div>
             <label for="studentNumber" th:text="#{register.studentNumber}">Student number</label><br>
-            <input type="text" th:field="*{studentNumber}">
+            <input type="text" th:field="*{studentNumber}" inputmode="numeric" dir="ltr" autocomplete="off">
+            <br>
+            <small th:if="${hint.fromYear() != null}"
+                   th:text="#{register.studentNumber.hint(${hint.digits()}, ${hint.fromYear()}, ${hint.toYear()})}"></small>
+            <small th:if="${hint.fromYear() == null}"
+                   th:text="#{register.studentNumber.hintDigits(${hint.digits()})}"></small>
         </div>
         <div>
             <label for="majorId" th:text="#{register.major}">Field of study</label><br>
@@ -46,5 +51,6 @@
 </th:block>
 
 <p><a th:href="@{/login}" th:text="#{register.haveAccount}">Already have an account? Sign in</a></p>
+<p><a th:href="@{/register/professor}" th:text="#{login.professor}">Professor? Register with an invite code</a></p>
 </body>
 </html>

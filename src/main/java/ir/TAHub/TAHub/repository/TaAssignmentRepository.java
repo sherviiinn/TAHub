@@ -26,4 +26,9 @@ public interface TaAssignmentRepository extends JpaRepository<TaAssignment, Long
 
     // TAs that were removed (the rows stay for history).
     List<TaAssignment> findByOfferingAndActiveFalseOrderByUserFullNameAsc(CourseOffering offering);
+
+    // Admin accounts panel: the TA roles a user has now (counted, and ended when a number is released).
+    List<TaAssignment> findByUserAndActiveTrue(User user);
+
+    long countByUserAndActiveTrue(User user);
 }

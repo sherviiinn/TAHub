@@ -2,6 +2,9 @@ package ir.TAHub.TAHub.model;
 
 import jakarta.persistence.*;
 import jakarta.persistence.EnumType;
+
+import java.time.Instant;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -13,6 +16,7 @@ public class User {
     @Column(nullable = false)
     private String fullName;
 
+    // The login name: the student number for students, a username for professors and admins.
     @Column(nullable = false, unique = true)
     private String studentNumber;
 
@@ -27,6 +31,14 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "major_id")
     private Major major;
+
+    // When an admin disabled the account (null = active). A disabled account cannot sign in.
+    private Instant disabledAt;
+
+    // Set when an admin released the student number: the old number is kept here and
+    // studentNumber becomes "released-<id>", so the real owner of the number can register.
+    @Column(length = 50)
+    private String releasedNumber;
 
     public User() {
     }
@@ -69,4 +81,11 @@ public class User {
     public Major getMajor() { return major; }
     public void setMajor(Major major) { this.major = major; }
 
+    public Instant getDisabledAt() { return disabledAt; }
+    public void setDisabledAt(Instant disabledAt) { this.disabledAt = disabledAt; }
+
+    public String getReleasedNumber() { return releasedNumber; }
+    public void setReleasedNumber(String releasedNumber) { this.releasedNumber = releasedNumber; }
+
+    public boolean isDisabled() { return disabledAt != null; }
 }
