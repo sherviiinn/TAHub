@@ -9,13 +9,14 @@
 <h1 th:text="#{login.title}">Sign in</h1>
 
 <p th:if="${param.error}" th:text="#{login.error}"></p>
+<p th:if="${param.disabled}" th:text="#{login.disabled}"></p>
 <p th:if="${param.logout}" th:text="#{login.logout}"></p>
 <p th:if="${param.registered}" th:text="#{login.registered}"></p>
 
 <form method="post" th:action="@{/login}">
     <div>
-        <label for="username" th:text="#{login.studentNumber}">Student number</label><br>
-        <input type="text" id="username" name="username" required autofocus>
+        <label for="username" th:text="#{login.studentNumber}">Student number or username</label><br>
+        <input type="text" id="username" name="username" dir="ltr" required autofocus>
     </div>
     <div>
         <label for="password" th:text="#{login.password}">Password</label><br>
@@ -25,5 +26,6 @@
 </form>
 
 <p><a th:href="@{/register}" th:text="#{login.register}">Create an account</a></p>
+<p><a th:href="@{/register/professor}" th:text="#{login.professor}">Professor? Register with an invite code</a></p>
 </body>
 </html>

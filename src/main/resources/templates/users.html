@@ -3,41 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Users</title>
+    <title th:text="#{users.title}">Users</title>
 </head>
 <body>
-<h1>Users</h1>
+<h1 th:text="#{users.title}">Users</h1>
+
+<!-- Disabling accounts and releasing numbers is done in its own careful panel. -->
+<p>
+    <a th:href="@{/admin/accounts}" th:text="#{users.link.accounts}">Accounts panel (disable, release number)</a>
+    |
+    <a th:href="@{/admin/professor-invites}" th:text="#{users.link.invites}">Professor invite codes</a>
+</p>
+
+<h2 th:text="#{users.add}">Add a user</h2>
+<p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
+<p>
+    <small th:if="${hint.fromYear() != null}"
+           th:text="#{register.studentNumber.hint(${hint.digits()}, ${hint.fromYear()}, ${hint.toYear()})}"></small>
+    <small th:text="#{users.loginHelp}">Professors and admins get a username.</small>
+</p>
 
 <form method="post" th:action="@{/users}">
-    <input type="text" name="fullName" placeholder="Full name" required>
-    <input type="text" name="studentNumber" placeholder="Student number" required>
-    <input type="password" name="password" placeholder="Password" required>
+    <input type="text" name="fullName" th:placeholder="#{register.fullName}" required>
+    <input type="text" name="studentNumber" th:placeholder="#{users.login}" dir="ltr" required>
+    <input type="password" name="password" th:placeholder="#{register.password}" required>
     <select name="role">
-        <option value="STUDENT">Student</option>
-        <option value="PROFESSOR">Professor</option>
-        <option value="ADMIN">Admin</option>
+        <option value="STUDENT" th:text="#{role.STUDENT}">Student</option>
+        <option value="PROFESSOR" th:text="#{role.PROFESSOR}">Professor</option>
+        <option value="ADMIN" th:text="#{role.ADMIN}">Admin</option>
     </select>
-    <button type="submit">Save</button>
+    <button type="submit" th:text="#{users.save}">Save</button>
 </form>
 
 <table border="1">
     <tr>
         <th>ID</th>
-        <th>Name</th>
-        <th>Student number</th>
-        <th>Role</th>
-        <th>Actions</th>
+        <th th:text="#{accounts.col.name}">Name</th>
+        <th th:text="#{accounts.col.login}">Number / username</th>
+        <th th:text="#{accounts.col.role}">Role</th>
     </tr>
     <tr th:each="u : ${users}">
         <td th:text="${u.id}"></td>
         <td th:text="${u.fullName}"></td>
-        <td th:text="${u.studentNumber}"></td>
-        <td th:text="${u.role}"></td>
-        <td>
-            <form method="post" th:action="@{/users/{id}/delete(id=${u.id})}">
-                <button type="submit">Delete</button>
-            </form>
-        </td>
+        <td dir="ltr" th:text="${u.studentNumber}"></td>
+        <td th:text="#{${'role.' + u.role}}"></td>
     </tr>
 </table>
 </body>

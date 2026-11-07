@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{accounts.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+    <h1 th:text="#{accounts.title}">Accounts</h1>
+    <p th:text="#{accounts.help}">Nothing is deleted here.</p>
+
+    <p th:if="${accountErrorKey}" class="alert alert-error" th:text="#{${accountErrorKey}}"></p>
+    <p th:if="${accountDoneKey}" class="alert alert-success" th:text="#{${accountDoneKey}}"></p>
+
+    <form method="get" th:action="@{/admin/accounts}" class="account-search">
+        <label for="q" th:text="#{accounts.search}">Search by number or name</label>
+        <input type="text" id="q" name="q" maxlength="100" autocomplete="off" th:value="${q}">
+        <button type="submit" th:text="#{accounts.search.submit}">Search</button>
+        <a th:href="@{/admin/accounts(invalid=true)}" th:text="#{accounts.filter.invalid}">Students with an invalid number</a>
+    </form>
+
+    <th:block th:if="${searched}">
+        <h2 th:if="${invalid}" th:text="#{accounts.filter.invalid}">Students with an invalid number</h2>
+        <p th:if="${#lists.isEmpty(users)}" th:text="#{accounts.empty}">No account found.</p>
+
+        <table th:unless="${#lists.isEmpty(users)}">
+            <tr>
+                <th th:text="#{accounts.col.name}">Name</th>
+                <th th:text="#{accounts.col.login}">Number / username</th>
+                <th th:text="#{accounts.col.role}">Role</th>
+                <th th:text="#{accounts.col.courses}">Courses</th>
+                <th th:text="#{accounts.col.ta}">TA roles</th>
+                <th th:text="#{accounts.col.status}">Status</th>
+                <th></th>
+            </tr>
+            <tr th:each="u : ${users}">
+                <td th:text="${u.fullName}"></td>
+                <td dir="ltr">
+                    <th:block th:if="${u.releasedNumber == null}">
+                        <span th:text="${u.studentNumber}"></span>
+                        <small th:unless="${validNumber[u.id]}" class="alert-error" th:text="#{accounts.invalidNumber}">invalid</small>
+                    </th:block>
+                    <span th:if="${u.releasedNumber != null}" th:text="#{accounts.releasedFrom(${u.releasedNumber})}"></span>
+                </td>
+                <td th:text="#{${'role.' + u.role}}"></td>
+                <td th:text="${courses[u.id]}"></td>
+                <td th:text="${taRoles[u.id]}"></td>
+                <td>
+                    <span th:if="${u.disabledAt == null}" th:text="#{accounts.status.active}">Active</span>
+                    <span th:if="${u.disabledAt != null and u.releasedNumber == null}"
+                          th:text="#{accounts.status.disabled(${disabledAt[u.id]})}">Disabled</span>
+                    <span th:if="${u.releasedNumber != null}" th:text="#{accounts.status.released}">Number released</span>
+                </td>
+                <td>
+                    <!-- Step 1: disable (can be undone) -->
+                    <form th:if="${u.disabledAt == null}" method="post"
+                          th:action="@{/admin/accounts/{id}/disable(id=${u.id})}">
+                        <input type="hidden" name="q" th:value="${q}">
+                        <button type="submit" th:text="#{accounts.disable}">Disable</button>
+                    </form>
+                    <form th:if="${u.disabledAt != null and u.releasedNumber == null}" method="post"
+                          th:action="@{/admin/accounts/{id}/enable(id=${u.id})}">
+                        <input type="hidden" name="q" th:value="${q}">
+                        <button type="submit" th:text="#{accounts.enable}">Enable</button>
+                    </form>
+
+                    <!-- Step 2: release the number. Only for a disabled student; the number must be typed again. -->
+                    <details th:if="${u.disabledAt != null and u.releasedNumber == null and u.role.name() == 'STUDENT'}">
+                        <summary th:text="#{accounts.release}">Release number</summary>
+                        <p th:text="#{accounts.release.help}">Explains what happens.</p>
+                        <form method="post" th:action="@{/admin/accounts/{id}/release(id=${u.id})}">
+                            <input type="hidden" name="q" th:value="${q}">
+                            <label th:for="'confirm-' + ${u.id}" th:text="#{accounts.release.confirm}">Type the student number again</label>
+                            <input type="text" th:id="'confirm-' + ${u.id}" name="confirmNumber" dir="ltr"
+                                   autocomplete="off" required>
+                            <button type="submit" th:text="#{accounts.release.submit}">Release this number</button>
+                        </form>
+                    </details>
+                </td>
+            </tr>
+        </table>
+    </th:block>
+
+    <h2 th:text="#{accounts.format.title}">Student number format</h2>
+    <p th:if="${hint.fromYear() != null}"
+       th:text="#{accounts.format.now(${hint.digits()}, ${hint.fromYear()}, ${hint.toYear()})}"></p>
+    <p th:if="${hint.fromYear() == null}" th:text="#{accounts.format.noSemester(${hint.digits()})}"></p>
+    <form method="post" th:action="@{/admin/accounts/number-format}">
+        <div class="field">
+            <label for="digits" th:text="#{accounts.format.digits}">Number of digits</label>
+            <input type="number" id="digits" name="digits" min="4" max="20" required th:value="${settings.digits}">
+        </div>
+        <div class="field">
+            <label for="yearsBack" th:text="#{accounts.format.yearsBack}">Entry years accepted (years back)</label>
+            <input type="number" id="yearsBack" name="yearsBack" min="0" max="50" required th:value="${settings.yearsBack}">
+        </div>
+        <p th:text="#{accounts.format.help}">Old accounts are not changed.</p>
+        <button type="submit" class="btn-primary" th:text="#{accounts.format.save}">Save</button>
+    </form>
+
+    <p><a th:href="@{/users}" th:text="#{courses.back}">Back</a></p>
+    </main>
+</body>
+</html>
