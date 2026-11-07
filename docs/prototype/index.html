@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TA Hub Prototype</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1d2330; --muted: #657084; --line: #dfe3ea;
+    --brand: #2f5bd3; --brand-soft: #e8eefc; --ok: #1f8a4c; --ok-soft: #e4f4ea;
+    --err: #c0392b; --err-soft: #fbe7e5; --warn: #9a6700; --warn-soft: #fff4d6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  a { color: var(--brand); }
+  .proto-bar { background: #1d2330; color: #fff; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 13px; }
+  .proto-bar strong { font-weight: 600; }
+  .proto-bar a { color: #cfe0ff; text-decoration: none; padding: 2px 8px; border: 1px solid #3a4560; border-radius: 6px; }
+  .proto-bar a:hover { background: #2b3550; }
+  .app-nav { background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+  .app-nav .logo { font-weight: 700; color: var(--brand); margin-inline-end: 12px; }
+  .app-nav a { text-decoration: none; color: var(--text); }
+  .app-nav .user { margin-inline-start: auto; color: var(--muted); font-size: 14px; }
+  .badge { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--err); color: #fff; font-size: 12px; text-align: center; }
+  main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+  section[data-screen] { display: none; }
+  section[data-screen].active { display: block; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+  h1 { font-size: 24px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 0 0 10px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .alert { border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+  .alert-error { background: var(--err-soft); color: var(--err); }
+  .alert-ok { background: var(--ok-soft); color: var(--ok); }
+  .alert-warn { background: var(--warn-soft); color: var(--warn); }
+  label { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 4px; }
+  input[type=text], input[type=password], input[type=number], input[type=datetime-local], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: #fff; }
+  .btn { display: inline-block; border: 1px solid var(--line); background: #fff; color: var(--text); padding: 8px 14px; border-radius: 6px; text-decoration: none; font: inherit; cursor: pointer; margin-top: 12px; }
+  .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn-danger { color: var(--err); border-color: #e9b3ad; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+  .pill-ok { background: var(--ok-soft); color: var(--ok); }
+  .pill-err { background: var(--err-soft); color: var(--err); }
+  .pill-warn { background: var(--warn-soft); color: var(--warn); }
+  .pill-brand { background: var(--brand-soft); color: var(--brand); }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  .file-box { border: 2px dashed var(--line); border-radius: 8px; padding: 16px; text-align: center; color: var(--muted); }
+  .note { font-size: 13px; color: var(--muted); border-inline-start: 3px solid var(--line); padding-inline-start: 10px; margin-top: 10px; }
+  .narrow { max-width: 420px; margin: 40px auto; }
+  @media (max-width: 600px) { .app-nav .user { margin-inline-start: 0; width: 100%; } th, td { padding: 6px; } }
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <strong>TA Hub – clickable prototype (fake data)</strong>
+  <span>Start:</span>
+  <a href="#login">Student journey</a>
+  <a href="#prof-course">Professor / TA journey</a>
+  <a href="#map">All screens</a>
+</div>
+
+<nav class="app-nav" id="app-nav">
+  <span class="logo">TA Hub</span>
+  <a href="#home">Home</a>
+  <a href="#home">My courses</a>
+  <a href="#notifications">Notifications <span class="badge">2</span></a>
+  <span class="user" id="nav-user">Sara Ahmadi (student) · <a href="#login-out">Sign out</a></span>
+</nav>
+
+<main>
+
+<!-- ============ ALL SCREENS ============ -->
+<section data-screen="map">
+  <div class="card">
+    <h1>All prototype screens</h1>
+    <p class="muted">Main journey of the MVP: professor creates an assignment → student submits a PDF → TA grades each question → professor publishes → student sees own grade and can object.</p>
+    <h2>Student</h2>
+    <ol>
+      <li><a href="#login">Sign in</a> · <a href="#login-error">Sign in – wrong password</a></li>
+      <li><a href="#home">My courses</a> · <a href="#join-error">Join course – wrong code</a></li>
+      <li><a href="#course">Course page (announcements and assignments)</a></li>
+      <li><a href="#assignment">Assignment – submit PDF</a> · <a href="#submit-error">not a PDF</a> · <a href="#submitted">submitted</a> · <a href="#closed">deadline passed</a></li>
+      <li><a href="#grade">My grade per question</a> · <a href="#objection-form">object to a question</a> · <a href="#objection-sent">objection sent</a></li>
+      <li><a href="#forbidden">403 – another student's file</a></li>
+    </ol>
+    <h2>Professor / TA</h2>
+    <ol>
+      <li><a href="#prof-course">Course page (manager view)</a></li>
+      <li><a href="#new-assignment">New assignment</a> · <a href="#new-assignment-error">invalid points</a></li>
+      <li><a href="#submissions">Submissions list</a></li>
+      <li><a href="#grading">Grade one submission</a> · <a href="#grading-error">points above maximum</a></li>
+      <li><a href="#published">Grades published</a></li>
+      <li><a href="#objection-reply">Answer an objection</a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ LOGIN ============ -->
+<section data-screen="login" data-nav="off">
+  <div class="card narrow">
+    <h1>Sign in</h1>
+    <label for="u1">Student number or username</label>
+    <input id="u1" type="text" value="40312100001">
+    <label for="p1">Password</label>
+    <input id="p1" type="password" value="password">
+    <a class="btn btn-primary" href="#home">Sign in</a>
+    <a class="btn" href="#login-error">Try a wrong password</a>
+    <p class="muted" style="margin-top:16px">No account? <a href="#login">Create an account</a> · Professor? <a href="#login">Register with an invite code</a></p>
+  </div>
+</section>
+
+<section data-screen="login-error" data-nav="off">
+  <div class="card narrow">
+    <h1>Sign in</h1>
+    <div class="alert alert-error">Invalid student number (or username) or password.</div>
+    <label for="u2">Student number or username</label>
+    <input id="u2" type="text" value="40312100001">
+    <label for="p2">Password</label>
+    <input id="p2" type="password" value="">
+    <a class="btn btn-primary" href="#home">Sign in</a>
+  </div>
+</section>
+
+<section data-screen="login-out" data-nav="off">
+  <div class="card narrow">
+    <h1>Sign in</h1>
+    <div class="alert alert-ok">You have been signed out.</div>
+    <a class="btn btn-primary" href="#login">Sign in again</a>
+  </div>
+</section>
+
+<!-- ============ HOME ============ -->
+<section data-screen="home">
+  <h1>My courses · Semester 4052</h1>
+  <div class="card">
+    <div class="row">
+      <div><strong>CS301 – Software Analysis and Design</strong><br><span class="muted">Dr. Ali Karimi · 1 new assignment</span></div>
+      <a class="btn btn-primary" href="#course">Open</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row">
+      <div><strong>CS201 – Data Structures</strong><br><span class="muted">Dr. Maryam Hosseini</span></div>
+      <a class="btn" href="#course">Open</a>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Join a course</h2>
+    <p class="muted">CS305 – Databases · Dr. Ali Karimi</p>
+    <label for="jc">Join code</label>
+    <input id="jc" type="text" value="K7P2QX">
+    <a class="btn btn-primary" href="#course">Join</a>
+    <a class="btn" href="#join-error">Try a wrong code</a>
+  </div>
+</section>
+
+<section data-screen="join-error">
+  <h1>CS305 – Databases</h1>
+  <div class="card">
+    <div class="alert alert-error">The join code is not correct. Ask your professor for the code.</div>
+    <label for="jc2">Join code</label>
+    <input id="jc2" type="text" value="ABC123">
+    <a class="btn btn-primary" href="#course">Join</a>
+  </div>
+</section>
+
+<!-- ============ COURSE (student) ============ -->
+<section data-screen="course">
+  <p class="muted"><a href="#home">My courses</a> › CS301</p>
+  <h1>CS301 – Software Analysis and Design</h1>
+  <p class="muted">Group 1 · Dr. Ali Karimi · TAs: Reza Mohammadi (Head TA), Nima Rahimi</p>
+  <div class="card">
+    <h2>Assignments</h2>
+    <table>
+      <tr><th>Title</th><th>Deadline</th><th>Points</th><th>Status</th></tr>
+      <tr><td><a href="#assignment">HW2 – Use Case and Activity</a></td><td>1405-09-05 23:59</td><td>20</td><td><span class="pill pill-warn">Not submitted</span></td></tr>
+      <tr><td><a href="#grade">HW1 – User stories</a></td><td>1405-08-20 23:59</td><td>10</td><td><span class="pill pill-ok">Graded: 8.5 / 10</span></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Announcements</h2>
+    <p><strong>HW2 is published</strong> <span class="pill pill-brand">New</span><br><span class="muted">Dr. Ali Karimi · 1405-08-24</span><br>Please submit one PDF. Late submissions are not accepted.</p>
+  </div>
+</section>
+
+<!-- ============ ASSIGNMENT (student) ============ -->
+<section data-screen="assignment">
+  <p class="muted"><a href="#course">CS301</a> › HW2</p>
+  <h1>HW2 – Use Case and Activity</h1>
+  <p class="muted">Deadline: 1405-09-05 23:59 (Tehran) · 11 days left</p>
+  <div class="card">
+    <h2>Questions</h2>
+    <table>
+      <tr><th>#</th><th>Question</th><th>Points</th></tr>
+      <tr><td>Q1</td><td>Use Case diagram of your MVP</td><td>8</td></tr>
+      <tr><td>Q2</td><td>Activity diagram with an error path</td><td>8</td></tr>
+      <tr><td>Q3</td><td>Short explanation</td><td>4</td></tr>
+      <tr><th></th><th>Total</th><th>20</th></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Your submission</h2>
+    <div class="file-box">answers.pdf · 2.4 MB</div>
+    <p class="muted">One PDF file, up to 20 MB. You can replace or delete it until the deadline.</p>
+    <a class="btn btn-primary" href="#submitted">Submit</a>
+    <a class="btn" href="#submit-error">Try a .docx file</a>
+    <a class="btn" href="#closed">See after the deadline</a>
+  </div>
+</section>
+
+<section data-screen="submit-error">
+  <p class="muted"><a href="#course">CS301</a> › HW2</p>
+  <h1>HW2 – Use Case and Activity</h1>
+  <div class="card">
+    <div class="alert alert-error">Only PDF files up to 20 MB are accepted. "answers.docx" was not saved.</div>
+    <h2>Your submission</h2>
+    <div class="file-box">No file submitted yet</div>
+    <a class="btn btn-primary" href="#submitted">Choose another file</a>
+  </div>
+</section>
+
+<section data-screen="submitted">
+  <p class="muted"><a href="#course">CS301</a> › HW2</p>
+  <h1>HW2 – Use Case and Activity</h1>
+  <div class="card">
+    <div class="alert alert-ok">Your file was submitted on 1405-08-25 at 21:14.</div>
+    <h2>Your submission</h2>
+    <table>
+      <tr><th>File</th><th>Submitted</th><th></th></tr>
+      <tr><td><a href="#submitted">answers.pdf</a></td><td>1405-08-25 21:14</td><td><span class="pill pill-ok">Submitted</span></td></tr>
+    </table>
+    <a class="btn" href="#assignment">Replace file</a>
+    <a class="btn btn-danger" href="#assignment">Delete</a>
+    <p class="note">Only you, the professor and the TAs of this course can open this file.</p>
+  </div>
+</section>
+
+<section data-screen="closed">
+  <p class="muted"><a href="#course">CS301</a> › HW2</p>
+  <h1>HW2 – Use Case and Activity</h1>
+  <div class="card">
+    <div class="alert alert-warn">The deadline has passed. Submissions are closed.</div>
+    <table>
+      <tr><th>File</th><th>Submitted</th></tr>
+      <tr><td>answers.pdf</td><td>1405-08-25 21:14</td></tr>
+    </table>
+    <p class="muted">Your grade will appear here after the professor publishes the grades.</p>
+  </div>
+</section>
+
+<!-- ============ GRADE (student) ============ -->
+<section data-screen="grade">
+  <p class="muted"><a href="#course">CS301</a> › HW1</p>
+  <h1>HW1 – User stories · My grade</h1>
+  <div class="card">
+    <table>
+      <tr><th>#</th><th>Points</th><th>Comment</th><th></th></tr>
+      <tr><td>Q1</td><td>4 / 4</td><td>Good.</td><td></td></tr>
+      <tr><td>Q2</td><td>2.5 / 4</td><td>Missing ownership cases in the criteria.</td><td><a href="#objection-form">Object</a></td></tr>
+      <tr><td>Q3</td><td>2 / 2</td><td></td><td></td></tr>
+      <tr><th>Total</th><th>8.5 / 10</th><th></th><th></th></tr>
+    </table>
+    <p class="note">Only you can see your grade.</p>
+  </div>
+</section>
+
+<section data-screen="objection-form">
+  <p class="muted"><a href="#course">CS301</a> › <a href="#grade">HW1</a> › Objection</p>
+  <h1>Object to Q2</h1>
+  <div class="card">
+    <p class="muted">Q2: 2.5 / 4 · "Missing ownership cases in the criteria."</p>
+    <label for="ob">Why do you think the grade should change?</label>
+    <textarea id="ob" rows="3">US-03 has an ownership case in its second criterion.</textarea>
+    <a class="btn btn-primary" href="#objection-sent">Send objection</a>
+    <p class="muted">You can send one objection per question.</p>
+  </div>
+</section>
+
+<section data-screen="objection-sent">
+  <p class="muted"><a href="#course">CS301</a> › HW1</p>
+  <h1>HW1 – User stories · My grade</h1>
+  <div class="card">
+    <div class="alert alert-ok">Your objection to Q2 was sent. The TA will answer it.</div>
+    <table>
+      <tr><th>#</th><th>Points</th><th>Objection</th></tr>
+      <tr><td>Q2</td><td>2.5 / 4</td><td><span class="pill pill-warn">Open</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-screen="forbidden">
+  <div class="card narrow">
+    <h1>403 – Access denied</h1>
+    <p>You can only open your own submission.</p>
+    <a class="btn" href="#course">Back to the course</a>
+  </div>
+</section>
+
+<section data-screen="notifications">
+  <h1>Notifications</h1>
+  <div class="card">
+    <p><strong>New assignment in CS301 – Software Analysis and Design</strong><br><a href="#assignment">HW2 – Use Case and Activity</a> · <span class="muted">today</span></p>
+    <p><strong>Grades published in CS301</strong><br><a href="#grade">HW1 – User stories</a> · <span class="muted">3 days ago</span></p>
+  </div>
+</section>
+
+<!-- ============ PROFESSOR / TA ============ -->
+<section data-screen="prof-course" data-user="Dr. Ali Karimi (professor)">
+  <p class="muted">Courses › CS301</p>
+  <h1>CS301 – Software Analysis and Design</h1>
+  <p class="muted">Group 1 · 42 students · Join code: K7P2QX</p>
+  <div class="card">
+    <div class="row"><h2>Assignments</h2><a class="btn btn-primary" href="#new-assignment">New assignment</a></div>
+    <table>
+      <tr><th>Title</th><th>Deadline</th><th>Submitted</th><th>Grades</th></tr>
+      <tr><td><a href="#submissions">HW2 – Use Case and Activity</a></td><td>1405-09-05 23:59</td><td>23 / 42</td><td><span class="pill pill-warn">Not published</span></td></tr>
+      <tr><td><a href="#submissions">HW1 – User stories</a></td><td>1405-08-20 23:59</td><td>40 / 42</td><td><span class="pill pill-ok">Published</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-screen="new-assignment" data-user="Dr. Ali Karimi (professor)">
+  <p class="muted"><a href="#prof-course">CS301</a> › New assignment</p>
+  <h1>New assignment</h1>
+  <div class="card">
+    <label for="t">Title</label><input id="t" type="text" value="HW2 – Use Case and Activity">
+    <label for="d">Deadline</label><input id="d" type="text" value="1405-09-05 23:59">
+    <label>Questions and points</label>
+    <table>
+      <tr><th>#</th><th>Question</th><th>Points</th></tr>
+      <tr><td>Q1</td><td><input type="text" value="Use Case diagram of your MVP"></td><td><input type="number" value="8"></td></tr>
+      <tr><td>Q2</td><td><input type="text" value="Activity diagram with an error path"></td><td><input type="number" value="8"></td></tr>
+      <tr><td>Q3</td><td><input type="text" value="Short explanation"></td><td><input type="number" value="4"></td></tr>
+    </table>
+    <p class="muted">Total: 20 points</p>
+    <a class="btn" href="#new-assignment">Save as draft</a>
+    <a class="btn btn-primary" href="#prof-course">Publish</a>
+    <a class="btn" href="#new-assignment-error">Try 0 points</a>
+    <p class="note">Publishing sends a notification to all active students of this course.</p>
+  </div>
+</section>
+
+<section data-screen="new-assignment-error" data-user="Dr. Ali Karimi (professor)">
+  <p class="muted"><a href="#prof-course">CS301</a> › New assignment</p>
+  <h1>New assignment</h1>
+  <div class="card">
+    <div class="alert alert-error">Every question needs more than 0 points.</div>
+    <table>
+      <tr><th>#</th><th>Question</th><th>Points</th></tr>
+      <tr><td>Q1</td><td><input type="text" value="Use Case diagram of your MVP"></td><td><input type="number" value="0"></td></tr>
+    </table>
+    <a class="btn btn-primary" href="#new-assignment">Fix</a>
+  </div>
+</section>
+
+<section data-screen="submissions" data-user="Reza Mohammadi (Head TA)">
+  <p class="muted"><a href="#prof-course">CS301</a> › HW2 › Submissions</p>
+  <h1>HW2 – Submissions</h1>
+  <p class="muted">23 of 42 students submitted · Deadline 1405-09-05 23:59</p>
+  <div class="card">
+    <table>
+      <tr><th>Student</th><th>Number</th><th>Submitted</th><th>Grade</th><th></th></tr>
+      <tr><td>Sara Ahmadi</td><td>40312100001</td><td>1405-08-25 21:14</td><td>–</td><td><a href="#grading">Grade</a></td></tr>
+      <tr><td>Lena Sadeghi</td><td>40412100006</td><td>1405-08-26 10:02</td><td>17 / 20</td><td><a href="#grading">Edit</a></td></tr>
+      <tr><td>Omid Hashemi</td><td>40212100005</td><td><span class="pill pill-err">Not submitted</span></td><td>–</td><td></td></tr>
+    </table>
+    <a class="btn btn-primary" href="#published">Publish grades</a>
+  </div>
+</section>
+
+<section data-screen="grading" data-user="Reza Mohammadi (Head TA)">
+  <p class="muted"><a href="#submissions">HW2 submissions</a> › Sara Ahmadi</p>
+  <h1>Grade: Sara Ahmadi</h1>
+  <div class="card">
+    <div class="file-box">answers.pdf (opens in the page)</div>
+    <table style="margin-top:12px">
+      <tr><th>#</th><th>Points</th><th>Comment</th></tr>
+      <tr><td>Q1 (max 8)</td><td><input type="number" value="7"></td><td><input type="text" value="One actor is missing."></td></tr>
+      <tr><td>Q2 (max 8)</td><td><input type="number" value="8"></td><td><input type="text" value=""></td></tr>
+      <tr><td>Q3 (max 4)</td><td><input type="number" value="3"></td><td><input type="text" value=""></td></tr>
+    </table>
+    <p class="muted">Total: 18 / 20</p>
+    <a class="btn btn-primary" href="#submissions">Save</a>
+    <a class="btn" href="#grading-error">Try 9 for Q1</a>
+  </div>
+</section>
+
+<section data-screen="grading-error" data-user="Reza Mohammadi (Head TA)">
+  <p class="muted"><a href="#submissions">HW2 submissions</a> › Sara Ahmadi</p>
+  <h1>Grade: Sara Ahmadi</h1>
+  <div class="card">
+    <div class="alert alert-error">Q1: points must be between 0 and 8. Nothing was saved.</div>
+    <a class="btn btn-primary" href="#grading">Fix</a>
+  </div>
+</section>
+
+<section data-screen="published" data-user="Dr. Ali Karimi (professor)">
+  <p class="muted"><a href="#prof-course">CS301</a> › HW2</p>
+  <h1>HW2 – Grades published</h1>
+  <div class="card">
+    <div class="alert alert-ok">Grades are published. Each student can now see only their own grade.</div>
+    <a class="btn" href="#objection-reply">See objections (1 open)</a>
+  </div>
+</section>
+
+<section data-screen="objection-reply" data-user="Reza Mohammadi (Head TA)">
+  <p class="muted"><a href="#prof-course">CS301</a> › HW1 › Objections</p>
+  <h1>Objection: Sara Ahmadi, Q2</h1>
+  <div class="card">
+    <p><strong>Student:</strong> US-03 has an ownership case in its second criterion.</p>
+    <p class="muted">Current points: 2.5 / 4</p>
+    <label for="rep">Reply</label>
+    <textarea id="rep" rows="2">You are right, I missed it.</textarea>
+    <label for="np">New points (optional)</label>
+    <input id="np" type="number" value="3.5">
+    <a class="btn btn-primary" href="#prof-course">Accept and change grade</a>
+    <a class="btn" href="#prof-course">Reject</a>
+  </div>
+</section>
+
+</main>
+
+<script>
+  // Shows one screen at a time, chosen by the part of the address after "#".
+  function show() {
+    var id = location.hash.slice(1) || 'map';
+    var screens = document.querySelectorAll('section[data-screen]');
+    var found = null;
+    screens.forEach(function (s) {
+      var on = s.getAttribute('data-screen') === id;
+      s.classList.toggle('active', on);
+      if (on) found = s;
+    });
+    if (!found) { location.hash = 'map'; return; }
+    document.getElementById('app-nav').style.display = found.getAttribute('data-nav') === 'off' ? 'none' : '';
+    var user = found.getAttribute('data-user') || 'Sara Ahmadi (student)';
+    document.getElementById('nav-user').innerHTML = user + ' · <a href="#login-out">Sign out</a>';
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', show);
+  show();
+</script>
+</body>
+</html>
