@@ -48,7 +48,7 @@
                 </div>
                 <div class="field">
                     <label for="majorId" th:text="#{register.major}">Field of study</label>
-                    <select id="majorId" name="majorId"
+                    <select id="majorId" name="majorId" data-pretty-select
                             th:autofocus="${badMajor}"
                             th:classappend="${badMajor} ? 'is-invalid'"
                             th:attr="aria-invalid=${badMajor} ? 'true',aria-describedby=${badMajor} ? 'register-error'">

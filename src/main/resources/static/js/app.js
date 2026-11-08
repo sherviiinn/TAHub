@@ -89,6 +89,252 @@
         }
     });
 
+    // ---------- bubble drop-down lists: <select data-pretty-select> ----------
+    // The browser draws the open list of a normal <select> itself, so CSS cannot shape it. Here the <select>
+    // stays in the form (hidden, it is still what the form sends) and a button with a bubble list is drawn
+    // next to it. On touch screens (phones) the phone's own picker is kept, because it is easier to use there.
+    var touch = window.matchMedia('(pointer: coarse)').matches;
+    var openSelect = null;   // the one that is open now (only one at a time)
+    var pickId = 0;
+
+    var caretSvg = '<svg class="icon pselect-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>';
+    var checkSvg = '<svg class="icon pselect-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+    function enhanceSelect(select) {
+        if (select.dataset.prettyReady || touch) {
+            return;
+        }
+        select.dataset.prettyReady = 'true';
+        pickId++;
+
+        var wrap = document.createElement('div');
+        wrap.className = 'pselect';
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pselect-button';
+        button.id = 'pselect-' + pickId;
+        button.setAttribute('aria-haspopup', 'listbox');
+        button.setAttribute('aria-expanded', 'false');
+        var list = document.createElement('ul');
+        list.className = 'pselect-list';
+        list.id = 'pselect-list-' + pickId;
+        list.setAttribute('role', 'listbox');
+        list.tabIndex = -1;
+        button.setAttribute('aria-controls', list.id);
+
+        // The label of the <select> now names the button, and a click on it opens nothing but focuses the button.
+        var label = select.id ? document.querySelector('label[for="' + select.id + '"]') : null;
+        if (label) {
+            if (!label.id) {
+                label.id = button.id + '-label';
+            }
+            button.setAttribute('aria-labelledby', label.id + ' ' + button.id);
+            list.setAttribute('aria-labelledby', label.id);
+            label.addEventListener('click', function (event) {
+                event.preventDefault();
+                button.focus();
+            });
+        }
+
+        select.classList.add('pselect-native');
+        select.tabIndex = -1;
+        select.setAttribute('aria-hidden', 'true');
+        select.parentNode.insertBefore(wrap, select.nextSibling);
+        wrap.appendChild(button);
+        wrap.appendChild(list);
+
+        // One line in the list per real option (the empty "Choose ..." option is only the placeholder).
+        var placeholder = '';
+        var items = [];
+        Array.prototype.forEach.call(select.options, function (option, index) {
+            if (option.value === '') {
+                if (!placeholder) {
+                    placeholder = option.text;
+                }
+                return;
+            }
+            var item = document.createElement('li');
+            item.className = 'pselect-option';
+            item.id = list.id + '-' + index;
+            item.setAttribute('role', 'option');
+            item.dataset.index = String(index);
+            item.innerHTML = '<span class="pselect-text"></span>' + checkSvg;
+            item.querySelector('.pselect-text').textContent = option.text;
+            if (option.disabled) {
+                item.setAttribute('aria-disabled', 'true');
+            }
+            list.appendChild(item);
+            items.push(item);
+        });
+
+        var active = -1;   // position in "items" that the keyboard is on
+
+        function sync() {
+            var chosen = select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
+            var empty = !chosen || chosen.value === '';
+            button.innerHTML = '<span class="pselect-value"></span>' + caretSvg;
+            button.querySelector('.pselect-value').textContent = empty ? placeholder : chosen.text;
+            button.classList.toggle('is-placeholder', empty);
+            items.forEach(function (item) {
+                item.setAttribute('aria-selected', String(Number(item.dataset.index) === select.selectedIndex));
+            });
+            wrap.classList.toggle('is-invalid', select.classList.contains('is-invalid'));
+        }
+
+        function setActive(position) {
+            if (!items.length) {
+                return;
+            }
+            active = Math.max(0, Math.min(items.length - 1, position));
+            items.forEach(function (item, i) { item.classList.toggle('is-active', i === active); });
+            list.setAttribute('aria-activedescendant', items[active].id);
+            items[active].scrollIntoView({block: 'nearest'});
+        }
+
+        function open() {
+            if (openSelect && openSelect !== close) {
+                openSelect();
+            }
+            // Open upwards when there is not enough room below.
+            var box = button.getBoundingClientRect();
+            var below = window.innerHeight - box.bottom;
+            wrap.classList.toggle('is-up', below < 260 && box.top > below);
+            wrap.classList.add('is-open');
+            button.setAttribute('aria-expanded', 'true');
+            var current = items.findIndex(function (item) { return item.getAttribute('aria-selected') === 'true'; });
+            setActive(current >= 0 ? current : 0);
+            openSelect = close;
+        }
+
+        function close() {
+            wrap.classList.remove('is-open');
+            button.setAttribute('aria-expanded', 'false');
+            list.removeAttribute('aria-activedescendant');
+            if (openSelect === close) {
+                openSelect = null;
+            }
+        }
+
+        function choose(position) {
+            var item = items[position];
+            if (!item || item.getAttribute('aria-disabled') === 'true') {
+                return;
+            }
+            select.selectedIndex = Number(item.dataset.index);
+            // Tell the page the value changed, like a real choice in the <select> would.
+            select.dispatchEvent(new Event('input', {bubbles: true}));
+            select.dispatchEvent(new Event('change', {bubbles: true}));
+            sync();
+            close();
+            button.focus({preventScroll: true});
+        }
+
+        button.addEventListener('click', function () {
+            if (wrap.classList.contains('is-open')) {
+                close();
+            } else {
+                open();
+            }
+        });
+
+        button.addEventListener('keydown', function (event) {
+            var isOpen = wrap.classList.contains('is-open');
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (!isOpen) {
+                    open();
+                } else {
+                    setActive(active + (event.key === 'ArrowDown' ? 1 : -1));
+                }
+            } else if (event.key === 'Home' && isOpen) {
+                event.preventDefault();
+                setActive(0);
+            } else if (event.key === 'End' && isOpen) {
+                event.preventDefault();
+                setActive(items.length - 1);
+            } else if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (isOpen) {
+                    choose(active);
+                } else {
+                    open();
+                }
+            } else if (event.key === 'Escape' && isOpen) {
+                event.preventDefault();
+                event.stopPropagation();
+                close();
+            } else if (event.key === 'Tab' && isOpen) {
+                close();
+            } else if (event.key.length === 1 && /\S/.test(event.key)) {
+                // Typing a letter jumps to the next option that starts with it.
+                var letter = event.key.toLowerCase();
+                for (var step = 1; step <= items.length; step++) {
+                    var i = (active + step) % items.length;
+                    if (items[i].textContent.trim().toLowerCase().indexOf(letter) === 0) {
+                        if (!isOpen) {
+                            open();
+                        }
+                        setActive(i);
+                        break;
+                    }
+                }
+            }
+        });
+
+        list.addEventListener('mousedown', function (event) {
+            event.preventDefault();   // keep the focus on the button
+        });
+        list.addEventListener('click', function (event) {
+            var item = event.target.closest('.pselect-option');
+            if (item) {
+                choose(items.indexOf(item));
+            }
+        });
+        list.addEventListener('mousemove', function (event) {
+            var item = event.target.closest('.pselect-option');
+            if (item && items.indexOf(item) !== active) {
+                setActive(items.indexOf(item));
+            }
+        });
+
+        // The value can also change from outside (for example live.js giving back what the user chose).
+        select.addEventListener('change', sync);
+
+        sync();
+        // The server may have put the cursor on this field (autofocus): give it to the button instead.
+        if (select.hasAttribute('autofocus') || document.activeElement === select) {
+            button.focus({preventScroll: true});
+        }
+    }
+
+    function enhanceAll(root) {
+        if (root.matches && root.matches('select[data-pretty-select]')) {
+            enhanceSelect(root);
+        }
+        if (root.querySelectorAll) {
+            root.querySelectorAll('select[data-pretty-select]').forEach(enhanceSelect);
+        }
+    }
+
+    enhanceAll(document);
+    // Pages that live.js reloads get new <select> boxes: dress them too.
+    new MutationObserver(function (changes) {
+        changes.forEach(function (change) {
+            change.addedNodes.forEach(function (node) {
+                if (node.nodeType === 1) {
+                    enhanceAll(node);
+                }
+            });
+        });
+    }).observe(document.body, {childList: true, subtree: true});
+
+    // A click anywhere else closes the open list.
+    document.addEventListener('mousedown', function (event) {
+        if (openSelect && !event.target.closest('.pselect')) {
+            openSelect();
+        }
+    });
+
     // ---------- sign in page: the example cards follow the mouse a little ----------
     // Sets --px and --py (from -1 to 1) on the dark half; app.css moves each card by its own depth.
     var aside = document.querySelector('.auth-aside');
