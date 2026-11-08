@@ -9,47 +9,187 @@
         <nav th:replace="~{fragments/layout :: nav}"></nav>
         <main> ... the page ... </main>
     </body>
+
+  On a wide screen the menu is a sidebar on the start side. On a phone it is hidden behind
+  the menu button in a thin top bar (static/js/app.js opens and closes it).
 -->
 
 <head th:fragment="head(pageTitle)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${pageTitle}">TA Hub</title>
+    <link rel="preload" th:href="@{/fonts/Vazirmatn-Regular.woff2}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <!-- Menu on phones and the page entrance animation -->
+    <script th:src="@{/js/app.js}" defer></script>
     <!-- Live notification count in the menu -->
     <script th:src="@{/js/live.js}" defer></script>
 </head>
 
 <body>
     <!-- The menu. The nav* variables come from GlobalModelAttributes. -->
-    <nav th:fragment="nav" class="main-nav">
+    <nav th:fragment="nav" class="app-nav" th:classappend="${navLoggedIn} ? 'has-sidebar'"
+         th:attr="aria-label=#{nav.mainLinks}">
         <th:block th:if="${navLoggedIn}">
-            <a th:href="@{/}" th:text="#{nav.home}">Home</a>
-            <a th:href="@{/courses}" th:text="#{home.courses}">Courses</a>
-            <a th:if="${navIsStudent or navIsProfessor}" th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
-            <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
-            <a th:href="@{/cafeteria}" th:text="#{nav.cafeteria}">Cafeteria</a>
-            <a th:href="@{/notices}" th:text="#{nav.notices}">Site notices</a>
-            <a th:if="${navIsStudent}" th:href="@{/my-ta-requests}" th:text="#{ta.link.mine}">My TA requests</a>
-            <a th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
-            <!-- id and data-* are used by static/js/live.js to update the number without reloading -->
-            <a id="nav-notifications" th:href="@{/notifications}"
-               th:attr="data-label=#{nav.notifications('{0}')},data-stream=@{/notifications/stream},data-form-gone=#{live.formGone}"
-               th:classappend="${navUnreadCount > 0} ? 'has-unread' : ''"
-               th:text="#{nav.notifications(${navUnreadCount})}">Notifications</a>
 
-            <th:block th:if="${navIsAdmin}">
-                <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
-                <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
-                <a th:href="@{/admin/majors}" th:text="#{home.majors}">Manage fields of study</a>
-                <a th:href="@{/admin/foods}" th:text="#{cafeteria.manageFoods}">Manage foods</a>
-            </th:block>
+            <!-- Icons used by the menu and the top bar (drawn once, used with <use href="#i-...">) -->
+            <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></symbol>
+                <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/></symbol>
+                <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 3h11a1 1 0 0 1 1 1v17l-6.5-4.5L5.5 21V4a1 1 0 0 1 1-1z"/></symbol>
+                <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.2A6.5 6.5 0 0 1 21.5 20"/></symbol>
+                <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15 6 9.5z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+                <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v18"/><path d="M4 3v5a3 3 0 0 0 6 0V3"/><path d="M17.5 21V3c-2.2 1.3-3.5 4-3.5 7.5V13h3.5"/></symbol>
+                <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3.5 10v4a1 1 0 0 0 1 1H7l7 4.5v-15L7 9H4.5a1 1 0 0 0-1 1z"/><path d="M17.5 9a4 4 0 0 1 0 6"/></symbol>
+                <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3.5 13.5h5l1.5 3h4l1.5-3h5"/><path d="M6 4h12l2.5 9.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-5.5z"/></symbol>
+                <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+                <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="16" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/></symbol>
+                <symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.5v5c3.5 2.7 8.5 2.7 12 0v-5"/></symbol>
+                <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol>
+                <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14.5 4H19a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4.5"/><path d="M10 16.5 14.5 12 10 7.5"/><path d="M14.5 12H4"/></symbol>
+                <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+                <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></symbol>
+            </svg>
 
-            <a th:href="@{/profile}" th:text="#{home.profile}">My profile</a>
-            <span class="nav-user" th:text="${navFullName}"></span>
-            <form method="post" th:action="@{/logout}" class="nav-logout">
-                <button type="submit" th:text="#{home.logout}">Sign out</button>
-            </form>
+            <!-- Phones only: thin bar with the menu button -->
+            <div class="topbar">
+                <button type="button" class="icon-button" data-nav-open aria-controls="sidebar" aria-expanded="false"
+                        th:attr="aria-label=#{nav.openMenu}" th:title="#{nav.openMenu}">
+                    <svg class="icon"><use href="#i-menu"/></svg>
+                </button>
+                <a class="brand" th:href="@{/}" th:text="#{app.name}">TA Hub</a>
+            </div>
+
+            <!-- Phones only: the dark layer behind the open menu (a click on it closes the menu) -->
+            <div class="nav-backdrop" data-nav-close></div>
+
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-head">
+                    <a class="brand" th:href="@{/}" th:text="#{app.name}">TA Hub</a>
+                    <button type="button" class="icon-button sidebar-close" data-nav-close
+                            th:attr="aria-label=#{nav.closeMenu}" th:title="#{nav.closeMenu}">
+                        <svg class="icon"><use href="#i-close"/></svg>
+                    </button>
+                </div>
+
+                <div class="sidebar-links">
+                    <div class="nav-section">
+                        <a class="nav-link" th:href="@{/}"
+                           th:classappend="${navCurrentPath == '/'} ? 'is-active'"
+                           th:attr="aria-current=${navCurrentPath == '/'} ? 'page'">
+                            <svg class="icon"><use href="#i-home"/></svg>
+                            <span th:text="#{nav.home}">Home</span>
+                        </a>
+                        <a class="nav-link" th:href="@{/courses}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/courses')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/courses')} ? 'page'">
+                            <svg class="icon"><use href="#i-book"/></svg>
+                            <span th:text="#{home.courses}">Courses</span>
+                        </a>
+                        <a class="nav-link" th:if="${navIsStudent or navIsProfessor}" th:href="@{/my-courses}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/my-courses')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/my-courses')} ? 'page'">
+                            <svg class="icon"><use href="#i-bookmark"/></svg>
+                            <span th:text="#{home.myCourses}">My courses</span>
+                        </a>
+                        <a class="nav-link" th:href="@{/professors}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/professors')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/professors')} ? 'page'">
+                            <svg class="icon"><use href="#i-people"/></svg>
+                            <span th:text="#{home.professors}">Professors</span>
+                        </a>
+                        <!-- id and data-* are used by static/js/live.js to update the number without reloading -->
+                        <a id="nav-notifications" class="nav-link" th:href="@{/notifications}"
+                           th:attr="data-label=#{nav.notifications('{0}')},data-stream=@{/notifications/stream},data-form-gone=#{live.formGone},aria-label=#{nav.notifications(${navUnreadCount})},aria-current=${#strings.startsWith(navCurrentPath, '/notifications')} ? 'page'"
+                           th:classappend="${(navUnreadCount > 0 ? 'has-unread ' : '') + (#strings.startsWith(navCurrentPath, '/notifications') ? 'is-active' : '')}">
+                            <svg class="icon"><use href="#i-bell"/></svg>
+                            <span th:text="#{nav.notificationsShort}">Notifications</span>
+                            <span class="nav-badge" th:hidden="${navUnreadCount == 0}"
+                                  th:text="${navUnreadCount > 99} ? '99+' : ${navUnreadCount}">0</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-section">
+                        <p class="nav-heading" th:text="#{nav.group.campus}">Campus</p>
+                        <a class="nav-link" th:href="@{/cafeteria}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/cafeteria')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/cafeteria')} ? 'page'">
+                            <svg class="icon"><use href="#i-food"/></svg>
+                            <span th:text="#{nav.cafeteria}">Cafeteria</span>
+                        </a>
+                        <a class="nav-link" th:href="@{/notices}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/notices')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/notices')} ? 'page'">
+                            <svg class="icon"><use href="#i-megaphone"/></svg>
+                            <span th:text="#{nav.notices}">Site notices</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-section">
+                        <p class="nav-heading" th:text="#{nav.group.ta}">TA</p>
+                        <a class="nav-link" th:if="${navIsStudent}" th:href="@{/my-ta-requests}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/my-ta-requests')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/my-ta-requests')} ? 'page'">
+                            <svg class="icon"><use href="#i-inbox"/></svg>
+                            <span th:text="#{ta.link.mine}">My TA requests</span>
+                        </a>
+                        <a class="nav-link" th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/ta-requests')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/ta-requests')} ? 'page'">
+                            <svg class="icon"><use href="#i-inbox"/></svg>
+                            <span th:text="#{ta.link.requests}">TA requests</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-section" th:if="${navIsAdmin}">
+                        <p class="nav-heading" th:text="#{nav.group.admin}">Admin</p>
+                        <a class="nav-link" th:href="@{/users}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/users')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/users')} ? 'page'">
+                            <svg class="icon"><use href="#i-user"/></svg>
+                            <span th:text="#{home.manageUsers}">Manage users</span>
+                        </a>
+                        <a class="nav-link" th:href="@{/admin/semesters}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/admin/semesters')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/admin/semesters')} ? 'page'">
+                            <svg class="icon"><use href="#i-calendar"/></svg>
+                            <span th:text="#{home.semesters}">Manage semesters</span>
+                        </a>
+                        <a class="nav-link" th:href="@{/admin/majors}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/admin/majors')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/admin/majors')} ? 'page'">
+                            <svg class="icon"><use href="#i-cap"/></svg>
+                            <span th:text="#{home.majors}">Manage fields of study</span>
+                        </a>
+                        <a class="nav-link" th:href="@{/admin/foods}"
+                           th:classappend="${#strings.startsWith(navCurrentPath, '/admin/foods')} ? 'is-active'"
+                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/admin/foods')} ? 'page'">
+                            <svg class="icon"><use href="#i-list"/></svg>
+                            <span th:text="#{cafeteria.manageFoods}">Manage foods</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="sidebar-foot">
+                    <div class="nav-user">
+                        <span class="avatar" aria-hidden="true"
+                              th:text="${#strings.toUpperCase(#strings.substring(navFullName, 0, 1))}">S</span>
+                        <span class="nav-user-name" th:text="${navFullName}">Full name</span>
+                    </div>
+                    <a class="nav-link" th:href="@{/profile}"
+                       th:classappend="${#strings.startsWith(navCurrentPath, '/profile')} ? 'is-active'"
+                       th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/profile')} ? 'page'">
+                        <svg class="icon"><use href="#i-user"/></svg>
+                        <span th:text="#{home.profile}">My profile</span>
+                    </a>
+                    <form method="post" th:action="@{/logout}" class="nav-logout">
+                        <button type="submit" class="nav-link">
+                            <svg class="icon"><use href="#i-logout"/></svg>
+                            <span th:text="#{home.logout}">Sign out</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
 
             <!-- The top bar (newest site notice). live.js reloads it from /live/banner when it changes. -->
             <div th:replace="~{fragments/layout :: banner}"></div>
@@ -59,11 +199,14 @@
     <!-- The top bar alone. The slot is always there (empty when there is no notice), so live.js can fill it. -->
     <div th:fragment="banner" id="site-banner-slot" th:attr="data-url=@{/live/banner}">
         <div class="site-banner" th:if="${navBannerNotice != null}">
+            <svg class="icon" aria-hidden="true"><use href="#i-megaphone"/></svg>
             <a th:href="@{'/notices#notice-' + ${navBannerNotice.id}}"
                th:text="${navBannerNotice.title}">Notice</a>
             <form method="post" th:action="@{/notices/{id}/dismiss(id=${navBannerNotice.id})}" class="site-banner-close">
                 <input type="hidden" name="back" th:value="${navCurrentPath}">
-                <button type="submit" th:title="#{notices.close}" th:attr="aria-label=#{notices.close}">&times;</button>
+                <button type="submit" class="icon-button" th:title="#{notices.close}" th:attr="aria-label=#{notices.close}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+                </button>
             </form>
         </div>
     </div>

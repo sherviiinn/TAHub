@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  The dark half of the sign in and register pages (login.html, register.html):
+  the name, a short sentence about the app, and three small example cards that look like the app.
+  Use it like this:   <aside th:replace="~{fragments/auth :: aside}"></aside>
+  On a phone only the name and the sentence stay (see section 13 of static/css/app.css).
+-->
+<body>
+<aside th:fragment="aside" class="auth-aside">
+    <span class="auth-glow auth-glow-a" aria-hidden="true"></span>
+    <span class="auth-glow auth-glow-b" aria-hidden="true"></span>
+
+    <a class="auth-logo" th:href="@{/login}">
+        <span class="auth-logo-mark" aria-hidden="true" th:text="#{auth.logo}">TA</span>
+        <span th:text="#{app.name}">TA Hub</span>
+    </a>
+
+    <div class="auth-intro">
+        <p class="auth-aside-title">
+            <span th:text="#{auth.aside.title1}">Your university,</span><br>
+            <span class="accent" th:text="#{auth.aside.title2}">in one place.</span>
+        </p>
+        <p class="auth-aside-text" th:text="#{auth.aside.text}">Courses, announcements, TA work and the cafeteria menu.</p>
+        <ul class="auth-chips">
+            <li class="auth-chip">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/></svg>
+                <span th:text="#{auth.chip.courses}">Courses</span>
+            </li>
+            <li class="auth-chip">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15 6 9.5z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+                <span th:text="#{auth.chip.live}">Live notifications</span>
+            </li>
+            <li class="auth-chip">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v18"/><path d="M4 3v5a3 3 0 0 0 6 0V3"/><path d="M17.5 21V3c-2.2 1.3-3.5 4-3.5 7.5V13h3.5"/></svg>
+                <span th:text="#{auth.chip.cafeteria}">Cafeteria</span>
+            </li>
+            <li class="auth-chip">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 13.5h5l1.5 3h4l1.5-3h5"/><path d="M6 4h12l2.5 9.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-5.5z"/></svg>
+                <span th:text="#{auth.chip.ta}">TA teams</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Only a picture of the app: screen readers skip it -->
+    <div class="auth-showcase" aria-hidden="true">
+        <div class="demo-card demo-card-1">
+            <span class="demo-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15 6 9.5z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
+            <div class="demo-text">
+                <strong th:text="#{auth.demo.announcementTitle}">New announcement</strong>
+                <small th:text="#{auth.demo.announcementText}">CS301 - Operating Systems</small>
+            </div>
+            <span class="demo-pill">2</span>
+        </div>
+        <div class="demo-card demo-card-2">
+            <span class="demo-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M7 3v18"/><path d="M4 3v5a3 3 0 0 0 6 0V3"/><path d="M17.5 21V3c-2.2 1.3-3.5 4-3.5 7.5V13h3.5"/></svg></span>
+            <div class="demo-text">
+                <strong th:text="#{auth.demo.lunchTitle}">Lunch today</strong>
+                <small th:text="#{auth.demo.lunchText}">Ghormeh sabzi / Chicken kebab</small>
+                <span class="demo-bar"><i></i></span>
+                <small th:text="#{auth.demo.lunchTime}">Reservation closes in 1d 4h</small>
+            </div>
+        </div>
+        <div class="demo-card demo-card-3">
+            <span class="demo-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M3.5 13.5h5l1.5 3h4l1.5-3h5"/><path d="M6 4h12l2.5 9.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-5.5z"/></svg></span>
+            <div class="demo-text">
+                <strong th:text="#{auth.demo.inviteTitle}">TA invitation</strong>
+                <small><span class="demo-dot"></span><span th:text="#{auth.demo.inviteText}">CS201 - Data Structures</span></small>
+            </div>
+            <span class="demo-pill demo-pill-teal" th:text="#{auth.demo.accept}">Accept</span>
+        </div>
+    </div>
+
+    <p class="auth-aside-foot" th:text="#{auth.aside.foot}">Made by students, for students.</p>
+</aside>
+</body>
+</html>

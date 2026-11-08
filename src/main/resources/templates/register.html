@@ -1,56 +1,115 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="#{register.title}">Create an account</title>
-</head>
-<body>
-<h1 th:text="#{register.title}">Create an account</h1>
+<head th:replace="~{fragments/layout :: head(#{register.title})}"></head>
+<body class="auth-page">
+<main class="auth">
+    <aside th:replace="~{fragments/auth :: aside}"></aside>
 
-<!-- Without any field of study registration cannot work, so we explain instead of showing the form. -->
-<p th:if="${#lists.isEmpty(majors)}" th:text="#{register.noMajors}"></p>
+    <div class="auth-main">
+        <!-- Two soft colour spots behind the card (only decoration) -->
+        <span class="auth-blob auth-blob-sky" aria-hidden="true"></span>
+        <span class="auth-blob auth-blob-beige" aria-hidden="true"></span>
+    <div class="auth-card">
+        <span class="auth-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M2.5 21a7.5 7.5 0 0 1 15 0"/><path d="M19 8v6"/><path d="M16 11h6"/></svg></span>
+        <h1 class="auth-title" th:text="#{register.heading}">Create your account</h1>
 
-<th:block th:unless="${#lists.isEmpty(majors)}">
-    <p th:if="${errorKey}" th:text="#{${errorKey}}"></p>
+        <!-- Without any field of study registration cannot work, so we explain instead of showing the form. -->
+        <div class="alert" role="status" th:if="${#lists.isEmpty(majors)}" th:text="#{register.noMajors}"></div>
 
-    <form method="post" th:action="@{/register}" th:object="${form}">
-        <div>
-            <label for="fullName" th:text="#{register.fullName}">Full name</label><br>
-            <input type="text" th:field="*{fullName}">
-        </div>
-        <div>
-            <label for="studentNumber" th:text="#{register.studentNumber}">Student number</label><br>
-            <input type="text" th:field="*{studentNumber}" inputmode="numeric" dir="ltr" autocomplete="off">
-            <br>
-            <small th:if="${hint.fromYear() != null}"
-                   th:text="#{register.studentNumber.hint(${hint.digits()}, ${hint.fromYear()}, ${hint.toYear()})}"></small>
-            <small th:if="${hint.fromYear() == null}"
-                   th:text="#{register.studentNumber.hintDigits(${hint.digits()})}"></small>
-        </div>
-        <div>
-            <label for="majorId" th:text="#{register.major}">Field of study</label><br>
-            <select id="majorId" name="majorId">
-                <option value="" th:text="#{register.chooseMajor}">Choose your field of study</option>
-                <option th:each="m : ${majors}"
-                        th:value="${m.id}"
-                        th:selected="${form.majorId != null and form.majorId == m.id}"
-                        th:text="${m.name}"></option>
-            </select>
-        </div>
-        <div>
-            <label for="password" th:text="#{register.password}">Password</label><br>
-            <input type="password" th:field="*{password}">
-        </div>
-        <div>
-            <label for="confirmPassword" th:text="#{register.confirmPassword}">Confirm password</label><br>
-            <input type="password" th:field="*{confirmPassword}">
-        </div>
-        <button type="submit" th:text="#{register.submit}">Register</button>
-    </form>
-</th:block>
+        <th:block th:unless="${#lists.isEmpty(majors)}">
+            <p class="auth-subtitle" th:text="#{register.subtitle}">You will use your student number to sign in.</p>
 
-<p><a th:href="@{/login}" th:text="#{register.haveAccount}">Already have an account? Sign in</a></p>
-<p><a th:href="@{/register/professor}" th:text="#{login.professor}">Professor? Register with an invite code</a></p>
+            <!--
+              err: the message key of the first problem (or empty). Its name tells which field is wrong,
+              like "register.error.passwordLength", so that field is marked and gets the cursor.
+            -->
+            <form method="post" th:action="@{/register}" th:object="${form}" class="auth-form" data-busy-form
+                  th:with="err=${errorKey} ?: '',
+                           badName=${#strings.contains(err, 'fullName')},
+                           badNumber=${#strings.contains(err, 'studentNumber')},
+                           badMajor=${#strings.contains(err, 'major')},
+                           badConfirm=${#strings.contains(err, 'passwordMismatch')},
+                           badPassword=${#strings.contains(err, 'password') and !#strings.contains(err, 'passwordMismatch')}">
+                <div class="field">
+                    <label for="fullName" th:text="#{register.fullName}">Full name</label>
+                    <input type="text" th:field="*{fullName}" autocomplete="name" maxlength="100"
+                           th:autofocus="${err == '' or badName}"
+                           th:classappend="${badName} ? 'is-invalid'"
+                           th:attr="aria-invalid=${badName} ? 'true',aria-describedby=${badName} ? 'register-error'">
+                </div>
+                <div class="field">
+                    <label for="studentNumber" th:text="#{register.studentNumber}">Student number</label>
+                    <!-- data-ascii-digits: Persian digits typed here become 0-9 (static/js/app.js) -->
+                    <input type="text" th:field="*{studentNumber}" inputmode="numeric" dir="ltr" autocomplete="off"
+                           maxlength="20" spellcheck="false" data-ascii-digits
+                           th:autofocus="${badNumber}"
+                           th:classappend="${badNumber} ? 'is-invalid'"
+                           th:attr="aria-invalid=${badNumber} ? 'true',aria-describedby=${badNumber} ? 'register-error student-number-hint' : 'student-number-hint'">
+                    <!-- The format the backend expects (digits, and the entry year at the start) -->
+                    <small class="field-hint" id="student-number-hint" th:if="${hint.fromYear() != null}"
+                           th:text="#{register.studentNumber.hint(${hint.digits()}, ${hint.fromYear()}, ${hint.toYear()})}"></small>
+                    <small class="field-hint" id="student-number-hint" th:if="${hint.fromYear() == null}"
+                           th:text="#{register.studentNumber.hintDigits(${hint.digits()})}"></small>
+                </div>
+                <div class="field">
+                    <label for="majorId" th:text="#{register.major}">Field of study</label>
+                    <select id="majorId" name="majorId" data-pretty-select
+                            th:autofocus="${badMajor}"
+                            th:classappend="${badMajor} ? 'is-invalid'"
+                            th:attr="aria-invalid=${badMajor} ? 'true',aria-describedby=${badMajor} ? 'register-error'">
+                        <option value="" th:text="#{register.chooseMajor}">Choose your field of study</option>
+                        <option th:each="m : ${majors}"
+                                th:value="${m.id}"
+                                th:selected="${form.majorId != null and form.majorId == m.id}"
+                                th:text="${m.name}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="password" th:text="#{register.password}">Password</label>
+                    <div class="password-field">
+                        <input type="password" th:field="*{password}" autocomplete="new-password"
+                               aria-describedby="password-hint"
+                               th:autofocus="${badPassword}"
+                               th:classappend="${badPassword} ? 'is-invalid'"
+                               th:attr="aria-invalid=${badPassword} ? 'true'">
+                        <button type="button" class="icon-button password-toggle" data-password-toggle
+                                aria-controls="password" aria-pressed="false"
+                                th:attr="data-show=#{auth.showPassword},data-hide=#{auth.hidePassword},aria-label=#{auth.showPassword}"
+                                th:title="#{auth.showPassword}">
+                            <svg class="icon icon-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon icon-eye-off" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 6A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.8"/><path d="M6.6 6.7C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.8 0 3.4-.6 4.7-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                        </button>
+                    </div>
+                    <small class="field-hint" id="password-hint" th:text="#{register.passwordHint}">8 to 64 characters.</small>
+                </div>
+                <div class="field">
+                    <label for="confirmPassword" th:text="#{register.confirmPassword}">Confirm password</label>
+                    <input type="password" th:field="*{confirmPassword}" autocomplete="new-password"
+                           th:autofocus="${badConfirm}"
+                           th:classappend="${badConfirm} ? 'is-invalid'"
+                           th:attr="aria-invalid=${badConfirm} ? 'true',aria-describedby=${badConfirm} ? 'register-error'">
+                </div>
+                <!-- The error sits right above the button; the wrong field is also marked and gets the cursor -->
+                <div class="auth-error" role="alert" id="register-error" th:if="${errorKey}">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/></svg>
+                    <span th:text="#{${errorKey}}">Error</span>
+                </div>
+                <button type="submit" class="btn-primary btn-block">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span th:text="#{register.submit}">Register</span>
+                </button>
+            </form>
+        </th:block>
+
+        <p class="auth-switch">
+            <a th:href="@{/login}" th:text="#{register.haveAccount}">Already have an account? Sign in</a>
+        </p>
+        <p class="auth-switch auth-switch-small">
+            <a th:href="@{/register/professor}" th:text="#{login.professor}">Professor? Register with an invite code</a>
+        </p>
+    </div>
+        <p class="auth-footer" th:text="#{auth.footer}">TA Hub</p>
+    </div>
+</main>
 </body>
 </html>

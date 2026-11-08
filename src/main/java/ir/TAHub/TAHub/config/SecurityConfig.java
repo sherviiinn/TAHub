@@ -25,7 +25,10 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Anyone may see the login and registration pages.
-                        .requestMatchers("/login", "/register", "/register/professor").permitAll()
+                        // The CSS, JS and font files and the error page too, so the sign in page is styled and an error
+                        // on it does not send the browser round and round between /login and /error.
+                        .requestMatchers("/login", "/register", "/register/professor", "/error",
+                                "/css/**", "/js/**", "/fonts/**").permitAll()
                         // Only admins may manage users and use the admin pages.
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
