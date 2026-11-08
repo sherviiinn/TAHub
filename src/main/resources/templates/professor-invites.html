@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{profInvite.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+    <h1 th:text="#{profInvite.title}">Professor invite codes</h1>
+    <p th:text="#{profInvite.help}">How it works.</p>
+
+    <p th:if="${inviteErrorKey}" class="alert alert-error" th:text="#{${inviteErrorKey}}"></p>
+    <div th:if="${newCode}" class="alert alert-success">
+        <p th:text="#{profInvite.created}">New code:</p>
+        <p dir="ltr"><strong th:text="${newCode}">CODE</strong></p>
+        <p th:text="#{profInvite.created.where}">Give it to the professor.</p>
+    </div>
+
+    <h2 th:text="#{profInvite.new}">New invite code</h2>
+    <form method="post" th:action="@{/admin/professor-invites}">
+        <div class="field">
+            <label for="forName" th:text="#{profInvite.forName}">For (optional)</label>
+            <input type="text" id="forName" name="forName" maxlength="100" autocomplete="off">
+        </div>
+        <button type="submit" class="btn-primary" th:text="#{profInvite.create}">Create code</button>
+    </form>
+
+    <h2 th:text="#{profInvite.list}">Codes</h2>
+    <p th:if="${#lists.isEmpty(invites)}" th:text="#{profInvite.empty}">No codes yet.</p>
+    <table th:unless="${#lists.isEmpty(invites)}">
+        <tr>
+            <th th:text="#{profInvite.col.code}">Code</th>
+            <th th:text="#{profInvite.col.for}">For</th>
+            <th th:text="#{profInvite.col.created}">Created</th>
+            <th th:text="#{profInvite.col.expires}">Valid until</th>
+            <th th:text="#{profInvite.col.state}">State</th>
+            <th></th>
+        </tr>
+        <tr th:each="i : ${invites}">
+            <td dir="ltr" th:text="${i.code}"></td>
+            <td th:text="${i.forName}"></td>
+            <td dir="ltr" th:text="${created[i.id]}"></td>
+            <td dir="ltr" th:text="${expires[i.id]}"></td>
+            <td>
+                <span th:if="${i.state != 'USED'}" th:text="#{${'profInvite.state.' + i.state}}"></span>
+                <span th:if="${i.state == 'USED'}"
+                      th:text="#{profInvite.state.USED(${i.usedBy != null ? i.usedBy.fullName : ''}, ${used[i.id]})}"></span>
+            </td>
+            <td>
+                <form th:if="${i.state == 'ACTIVE'}" method="post"
+                      th:action="@{/admin/professor-invites/{id}/cancel(id=${i.id})}">
+                    <button type="submit" th:text="#{profInvite.cancel}">Cancel</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <p><a th:href="@{/users}" th:text="#{courses.back}">Back</a></p>
+    </main>
+</body>
+</html>

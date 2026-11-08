@@ -21,6 +21,11 @@
         <a th:href="${offering.telegramLink}" target="_blank" rel="noopener noreferrer"
            th:text="#{telegram.link}">Telegram group</a>
     </p>
+    <!-- Resources: everyone who is logged in -->
+    <p>
+        <a th:href="@{/courses/{id}/resources(id=${offering.id})}"
+           th:text="#{resources.link(${resourceCount})}">Resources</a>
+    </p>
     <!-- What a student sees about their own enrollment -->
     <div th:if="${isStudent}">
 
@@ -74,13 +79,23 @@
         <ul th:unless="${#lists.isEmpty(teachingAssistants)}">
             <li th:each="t : ${teachingAssistants}">
                 <span th:text="${t.assignment.user.fullName}"></span>
+                <span class="tag" th:if="${t.head}" th:text="#{ta.head.tag}">Head TA</span>
                 <span th:if="${canManage or canManageTeam}" th:text="'(' + ${t.assignment.user.studentNumber} + ')'"></span>
                 <a th:if="${t.canEditPermissions}"
                    th:href="@{/courses/{id}/tas/{uid}/permissions(id=${offering.id},uid=${t.assignment.user.id})}"
                    th:text="#{ta.permissions.link}">Permissions</a>
+                <!-- Only the professor makes or unmakes head TAs -->
+                <form th:if="${t.canChangeHead and !t.head}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/head(id=${offering.id},uid=${t.assignment.user.id})}">
+                    <button type="submit" class="btn-small" th:text="#{ta.head.make}">Make head TA</button>
+                </form>
+                <form th:if="${t.canChangeHead and t.head}" method="post"
+                      th:action="@{/courses/{id}/tas/{uid}/unhead(id=${offering.id},uid=${t.assignment.user.id})}">
+                    <button type="submit" class="btn-small" th:text="#{ta.head.remove}">Remove head TA</button>
+                </form>
                 <form th:if="${t.canRemove}" method="post"
                       th:action="@{/courses/{id}/tas/{uid}/remove(id=${offering.id},uid=${t.assignment.user.id})}">
-                    <button type="submit" th:text="#{ta.remove}">Remove</button>
+                    <button type="submit" class="btn-small btn-danger" th:text="#{ta.remove}">Remove</button>
                 </form>
             </li>
         </ul>
@@ -100,11 +115,55 @@
             </ul>
         </th:block>
 
+        <!-- Team limit: how many TAs head TAs may have in the team (the professor is not held to it) -->
+        <th:block th:if="${taTeamSize != null}">
+            <p th:text="${taTeamLimit != null}
+                    ? #{ta.teamLimit.status(${taTeamSize}, ${taTeamLimit})}
+                    : #{ta.teamLimit.statusNoLimit(${taTeamSize})}">Team: 3 of 5</p>
+            <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
+                <p th:if="${teamLimitSaved}" th:text="#{ta.teamLimit.saved}">Saved.</p>
+                <p th:if="${teamLimitErrorKey}" th:text="#{${teamLimitErrorKey}}"></p>
+                <form method="post" th:action="@{/courses/{id}/ta-team-limit(id=${offering.id})}">
+                    <label for="teamLimit" th:text="#{ta.teamLimit.label}">Team limit</label>
+                    <input type="number" id="teamLimit" name="limit" min="1" max="50" th:value="${taTeamLimit}">
+                    <button type="submit" class="btn-small" th:text="#{ta.teamLimit.save}">Save</button>
+                </form>
+                <small th:text="#{ta.teamLimit.help}">Empty means no limit.</small>
+            </th:block>
+
+            <!-- A head TA's request to raise the limit -->
+            <th:block th:if="${pendingLimitRequest != null}">
+                <p th:text="#{ta.limitRequest.waiting(${pendingLimitRequest.requestedBy.fullName}, ${pendingLimitRequest.requestedLimit})}">
+                    Waiting request</p>
+                <p th:if="${pendingLimitRequest.message}" class="announcement-body" th:text="${pendingLimitRequest.message}"></p>
+                <th:block th:if="${canManage and isCurrentSemester and !isCancelled}">
+                    <form method="post" th:action="@{/ta-limit-requests/{rid}/approve(rid=${pendingLimitRequest.id})}">
+                        <button type="submit" class="btn-small btn-primary" th:text="#{ta.limitRequest.approve}">Approve</button>
+                    </form>
+                    <form method="post" th:action="@{/ta-limit-requests/{rid}/reject(rid=${pendingLimitRequest.id})}">
+                        <button type="submit" class="btn-small btn-danger" th:text="#{ta.limitRequest.reject}">Reject</button>
+                    </form>
+                </th:block>
+            </th:block>
+            <th:block th:if="${canRequestLimit and pendingLimitRequest == null}">
+                <p th:if="${limitRequestSent}" th:text="#{ta.limitRequest.sent}">Sent.</p>
+                <p th:if="${limitRequestErrorKey}" th:text="#{${limitRequestErrorKey}}"></p>
+                <form method="post" th:action="@{/courses/{id}/ta-limit-requests(id=${offering.id})}">
+                    <label for="requestedLimit" th:text="#{ta.limitRequest.label}">Ask for a higher limit</label>
+                    <input type="number" id="requestedLimit" name="requestedLimit" min="1" max="50" required>
+                    <label for="limitMessage" th:text="#{ta.limitRequest.messageLabel}">Why (optional)</label>
+                    <input type="text" id="limitMessage" name="message" maxlength="300" autocomplete="off">
+                    <button type="submit" class="btn-small" th:text="#{ta.limitRequest.send}">Ask the professor</button>
+                </form>
+            </th:block>
+        </th:block>
+
         <!-- Invite a TA: they become a TA only after they accept -->
         <th:block th:if="${(canManage or canManageTeam) and isCurrentSemester and !isCancelled}">
             <p th:if="${taErrorKey}" th:text="#{${taErrorKey}}"></p>
             <p th:if="${taInvitedName}" th:text="#{ta.invitations.sent(${taInvitedName})}">Invitation sent.</p>
-            <form method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
+            <p th:if="${taTeamFull}" th:text="#{ta.error.teamFull}">The team is full.</p>
+            <form th:unless="${taTeamFull}" method="post" th:action="@{/courses/{id}/tas(id=${offering.id})}">
                 <label for="taNumber" th:text="#{ta.studentNumber}">Student number</label>
                 <input type="text" id="taNumber" name="studentNumber" maxlength="20" required autocomplete="off">
                 <button type="submit" th:text="#{ta.invite}">Invite as TA</button>
@@ -120,8 +179,12 @@
         <!-- A student of another group of this course cannot be a TA here -->
         <p th:if="${isStudentOfOtherGroup}" th:text="#{ta.apply.error.otherGroup}">You are a student of another group.</p>
 
+        <!-- The team is full: nobody can ask until the professor raises the limit -->
+        <p th:if="${taTeamFull and (myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN')}"
+           th:text="#{ta.apply.error.teamFull}">The team is full.</p>
+
         <!-- No request yet, or the student took the old one back -->
-        <form th:if="${!isStudentOfOtherGroup and (myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN')}" method="post"
+        <form th:if="${!isStudentOfOtherGroup and !taTeamFull and (myTaApplication == null or myTaApplication.status.name() == 'WITHDRAWN')}" method="post"
               th:action="@{/courses/{id}/ta-applications(id=${offering.id})}">
             <label for="taMessage" th:text="#{ta.apply.messageLabel}">Message</label><br>
             <textarea id="taMessage" name="message" rows="4" cols="40" maxlength="500"></textarea><br>

@@ -1466,6 +1466,11 @@ main.auth {
     text-align: center;
 }
 
+.auth-switch-small {
+    margin-block-start: 0.5rem;
+    font-size: 0.85rem;
+}
+
 /* The error above the button: slides in, then gives one small shake */
 .auth-error {
     display: flex;
@@ -1746,23 +1751,35 @@ button.pselect-button {
     gap: 0.75rem;
     margin: 0;
     padding: 0.55rem 0.75rem;
+    border-inline-start: 3px solid transparent;
     border-radius: 10px;
     cursor: pointer;
-    transition: background-color var(--fast) var(--ease);
+    transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+                color var(--fast) var(--ease), padding var(--fast) var(--ease);
 }
 
 .pselect-option + .pselect-option {
     margin-block-start: 2px;
 }
 
-.pselect-option.is-active {
-    background: var(--beige);
-}
-
+/* The chosen option */
 .pselect-option[aria-selected="true"] {
     background: var(--sky);
     color: var(--navy);
     font-weight: 500;
+}
+
+/* The option under the mouse (or the keyboard): dark, so it is clear which one a click picks */
+.pselect-option.is-active,
+.pselect-option[aria-selected="true"].is-active {
+    border-inline-start-color: var(--navy);
+    background: var(--navy);
+    color: var(--white);
+    padding-inline-start: 0.95rem;
+}
+
+.pselect-option.is-active .pselect-check {
+    color: var(--white);
 }
 
 .pselect-option[aria-disabled="true"] {

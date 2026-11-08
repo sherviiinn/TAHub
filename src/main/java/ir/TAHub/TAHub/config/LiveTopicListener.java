@@ -4,6 +4,7 @@ import ir.TAHub.TAHub.model.Announcement;
 import ir.TAHub.TAHub.model.CafeteriaMeal;
 import ir.TAHub.TAHub.model.CafeteriaSettings;
 import ir.TAHub.TAHub.model.CourseOffering;
+import ir.TAHub.TAHub.model.CourseResource;
 import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.Food;
 import ir.TAHub.TAHub.model.RosterEntry;
@@ -12,6 +13,7 @@ import ir.TAHub.TAHub.model.SiteNoticeDismissal;
 import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.TaInvitation;
+import ir.TAHub.TAHub.model.TaLimitRequest;
 import ir.TAHub.TAHub.service.NotificationStream;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
@@ -113,6 +115,10 @@ public class LiveTopicListener
         } else if (entity instanceof TaInvitation invitation) {
             topics.add(offeringTopic(invitation.getOffering()));
             topics.add("ta-requests");
+        } else if (entity instanceof CourseResource resource) {
+            topics.add(offeringTopic(resource.getOffering()));
+        } else if (entity instanceof TaLimitRequest request) {
+            topics.add(offeringTopic(request.getOffering()));
         } else if (entity instanceof Announcement announcement) {
             topics.add(offeringTopic(announcement.getOffering()));
         } else if (entity instanceof SiteNotice) {

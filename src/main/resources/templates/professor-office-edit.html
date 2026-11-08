@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{office.edit})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+    <h1 th:text="#{office.edit}">Edit office information</h1>
+    <h2 th:text="${professor.fullName}">Professor</h2>
+    <p th:text="#{office.edit.help}">Everything is optional.</p>
+
+    <p th:if="${officeErrorKey}" class="alert alert-error" th:text="#{${officeErrorKey}}"></p>
+
+    <form method="post" th:action="@{/professors/{id}/office(id=${professor.id})}">
+        <div class="field">
+            <label for="building" th:text="#{office.building}">Building</label>
+            <input type="text" id="building" name="building" maxlength="100" autocomplete="off" th:value="${building}">
+        </div>
+        <div class="field">
+            <label for="room" th:text="#{office.room}">Room</label>
+            <input type="text" id="room" name="room" maxlength="50" autocomplete="off" th:value="${room}">
+        </div>
+        <div class="field">
+            <label for="availability" th:text="#{office.availability}">Usually in the office</label>
+            <textarea id="availability" name="availability" rows="3" maxlength="300"
+                      th:placeholder="#{office.availability.placeholder}" th:text="${availability}"></textarea>
+        </div>
+        <div class="field">
+            <label for="email" th:text="#{office.email}">Email</label>
+            <input type="email" id="email" name="email" maxlength="150" autocomplete="off" th:value="${email}">
+        </div>
+        <div class="field">
+            <label for="phone" th:text="#{office.phone}">Phone</label>
+            <input type="text" id="phone" name="phone" maxlength="30" autocomplete="off" dir="ltr" th:value="${phone}">
+        </div>
+        <div class="field">
+            <label for="telegram" th:text="#{office.telegram.label}">Telegram username</label>
+            <input type="text" id="telegram" name="telegram" maxlength="40" autocomplete="off" placeholder="@username" dir="ltr" th:value="${telegram}">
+        </div>
+        <div class="field">
+            <label for="website" th:text="#{office.website}">Web page</label>
+            <input type="url" id="website" name="website" maxlength="300" placeholder="https://..." autocomplete="off" th:value="${website}">
+        </div>
+        <div class="field">
+            <label for="note" th:text="#{office.note}">Note</label>
+            <textarea id="note" name="note" rows="2" maxlength="300" th:placeholder="#{office.note.placeholder}" th:text="${note}"></textarea>
+        </div>
+        <button type="submit" class="btn-primary" th:text="#{office.save}">Save</button>
+    </form>
+
+    <p><a th:href="@{/professors/{id}(id=${professor.id})}" th:text="#{announcements.edit.cancel}">Cancel</a></p>
+    </main>
+</body>
+</html>

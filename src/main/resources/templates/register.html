@@ -40,11 +40,16 @@
                 <div class="field">
                     <label for="studentNumber" th:text="#{register.studentNumber}">Student number</label>
                     <!-- data-ascii-digits: Persian digits typed here become 0-9 (static/js/app.js) -->
-                    <input type="text" th:field="*{studentNumber}" inputmode="numeric" autocomplete="username"
+                    <input type="text" th:field="*{studentNumber}" inputmode="numeric" dir="ltr" autocomplete="off"
                            maxlength="20" spellcheck="false" data-ascii-digits
                            th:autofocus="${badNumber}"
                            th:classappend="${badNumber} ? 'is-invalid'"
-                           th:attr="aria-invalid=${badNumber} ? 'true',aria-describedby=${badNumber} ? 'register-error'">
+                           th:attr="aria-invalid=${badNumber} ? 'true',aria-describedby=${badNumber} ? 'register-error student-number-hint' : 'student-number-hint'">
+                    <!-- The format the backend expects (digits, and the entry year at the start) -->
+                    <small class="field-hint" id="student-number-hint" th:if="${hint.fromYear() != null}"
+                           th:text="#{register.studentNumber.hint(${hint.digits()}, ${hint.fromYear()}, ${hint.toYear()})}"></small>
+                    <small class="field-hint" id="student-number-hint" th:if="${hint.fromYear() == null}"
+                           th:text="#{register.studentNumber.hintDigits(${hint.digits()})}"></small>
                 </div>
                 <div class="field">
                     <label for="majorId" th:text="#{register.major}">Field of study</label>
@@ -98,6 +103,9 @@
 
         <p class="auth-switch">
             <a th:href="@{/login}" th:text="#{register.haveAccount}">Already have an account? Sign in</a>
+        </p>
+        <p class="auth-switch auth-switch-small">
+            <a th:href="@{/register/professor}" th:text="#{login.professor}">Professor? Register with an invite code</a>
         </p>
     </div>
         <p class="auth-footer" th:text="#{auth.footer}">TA Hub</p>

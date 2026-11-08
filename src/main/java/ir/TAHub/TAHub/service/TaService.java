@@ -88,8 +88,35 @@ public class TaService {
                 application.setStatus(TaApplicationStatus.WITHDRAWN);
                 application.setDecidedAt(Instant.now());
                 applicationRepository.save(application);
+                afterRequestHandled(application.getOffering());
             }
         }
+    }
+
+    /**
+     * Call this after a TA request of the offering was accepted, rejected, withdrawn or closed.
+     * When no request is waiting any more, the professor's "New TA request" notification goes away.
+     */
+    @Transactional
+    public void afterRequestHandled(CourseOffering offering) {
+        if (applicationRepository.countByOfferingAndStatus(offering, TaApplicationStatus.PENDING) == 0) {
+            notificationService.clearTaRequestNotifications(offering);
+        }
+    }
+
+    /** Active TAs plus waiting invitations: the places the team already uses. */
+    public long teamSize(CourseOffering offering) {
+        return taRepository.countByOfferingAndActiveTrue(offering)
+                + invitationRepository.countByOfferingAndStatus(offering, TaInvitationStatus.PENDING);
+    }
+
+    /**
+     * True when the offering has a team limit and the team reached it. Then nobody can ask to be a TA,
+     * and nobody (the professor included) can accept a request or invite, until the professor raises the limit.
+     */
+    public boolean isTeamFull(CourseOffering offering) {
+        Integer limit = offering.getTaTeamLimit();
+        return limit != null && teamSize(offering) >= limit;
     }
 
     /** Closes a waiting invitation that can no longer be accepted, and tells the people who sent it. */

@@ -19,13 +19,20 @@ public enum TaPermission {
     VIEW_STUDENTS,
     /** Paste the class list, remove and restore students, and manage the join code. */
     MANAGE_STUDENTS,
+    /** Add, edit and delete the course's resources (videos and links). */
+    MANAGE_RESOURCES,
     /** Add and remove TAs (the head TA has this). */
     MANAGE_TEAM,
     /** Give other TAs the permissions they have themselves (the head TA has this). */
     GRANT_PERMISSIONS;
 
+    /** A head TA is a TA with these two. Only the professor (or an admin) can give or take them. */
+    public static Set<TaPermission> headOnly() {
+        return EnumSet.of(MANAGE_TEAM, GRANT_PERMISSIONS);
+    }
+
     /** What a TA gets when the professor makes them a TA (the professor can change it right after). */
     public static Set<TaPermission> defaults() {
-        return EnumSet.of(POST_ANNOUNCEMENTS, EDIT_TELEGRAM);
+        return EnumSet.of(POST_ANNOUNCEMENTS, EDIT_TELEGRAM, MANAGE_RESOURCES);
     }
 }

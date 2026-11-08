@@ -7,6 +7,7 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.MajorRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.RosterService;
+import ir.TAHub.TAHub.service.StudentNumberRules;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,30 +22,34 @@ public class RegistrationController {
     private final MajorRepository majorRepository;
     private final PasswordEncoder passwordEncoder;
     private final RosterService rosterService;
+    private final StudentNumberRules numberRules;
 
     public RegistrationController(UserRepository userRepository,
                                   MajorRepository majorRepository,
                                   PasswordEncoder passwordEncoder,
-                                  RosterService rosterService) {
+                                  RosterService rosterService,
+                                  StudentNumberRules numberRules) {
         this.userRepository = userRepository;
         this.majorRepository = majorRepository;
         this.passwordEncoder = passwordEncoder;
         this.rosterService = rosterService;
+        this.numberRules = numberRules;
     }
 
     @GetMapping("/register")
     public String showForm(Model model) {
         model.addAttribute("form", new RegisterForm());
         model.addAttribute("majors", majorRepository.findAllByOrderByNameAsc());
+        model.addAttribute("hint", numberRules.hint());
         return "register";
     }
 
     @PostMapping("/register")
     public String register(@ModelAttribute("form") RegisterForm form, Model model) {
 
-        // Clean up whitespace first, so " 12345 " is treated as "12345".
+        // Clean up whitespace first, so " 12345 " is treated as "12345". Persian digits become English ones.
         form.setFullName(trimOrEmpty(form.getFullName()));
-        form.setStudentNumber(trimOrEmpty(form.getStudentNumber()));
+        form.setStudentNumber(numberRules.clean(form.getStudentNumber()));
 
         // We never trust the id from the form: we load the real major (or null if it does not exist).
         Major major = form.getMajorId() == null
@@ -55,6 +60,7 @@ public class RegistrationController {
         if (errorKey != null) {
             model.addAttribute("errorKey", errorKey);
             model.addAttribute("majors", majorRepository.findAllByOrderByNameAsc());
+            model.addAttribute("hint", numberRules.hint());
             return "register";
         }
 
@@ -86,7 +92,7 @@ public class RegistrationController {
         if (form.getStudentNumber().isEmpty()) {
             return "register.error.studentNumberRequired";
         }
-        if (!form.getStudentNumber().matches("\\d{4,20}")) {
+        if (!numberRules.isValid(form.getStudentNumber())) {
             return "register.error.studentNumberFormat";
         }
         if (userRepository.existsByStudentNumber(form.getStudentNumber())) {
@@ -111,4 +117,4 @@ public class RegistrationController {
     private String trimOrEmpty(String value) {
         return value == null ? "" : value.trim();
     }
-}
+}

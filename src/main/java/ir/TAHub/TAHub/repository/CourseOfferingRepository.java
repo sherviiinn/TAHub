@@ -21,5 +21,8 @@ public interface CourseOfferingRepository extends JpaRepository<CourseOffering, 
     // Lists shown to students must not include cancelled offerings.
     List<CourseOffering> findBySemesterAndCancelledFalseOrderByCourseCodeAsc(Semester semester);
 
+    // Every offering of a course, newest semester first (for the resources of the last semester).
+    List<CourseOffering> findByCourseOrderBySemesterIdDesc(Course course);
+
     Optional<CourseOffering> findByCourseAndSemesterAndProfessor(Course course, Semester semester, User professor);
 }

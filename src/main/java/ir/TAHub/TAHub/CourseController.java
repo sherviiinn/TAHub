@@ -9,6 +9,7 @@ import ir.TAHub.TAHub.model.TaApplication;
 import ir.TAHub.TAHub.model.TaAssignment;
 import ir.TAHub.TAHub.model.TaInvitation;
 import ir.TAHub.TAHub.model.TaInvitationStatus;
+import ir.TAHub.TAHub.model.TaLimitRequestStatus;
 import ir.TAHub.TAHub.model.TaPermission;
 import ir.TAHub.TAHub.model.TaApplicationStatus;
 import ir.TAHub.TAHub.model.Role;
@@ -17,14 +18,17 @@ import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
+import ir.TAHub.TAHub.repository.CourseResourceRepository;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
 import ir.TAHub.TAHub.repository.RosterEntryRepository;
 import ir.TAHub.TAHub.repository.TaApplicationRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.TaInvitationRepository;
+import ir.TAHub.TAHub.repository.TaLimitRequestRepository;
 import ir.TAHub.TAHub.repository.SemesterRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.OfferingAccess;
+import ir.TAHub.TAHub.service.TaService;
 import ir.TAHub.TAHub.util.JoinCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -47,7 +51,8 @@ public class CourseController {
     private static final int MAX_LENGTH = 100;
 
     /** One TA as the course page shows it, with the buttons the current user may use. */
-    public record TaRow(TaAssignment assignment, boolean canRemove, boolean canEditPermissions) {
+    public record TaRow(TaAssignment assignment, boolean head, boolean canRemove, boolean canEditPermissions,
+                        boolean canChangeHead) {
     }
 
     /** A waiting TA invitation, and whether the current user may take it back. */
@@ -65,6 +70,9 @@ public class CourseController {
     private final AnnouncementRepository announcementRepository;
     private final OfferingAccess access;
     private final TaInvitationRepository invitationRepository;
+    private final TaLimitRequestRepository limitRequestRepository;
+    private final CourseResourceRepository resourceRepository;
+    private final TaService taService;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -76,7 +84,10 @@ public class CourseController {
                             TaApplicationRepository applicationRepository,
                             AnnouncementRepository announcementRepository,
                             OfferingAccess access,
-                            TaInvitationRepository invitationRepository) {
+                            TaInvitationRepository invitationRepository,
+                            TaLimitRequestRepository limitRequestRepository,
+                            CourseResourceRepository resourceRepository,
+                            TaService taService) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -88,6 +99,9 @@ public class CourseController {
         this.announcementRepository = announcementRepository;
         this.access = access;
         this.invitationRepository = invitationRepository;
+        this.limitRequestRepository = limitRequestRepository;
+        this.resourceRepository = resourceRepository;
+        this.taService = taService;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -150,11 +164,27 @@ public class CourseController {
         // Everybody can see who the TAs are. A TA cannot enroll as a student in the same offering.
         boolean open = access.isOpen(offering);
         List<TaRow> taRows = taRepository.findByOfferingAndActiveTrueOrderByUserFullNameAsc(offering).stream()
-                .map(ta -> new TaRow(ta,
+                .map(ta -> new TaRow(ta, ta.isHead(),
                         open && access.canRemoveTa(current, offering, ta),
-                        open && access.canEditTaPermissions(current, offering, ta)))
+                        open && access.canEditTaPermissions(current, offering, ta),
+                        open && canManage))
                 .toList();
         model.addAttribute("teachingAssistants", taRows);
+
+        // A full team takes nobody new: the "Become a head TA" form is replaced by a message.
+        model.addAttribute("taTeamFull", taService.isTeamFull(offering));
+
+        // The team limit: the professor and TAs who manage the team see it.
+        if (canManage || canManageTeam) {
+            model.addAttribute("taTeamSize", taService.teamSize(offering));
+            model.addAttribute("taTeamLimit", offering.getTaTeamLimit());
+
+            // A head TA's waiting request to raise the limit (the professor answers it; head TAs see it).
+            model.addAttribute("pendingLimitRequest", limitRequestRepository
+                    .findFirstByOfferingAndStatus(offering, TaLimitRequestStatus.PENDING).orElse(null));
+            boolean iAmHead = access.activeTa(current, offering).map(TaAssignment::isHead).orElse(false);
+            model.addAttribute("canRequestLimit", iAmHead && open && offering.getTaTeamLimit() != null);
+        }
 
         // Waiting invitations: seen by the professor and by TAs who manage the team.
         // The professor cancels any; a TA only the ones they sent.
@@ -187,6 +217,8 @@ public class CourseController {
         if (canSeeAnnouncements) {
             model.addAttribute("announcementCount", announcementRepository.countByOfferingAndDeletedFalse(offering));
         }
+        // Resources are for everyone who is logged in.
+        model.addAttribute("resourceCount", resourceRepository.countByOfferingAndDeletedFalse(offering));
 
         // TA applications: is the offering taking them, and what is this student's own request (if any).
         model.addAttribute("taApplicationsOpen", offering.isTaApplicationsOpen());

@@ -70,15 +70,15 @@ public class DemoDataSeeder implements CommandLineRunner {
         Semester previous = semester("4051", false);
         Semester current = semester("4052", true);
 
-        User prof1 = user("Dr. Ali Karimi", "9001", Role.PROFESSOR);
-        User prof2 = user("Dr. Maryam Hosseini", "9002", Role.PROFESSOR);
+        User prof1 = user("Dr. Ali Karimi", "karimi", Role.PROFESSOR);
+        User prof2 = user("Dr. Maryam Hosseini", "hosseini", Role.PROFESSOR);
 
-        User sara = user("Sara Ahmadi", "40000001", Role.STUDENT);
-        User reza = user("Reza Mohammadi", "40000002", Role.STUDENT);
-        User nima = user("Nima Rahimi", "40000003", Role.STUDENT);
-        User tina = user("Tina Karimi", "40000004", Role.STUDENT);
-        User omid = user("Omid Hashemi", "40000005", Role.STUDENT);
-        User lena = user("Lena Sadeghi", "40000006", Role.STUDENT);
+        User sara = user("Sara Ahmadi", "40312100001", Role.STUDENT);
+        User reza = user("Reza Mohammadi", "40312100002", Role.STUDENT);
+        User nima = user("Nima Rahimi", "40312100003", Role.STUDENT);
+        User tina = user("Tina Karimi", "40212100004", Role.STUDENT);
+        User omid = user("Omid Hashemi", "40212100005", Role.STUDENT);
+        User lena = user("Lena Sadeghi", "40412100006", Role.STUDENT);
 
         Course cs101 = course("CS101", "Introduction to Programming");
         Course cs201 = course("CS201", "Data Structures");
@@ -108,7 +108,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         enroll(reza, newCs301b, EnrollmentStatus.ACTIVE);
         enroll(nima, newCs301b, EnrollmentStatus.ACTIVE);
 
-        log.info("Demo data created. All demo accounts use the password '{}'. Professors: 9001, 9002. Students: 40000001 to 40000006.",
+        log.info("Demo data created. All demo accounts use the password '{}'. Professors: karimi, hosseini. Students: 40312100001 to 40312100003, 40212100004, 40212100005, 40412100006.",
                 DEMO_PASSWORD);
     }
 
@@ -153,4 +153,4 @@ public class DemoDataSeeder implements CommandLineRunner {
         enrollment.setSource(EnrollmentSource.JOIN_CODE);
         enrollmentRepository.save(enrollment);
     }
-}
+}
