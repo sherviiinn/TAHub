@@ -21,7 +21,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Anyone may see the login and registration pages.
-                        .requestMatchers("/login", "/register").permitAll()
+                        .requestMatchers("/login", "/register", "/error", "/css/**", "/js/**", "/fonts/**").permitAll()
                         // Only admins may manage users.
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         // Only admins and professors may create courses.
