@@ -89,6 +89,28 @@
         }
     });
 
+    // ---------- sign in page: the example cards follow the mouse a little ----------
+    // Sets --px and --py (from -1 to 1) on the dark half; app.css moves each card by its own depth.
+    var aside = document.querySelector('.auth-aside');
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (aside && !calm) {
+        var frame = 0;
+        aside.addEventListener('mousemove', function (event) {
+            var box = aside.getBoundingClientRect();
+            var x = ((event.clientX - box.left) / box.width) * 2 - 1;
+            var y = ((event.clientY - box.top) / box.height) * 2 - 1;
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(function () {
+                aside.style.setProperty('--px', x.toFixed(3));
+                aside.style.setProperty('--py', y.toFixed(3));
+            });
+        });
+        aside.addEventListener('mouseleave', function () {
+            aside.style.setProperty('--px', '0');
+            aside.style.setProperty('--py', '0');
+        });
+    }
+
     // ---------- 3. phone menu ----------
     var openButton = document.querySelector('[data-nav-open]');
     var sidebar = document.getElementById('sidebar');

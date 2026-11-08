@@ -1,0 +1,1616 @@
+/* TA Hub styles. The frontend developer owns this file.
+   Use logical properties (margin-inline-start, padding-inline, inset-inline-start ...) instead of
+   left/right, so the pages also work right-to-left when Persian is added.
+
+   Contents:
+     1. Font            5. Sidebar menu        9. Messages and tags
+     2. Colors, sizes   6. Site notice bar    10. Older page parts (notifications, cafeteria ...)
+     3. Base            7. Buttons            11. Animations
+     4. Page layout     8. Forms and tables   12. Phones
+                                              13. Sign in and register pages
+*/
+
+/* ===== 1. Font (files in static/fonts) ===== */
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Medium.woff2") format("woff2");
+    font-weight: 500;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Black.woff2") format("woff2");
+    font-weight: 900;
+    font-display: swap;
+}
+
+/* ===== 2. Colors and sizes ===== */
+:root {
+    /* The palette */
+    --black: #0d0d0d;
+    --navy: #2f4156;
+    --teal: #567c8d;
+    --sky: #c8d9e6;
+    --beige: #f5efeb;
+    --white: #ffffff;
+
+    /* Made from the palette */
+    --navy-hover: #243344;
+    --sky-soft: #eaf1f7;      /* light sky, for info boxes */
+    --beige-hover: #ece4de;   /* menu hover */
+    --row-hover: #faf7f5;     /* table row hover */
+
+    /* What things use */
+    --color-text: var(--black);
+    --color-muted: #586a77;
+    --color-bg: var(--white);
+    --color-surface: var(--beige);
+    --color-border: #e3e8ed;
+    --color-border-strong: #cfd8e0;
+    --table-line: #aebdca;    /* lines inside tables: clearly visible */
+    --table-head: var(--teal); /* the thick line under the header row */
+    --color-primary: var(--navy);
+    --color-link: var(--teal);
+    --color-focus: var(--sky);
+
+    --error-bg: #fbeeee;
+    --error-text: #8a2c2c;
+    --success-bg: #ebf5ef;
+    --success-text: #2d6a45;
+
+    /* Sizes */
+    --sidebar-w: 16.5rem;
+    --content-w: 52rem;
+    --gutter: 1.5rem;
+    --topbar-h: 3.5rem;
+    --radius-s: 8px;
+    --radius: 12px;
+    --radius-l: 16px;
+    --radius-pill: 999px;
+
+    /* Motion */
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --fast: 150ms;
+    --normal: 220ms;
+
+    --shadow: 0 1px 2px rgb(13 13 13 / 0.04), 0 4px 16px rgb(47 65 86 / 0.06);
+    --shadow-l: 0 12px 40px rgb(47 65 86 / 0.18);
+
+    /* 1 = left-to-right, -1 = right-to-left (used to slide the menu in from the correct side) */
+    --dir: 1;
+}
+
+[dir="rtl"] {
+    --dir: -1;
+}
+
+/* ===== 3. Base ===== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: "Vazirmatn", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.975rem;
+    line-height: 1.65;
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+    margin: 0 0 0.75rem;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+h1 {
+    font-size: 1.85rem;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--navy);
+    margin-block-end: 1.25rem;
+}
+
+h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-block-start: 2.25rem;
+}
+
+h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-block-start: 1.5rem;
+}
+
+p {
+    margin: 0 0 0.85rem;
+}
+
+small,
+.muted {
+    color: var(--color-muted);
+}
+
+small {
+    font-size: 0.82rem;
+}
+
+a {
+    color: var(--color-link);
+    text-decoration: underline;
+    text-decoration-color: var(--sky);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    transition: color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
+}
+
+a:hover {
+    color: var(--navy);
+    text-decoration-color: currentColor;
+}
+
+:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+    border-radius: var(--radius-s);
+}
+
+hr {
+    border: 0;
+    border-block-start: 1px solid var(--color-border);
+    margin-block: 2rem;
+}
+
+ul, ol {
+    padding-inline-start: 1.25rem;
+}
+
+li + li {
+    margin-block-start: 0.25rem;
+}
+
+::selection {
+    background: var(--sky);
+    color: var(--black);
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.icon {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.icon-sprite {
+    display: none;
+}
+
+/* ===== 4. Page layout =====
+   The content sits in the middle of the space next to the menu, never wider than --content-w. */
+main {
+    max-inline-size: calc(var(--content-w) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding: 2.5rem var(--gutter) 4rem;
+}
+
+.app-nav.has-sidebar ~ main,
+.app-nav.has-sidebar #site-banner-slot {
+    max-inline-size: none;
+    margin-inline: var(--sidebar-w) 0;
+    padding-inline: max(var(--gutter), calc((100% - var(--sidebar-w) - var(--content-w)) / 2));
+}
+
+/* For pages that need more room (a wide table). Use it later as <main class="wide">. */
+.app-nav.has-sidebar ~ main.wide {
+    --content-w: 72rem;
+}
+
+/* Small layout helpers for the page steps */
+.stack > * + * {
+    margin-block-start: 0.75rem;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-block-end: 1.5rem;
+}
+
+.page-head h1 {
+    margin: 0;
+}
+
+.card {
+    padding: 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-l);
+    background: var(--color-bg);
+    box-shadow: var(--shadow);
+}
+
+.card-soft {
+    padding: 1.25rem;
+    border-radius: var(--radius-l);
+    background: var(--color-surface);
+}
+
+.empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--color-muted);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-l);
+}
+
+/* ===== 5. Sidebar menu ===== */
+.app-nav {
+    margin: 0;
+}
+
+.topbar,
+.nav-backdrop,
+.sidebar-head .sidebar-close {
+    display: none;
+}
+
+.sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    inline-size: var(--sidebar-w);
+    background: var(--color-surface);
+    border-inline-end: 1px solid var(--color-border);
+}
+
+.sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.1rem 0.75rem;
+}
+
+.brand {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--navy);
+    text-decoration: none;
+}
+
+.brand:hover {
+    color: var(--navy);
+}
+
+.sidebar-links {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.25rem 0.75rem 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.nav-section + .nav-section {
+    margin-block-start: 1.1rem;
+}
+
+.nav-heading {
+    margin: 0 0 0.3rem;
+    padding-inline: 0.75rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    inline-size: 100%;
+    min-block-size: 2.4rem;
+    font-weight: 400;
+    padding: 0.45rem 0.75rem;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-size: 0.93rem;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.nav-link + .nav-link {
+    margin-block-start: 2px;
+}
+
+.nav-link .icon {
+    color: var(--teal);
+    transition: color var(--fast) var(--ease);
+}
+
+.nav-link:hover {
+    background: var(--beige-hover);
+    color: var(--color-text);
+}
+
+.nav-link.is-active {
+    background: var(--sky);
+    color: var(--navy);
+    font-weight: 500;
+}
+
+.nav-link.is-active .icon {
+    color: var(--navy);
+}
+
+.nav-link:active {
+    transform: scale(0.985);
+}
+
+/* Unread notifications: the number in a small pill at the end of the link (static/js/live.js keeps it fresh) */
+.nav-badge {
+    margin-inline-start: auto;
+    min-inline-size: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: var(--radius-pill);
+    background: var(--navy);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4rem;
+    text-align: center;
+}
+
+.nav-badge.bump {
+    animation: bump 360ms var(--ease);
+}
+
+.sidebar-foot {
+    padding: 0.75rem;
+    border-block-start: 1px solid var(--color-border);
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.35rem 0.75rem 0.6rem;
+    min-inline-size: 0;
+}
+
+.avatar {
+    display: grid;
+    place-items: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    flex: none;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.nav-user-name {
+    overflow: hidden;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav-logout {
+    margin: 2px 0 0;
+}
+
+.icon-button {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    min-block-size: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background-color var(--fast) var(--ease);
+}
+
+.icon-button:hover {
+    background: rgb(47 65 86 / 0.08);
+}
+
+/* ===== 6. Site notice bar (the newest admin notice, above the page) ===== */
+.site-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-block-start: 1.25rem;
+    padding-block: 0.4rem;
+    padding-inline: 1rem 0.4rem;
+    border: 1px solid var(--sky);
+    border-radius: var(--radius);
+    background: var(--sky-soft);
+    color: var(--navy);
+    animation: slide-down var(--normal) var(--ease) both;
+}
+
+.site-banner > .icon {
+    color: var(--teal);
+}
+
+.site-banner a {
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.site-banner a:hover {
+    text-decoration: underline;
+}
+
+.site-banner-close {
+    margin: 0;
+}
+
+.site-banner-close .icon-button {
+    inline-size: 2rem;
+    block-size: 2rem;
+    color: var(--navy);
+}
+
+/* ===== 7. Buttons =====
+   Every button looks like a light "secondary" button by default.
+   .btn-primary for the main action of a form, .btn-danger for removing or deleting,
+   .btn-ghost for quiet actions. A link can look like a button with class="btn". */
+button,
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-block-size: 2.4rem;
+    padding: 0.45rem 1.1rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.3;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+                color var(--fast) var(--ease), transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+button:hover,
+.btn:hover {
+    background: var(--row-hover);
+    border-color: var(--teal);
+    color: var(--color-text);
+}
+
+button:active,
+.btn:active {
+    transform: scale(0.97);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary,
+button.btn-primary {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: var(--white);
+}
+
+.btn-primary:hover,
+button.btn-primary:hover {
+    border-color: var(--navy-hover);
+    background: var(--navy-hover);
+    color: var(--white);
+    box-shadow: 0 4px 14px rgb(47 65 86 / 0.25);
+}
+
+.btn-danger,
+button.btn-danger {
+    border-color: #e9c9c9;
+    color: var(--error-text);
+}
+
+.btn-danger:hover,
+button.btn-danger:hover {
+    border-color: var(--error-text);
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.btn-ghost,
+button.btn-ghost {
+    border-color: transparent;
+    background: transparent;
+}
+
+.btn-ghost:hover,
+button.btn-ghost:hover {
+    border-color: transparent;
+    background: var(--beige);
+}
+
+.btn-small {
+    min-block-size: 2rem;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+/* The menu's own buttons keep the menu look */
+.nav-link:hover,
+.icon-button:active,
+.nav-link:active {
+    box-shadow: none;
+}
+
+/* Forms in a line with their button (many small forms in the pages) */
+form {
+    margin: 0 0 0.85rem;
+}
+
+/* ===== 8. Forms and tables ===== */
+label {
+    display: inline-block;
+    margin-block-end: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="time"],
+input[type="date"],
+select,
+textarea {
+    inline-size: 100%;
+    max-inline-size: 28rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+textarea {
+    max-inline-size: 100%;
+    min-block-size: 7rem;
+    resize: vertical;
+}
+
+select {
+    cursor: pointer;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+    border-color: var(--teal);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px var(--color-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #8c9aa5;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
+    accent-color: var(--navy);
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* A label and its field, one under the other */
+.field {
+    margin-block-end: 1rem;
+}
+
+.field label {
+    display: block;
+}
+
+table {
+    inline-size: 100%;
+    border: 1.5px solid var(--table-line);
+    border-radius: var(--radius);
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-block-end: 1.25rem;
+    font-size: 0.93rem;
+}
+
+th,
+td {
+    padding: 0.7rem 0.85rem;
+    border: 0;
+    border-block-end: 1px solid var(--table-line);
+    text-align: start;
+    vertical-align: middle;
+}
+
+/* A line between the columns too (not before the first one) */
+th + th,
+td + td,
+th + td,
+td + th {
+    border-inline-start: 1px solid var(--table-line);
+}
+
+th {
+    color: var(--navy);
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: var(--beige);
+    border-block-end: 2px solid var(--table-head);
+}
+
+/* The outer frame already draws the last line */
+tr:last-child > td {
+    border-block-end: 0;
+}
+
+/* Rounded corners: the corner cells follow the frame */
+tr:first-child > :first-child { border-start-start-radius: calc(var(--radius) - 1.5px); }
+tr:first-child > :last-child  { border-start-end-radius: calc(var(--radius) - 1.5px); }
+tr:last-child > :first-child  { border-end-start-radius: calc(var(--radius) - 1.5px); }
+tr:last-child > :last-child   { border-end-end-radius: calc(var(--radius) - 1.5px); }
+
+tbody tr,
+table > tr {
+    transition: background-color var(--fast) var(--ease);
+}
+
+tr:hover > td {
+    background: var(--row-hover);
+}
+
+td form {
+    margin: 0;
+}
+
+/* ===== 9. Messages and tags ===== */
+.alert {
+    margin-block-end: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    background: var(--sky-soft);
+    color: var(--navy);
+    animation: fade-in var(--normal) var(--ease) both;
+}
+
+.alert-error {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.alert-success {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.tag,
+.tag-new {
+    display: inline-block;
+    padding: 0.05rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.6;
+    vertical-align: middle;
+}
+
+.tag {
+    background: var(--sky);
+    color: var(--navy);
+}
+
+.tag-muted {
+    background: var(--beige);
+    color: var(--color-muted);
+}
+
+.tag-new {
+    margin-inline-start: 0.5rem;
+    background: var(--navy);
+    color: var(--white);
+}
+
+/* live.js shows this when a form the user was filling in is gone */
+.live-note {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    background: var(--sky-soft);
+    color: var(--navy);
+    animation: fade-in var(--normal) var(--ease) both;
+}
+
+/* ===== 10. Older page parts (they get their full design in their own step) ===== */
+.announcement-body {
+    white-space: pre-line; /* keep the line breaks the author typed */
+}
+
+.notification-list {
+    list-style: none;
+    padding: 0;
+}
+
+.notification-list li {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-block-end: 0.5rem;
+    transition: background-color var(--fast) var(--ease);
+}
+
+.notification-list .notification-unread {
+    background: var(--row-hover);
+    border-inline-start: 3px solid var(--navy);
+}
+
+.notification-list form {
+    margin: 0;
+}
+
+.cafeteria-table th,
+.cafeteria-table td {
+    vertical-align: top;
+}
+
+.cafeteria-today > td,
+td.cafeteria-today,
+tr.cafeteria-today {
+    background: #fbf6ef;
+}
+
+.food-separator {
+    color: var(--color-muted);
+}
+
+.reservation {
+    margin-block-start: 0.4rem;
+}
+
+.reservation-bar {
+    inline-size: 100%;
+    max-inline-size: 10rem;
+    block-size: 0.4rem;
+    border-radius: var(--radius-pill);
+    background: #eef1f4;
+    overflow: hidden;
+}
+
+.reservation-fill {
+    block-size: 100%;
+    border-radius: inherit;
+    transition: width 0.6s var(--ease), background-color 0.6s var(--ease);
+}
+
+.bar-green  { background: #4c9a6a; }
+.bar-yellow { background: #e0b341; }
+.bar-red    { background: #c9574f; }
+.bar-grey   { background: #cbd3da; }
+
+.permission-list {
+    list-style: none;
+    padding: 0;
+}
+
+/* ===== 11. Animations ===== */
+
+/* The page content comes in softly, only when the page is opened.
+   app.js adds "entered" to <html> right after, so a live reload of <main> (live.js) does not play it again. */
+html:not(.entered) main {
+    animation: page-in 260ms var(--ease) both;
+}
+
+@keyframes page-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes slide-down {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes bump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+/* People who asked their system for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ===== 12. Phones and small screens ===== */
+@media (max-width: 56rem) {
+    :root {
+        --gutter: 1rem;
+    }
+
+    h1 {
+        font-size: 1.55rem;
+    }
+
+    .app-nav.has-sidebar {
+        padding-block-start: var(--topbar-h);
+    }
+
+    .app-nav.has-sidebar ~ main,
+    .app-nav.has-sidebar #site-banner-slot {
+        margin-inline: 0;
+        padding-inline: var(--gutter);
+    }
+
+    .app-nav.has-sidebar ~ main {
+        padding-block-start: 1.5rem;
+    }
+
+    .topbar {
+        position: fixed;
+        inset-block-start: 0;
+        inset-inline: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        block-size: var(--topbar-h);
+        padding-inline: 0.5rem 1rem;
+        background: rgb(255 255 255 / 0.9);
+        border-block-end: 1px solid var(--color-border);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
+
+    .topbar .brand {
+        font-size: 1.2rem;
+    }
+
+    .sidebar-head .sidebar-close {
+        display: inline-grid;
+    }
+
+    /* Closed: outside the screen and not reachable with the keyboard */
+    .sidebar {
+        inline-size: min(18rem, 85vw);
+        box-shadow: var(--shadow-l);
+        transform: translateX(calc(-100% * var(--dir)));
+        visibility: hidden;
+        transition: transform 280ms var(--ease), visibility 0s linear 280ms;
+    }
+
+    .nav-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 25;
+        background: rgb(13 13 13 / 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 280ms var(--ease);
+    }
+
+    /* Open (app.js adds "nav-open" to <html>) */
+    .nav-open .sidebar {
+        transform: none;
+        visibility: visible;
+        transition: transform 280ms var(--ease), visibility 0s;
+    }
+
+    .nav-open .nav-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .nav-open body {
+        overflow: hidden;
+    }
+
+    /* Wide tables scroll sideways instead of breaking the page */
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    select {
+        max-inline-size: 100%;
+        font-size: 1rem; /* 16px or more stops iPhones from zooming into the field */
+    }
+}
+
+/* ===== 13. Sign in and register pages (no menu: the user is not logged in yet) =====
+   Two halves: the dark one with the name and example cards (fragments/auth.html), and the form.
+   On a phone the dark half becomes a short header above the form. */
+.auth-page {
+    background: var(--white);
+}
+
+main.auth {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    min-block-size: 100vh;
+    min-block-size: 100dvh;
+    max-inline-size: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ----- the dark half ----- */
+.auth-aside {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 2.75rem 3.5rem;
+    background: linear-gradient(160deg, #34495f 0%, var(--navy) 45%, #26364a 100%);
+    color: var(--white);
+    animation: fade-in 500ms var(--ease) both;
+}
+
+/* A soft dot pattern that fades out towards the bottom */
+.auth-aside::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgb(200 217 230 / 0.13) 1px, transparent 1px);
+    background-size: 22px 22px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 85%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 85%);
+    pointer-events: none;
+}
+
+.auth-aside > * {
+    position: relative;
+}
+
+.auth-aside > .auth-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(10px);
+    pointer-events: none;
+}
+
+.auth-glow-a {
+    inline-size: 30rem;
+    block-size: 30rem;
+    inset-block-end: -12rem;
+    inset-inline-end: -10rem;
+    background: radial-gradient(circle, rgb(86 124 141 / 0.65), transparent 68%);
+}
+
+.auth-glow-b {
+    inline-size: 22rem;
+    block-size: 22rem;
+    inset-block-start: -8rem;
+    inset-inline-start: -6rem;
+    background: radial-gradient(circle, rgb(200 217 230 / 0.16), transparent 70%);
+}
+
+.auth-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    align-self: flex-start;
+    color: var(--white);
+    font-size: 1.45rem;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.auth-logo:hover {
+    color: var(--white);
+}
+
+.auth-logo-mark {
+    display: grid;
+    place-items: center;
+    inline-size: 2.1rem;
+    block-size: 2.1rem;
+    border-radius: 10px;
+    background: var(--sky);
+    color: var(--navy);
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.auth-aside-title {
+    margin: 0 0 0.8rem;
+    font-size: 2.55rem;
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+}
+
+.auth-aside-title .accent {
+    color: var(--sky);
+}
+
+.auth-aside-text {
+    max-inline-size: 27rem;
+    margin: 0;
+    color: rgb(200 217 230 / 0.9);
+}
+
+.auth-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.auth-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid rgb(200 217 230 / 0.18);
+    border-radius: var(--radius-pill);
+    background: rgb(255 255 255 / 0.08);
+    color: var(--sky);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.auth-chip + .auth-chip {
+    margin-block-start: 0;
+}
+
+.auth-chip .icon {
+    inline-size: 0.95rem;
+    block-size: 0.95rem;
+}
+
+/* Three example cards that look like the app, floating slowly */
+.auth-showcase {
+    position: relative;
+    flex: 1;
+    min-block-size: 21rem;
+    max-inline-size: 32rem;
+}
+
+.demo-card {
+    --delay: 0ms;
+    --float-time: 7s;
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    inline-size: 20rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-l);
+    background: rgb(255 255 255 / 0.97);
+    color: var(--black);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    box-shadow: 0 18px 40px rgb(10 20 35 / 0.35);
+    /* "translate" follows the mouse (app.js sets --px and --py on the dark half);
+       "transform" is used by the entrance and the floating, so the two add up. */
+    translate: calc(var(--px, 0) * var(--depth, 10px)) calc(var(--py, 0) * var(--depth, 10px));
+    transition: translate 600ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms var(--ease);
+    will-change: transform, translate;
+    animation:
+        card-in 800ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay) both,
+        float var(--float-time) ease-in-out calc(var(--delay) + 800ms) infinite;
+}
+
+.demo-card:hover {
+    box-shadow: 0 26px 56px rgb(10 20 35 / 0.45);
+}
+
+.demo-card-1 {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    --delay: 150ms;
+    --float-time: 6.5s;
+    --depth: 14px;
+}
+
+.demo-card-2 {
+    inset-block-start: 7.25rem;
+    inset-inline-start: 9rem;
+    --delay: 350ms;
+    --float-time: 8s;
+    --depth: 24px;
+}
+
+.demo-card-3 {
+    inset-block-start: 16.75rem;
+    inset-inline-start: 2.5rem;
+    --delay: 550ms;
+    --float-time: 7.25s;
+    --depth: 18px;
+}
+
+.demo-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    flex: none;
+    border-radius: 10px;
+    background: var(--sky-soft);
+    color: var(--navy);
+}
+
+.demo-text {
+    flex: 1;
+    min-inline-size: 0;
+}
+
+.demo-text strong {
+    display: block;
+    font-weight: 700;
+}
+
+.demo-text small {
+    display: block;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.demo-bar {
+    display: block;
+    block-size: 0.35rem;
+    margin-block: 0.5rem 0.3rem;
+    border-radius: var(--radius-pill);
+    background: #eef1f4;
+    overflow: hidden;
+}
+
+.demo-bar i {
+    display: block;
+    inline-size: 46%;
+    block-size: 100%;
+    border-radius: inherit;
+    background: #e0b341;
+    animation: bar-tick 9s ease-in-out 1.5s infinite;
+}
+
+.demo-pill {
+    align-self: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--radius-pill);
+    background: var(--navy);
+    color: var(--white);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.demo-card-1 .demo-pill {
+    animation: pill-pulse 3.2s ease-in-out 1.2s infinite;
+}
+
+.demo-pill-teal {
+    background: var(--teal);
+}
+
+.demo-dot {
+    display: inline-block;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    margin-inline-end: 0.3rem;
+    border-radius: 50%;
+    background: #4c9a6a;
+}
+
+.auth-aside-foot {
+    margin: 0;
+    color: rgb(200 217 230 / 0.6);
+    font-size: 0.8rem;
+}
+
+@keyframes card-in {
+    from { opacity: 0; transform: translateY(28px) scale(0.96); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* A slow, soft drift: up, a little to the side and back, with a tiny tilt */
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25%      { transform: translate(4px, -10px) rotate(0.6deg); }
+    50%      { transform: translate(0, -16px) rotate(0deg); }
+    75%      { transform: translate(-4px, -8px) rotate(-0.6deg); }
+}
+
+@keyframes bar-tick {
+    0%, 100% { inline-size: 46%; }
+    50%      { inline-size: 38%; }
+}
+
+@keyframes pill-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(47 65 86 / 0.45); }
+    50%      { box-shadow: 0 0 0 6px rgb(47 65 86 / 0); }
+}
+
+/* ----- the form half ----- */
+.auth-main {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: 2.5rem 1.5rem 3.5rem;
+    background: linear-gradient(180deg, #fbfaf8 0%, var(--white) 60%);
+}
+
+/* The same dot pattern as the dark half, clear at the edges and fading out around the card */
+.auth-main::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgb(47 65 86 / 0.2) 1.2px, transparent 1.4px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse 48% 48% at 50% 45%, transparent 30%, #000 85%);
+    mask-image: radial-gradient(ellipse 48% 48% at 50% 45%, transparent 30%, #000 85%);
+    pointer-events: none;
+}
+
+.auth-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.auth-blob-sky {
+    inline-size: 22rem;
+    block-size: 22rem;
+    inset-block-start: -6rem;
+    inset-inline-end: -6rem;
+    background: radial-gradient(circle, var(--sky), transparent 70%);
+}
+
+.auth-blob-beige {
+    inline-size: 20rem;
+    block-size: 20rem;
+    inset-block-end: -7rem;
+    inset-inline-start: -5rem;
+    background: radial-gradient(circle, #efe3da, transparent 70%);
+}
+
+/* The small icon above the title (a lock, or a person with + on register) */
+.auth-badge {
+    display: grid;
+    place-items: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+    margin-block-end: 1.1rem;
+    border-radius: 14px;
+    background: linear-gradient(145deg, var(--navy), var(--teal));
+    color: var(--white);
+    box-shadow: 0 8px 20px rgb(47 65 86 / 0.25);
+    animation: badge-in 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 250ms both;
+}
+
+.auth-badge .icon {
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+}
+
+.auth-footer {
+    position: absolute;
+    inset-block-end: 1.25rem;
+    inset-inline: 0;
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.78rem;
+    text-align: center;
+}
+
+@keyframes badge-in {
+    from { opacity: 0; transform: scale(0.6); }
+    to   { opacity: 1; transform: none; }
+}
+
+.auth-card {
+    position: relative;
+    inline-size: min(100%, 26rem);
+    padding: 2.25rem;
+    border: 2px solid #93a5b4;
+    border-radius: 20px;
+    background: var(--white);
+    box-shadow:
+        0 1px 2px rgb(13 13 13 / 0.05),
+        0 14px 36px rgb(47 65 86 / 0.12);
+}
+
+.auth-title {
+    margin-block-end: 0.4rem;
+    font-size: 1.75rem;
+}
+
+.auth-subtitle {
+    margin-block-end: 1.5rem;
+    color: var(--color-muted);
+}
+
+.auth-form {
+    margin: 0;
+}
+
+.auth-form input[type="text"],
+.auth-form input[type="password"],
+.auth-form select {
+    max-inline-size: 100%;
+    min-block-size: 2.9rem;
+    padding: 0.7rem 1rem;
+}
+
+.field-hint {
+    display: block;
+    margin-block-start: 0.35rem;
+}
+
+.btn-block {
+    inline-size: 100%;
+    min-block-size: 2.9rem;
+    margin-block-start: 0.5rem;
+}
+
+.auth-switch {
+    margin: 1.5rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.92rem;
+    text-align: center;
+}
+
+/* The error above the button: slides in, then gives one small shake */
+.auth-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.25rem 0 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #efc4c4;
+    border-radius: var(--radius);
+    background: #fdf4f4;
+    color: var(--error-text);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    animation:
+        error-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both,
+        error-nudge 360ms ease-in-out 420ms 1;
+}
+
+.auth-error .icon {
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+    margin-block-start: 0.1rem;
+    color: #c0504a;
+    stroke-width: 2;
+}
+
+.auth-error + .btn-block {
+    margin-block-start: 0;
+}
+
+@keyframes error-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes error-nudge {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-4px); }
+    50%      { transform: translateX(4px); }
+    75%      { transform: translateX(-2px); }
+}
+
+/* ----- phones: the dark half becomes a short header ----- */
+@media (max-width: 56rem) {
+    main.auth {
+        grid-template-columns: 1fr;
+        align-content: start;
+    }
+
+    .auth-aside {
+        gap: 1.1rem;
+        padding: 1.4rem 1.25rem 1.6rem;
+    }
+
+    .auth-aside-title {
+        font-size: 1.6rem;
+    }
+
+    .auth-chips,
+    .auth-showcase,
+    .auth-aside-foot {
+        display: none;
+    }
+
+    .auth-main {
+        place-items: start center;
+        padding: 1.5rem 1.25rem 2.5rem;
+    }
+
+    /* On a narrow screen the dots would sit behind the form: keep them lighter */
+    .auth-main::before {
+        opacity: 0.45;
+    }
+
+    .auth-footer {
+        position: static;
+        margin-block-start: 2rem;
+    }
+
+    .auth-card {
+        padding: 0.5rem 0.25rem;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+}
+
+/* The password box with the eye button inside it, at the end */
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-inline-end: 3rem !important;
+}
+
+.password-toggle {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-end: 0.35rem;
+    transform: translateY(-50%);
+    color: var(--color-muted);
+}
+
+.password-toggle:hover {
+    color: var(--navy);
+}
+
+.password-toggle:active {
+    transform: translateY(-50%) scale(0.94);
+}
+
+/* A field the server said is wrong */
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid {
+    border-color: var(--error-text);
+}
+
+input.is-invalid:focus,
+select.is-invalid:focus,
+textarea.is-invalid:focus {
+    border-color: var(--error-text);
+    box-shadow: 0 0 0 3px #f3d3d3;
+}
+
+/* "Sending..." state of a button (app.js adds is-busy after the form is sent) */
+.spinner {
+    display: none;
+    inline-size: 1rem;
+    block-size: 1rem;
+    border: 2px solid currentColor;
+    border-block-start-color: transparent;
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+}
+
+.is-busy .spinner {
+    display: inline-block;
+}
+
+button.is-busy {
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
