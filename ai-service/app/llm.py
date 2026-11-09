@@ -19,7 +19,11 @@ _TIMEOUT_SECONDS = 120
 _client = genai.Client(
     api_key=settings.gemini_api_key,
     http_options=types.HttpOptions(timeout=_TIMEOUT_SECONDS * 1000),  # milliseconds
-)
+) if settings.gemini_api_key else None
+
+
+def is_configured() -> bool:
+    return _client is not None
 
 # The free tier is rate limited and busy models answer 503, so we wait and try again.
 _RETRY_CODES = {429, 500, 503}
@@ -40,12 +44,14 @@ class LlmError(Exception):
 
     def __init__(self, code: str, message: str = "", status: int | None = None):
         super().__init__(message or code)
-        self.code = code  # "rate_limited", "network_error" or "llm_failed"
+        self.code = code  # "rate_limited", "network_error", "llm_failed" or "not_configured"
         self.status = status  # HTTP status from Gemini, if there was one
 
 
 def _with_retry(fn):
     """Runs fn() and tries again on rate limits, busy servers and broken connections."""
+    if _client is None:
+        raise LlmError("not_configured", "GEMINI_API_KEY is not set in ai-service/.env")
     tries = len(_WAITS) + 1
     for attempt in range(1, tries + 1):
         try:

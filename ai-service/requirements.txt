@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-google-genai
-python-dotenv
-pymupdf
-numpy
+fastapi==0.162.0
+uvicorn==0.54.0
+google-genai==2.33.0
+python-dotenv==1.2.4
+httpx==0.28.1
+pymupdf~=2.0
+numpy~=2.5

@@ -1,0 +1,7 @@
+.env
+venv/
+data/
+__pycache__/
+*.pyc
+answer.txt
+*_sample.txt

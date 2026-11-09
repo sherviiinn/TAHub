@@ -22,13 +22,10 @@ class Settings:
 
 
 def _load() -> Settings:
-    key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not key:
-        raise RuntimeError(
-            "GEMINI_API_KEY is missing. Create a .env file (see .env.example)."
-        )
+    # The service also starts without a key (for teammates who do not have one);
+    # every AI request then fails with the "not_configured" error code.
     return Settings(
-        gemini_api_key=key,
+        gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         # Model names live here, so changing them never needs a code change.
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip(),
         # Used when the main model is overloaded (503) or out of quota (429). Optional.

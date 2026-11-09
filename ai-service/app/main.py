@@ -12,7 +12,7 @@ app = FastAPI(title="TA Hub AI Service")
 @app.get("/health")
 def health():
     """No key needed. Used to check that the service is up."""
-    return {"status": "ok", "model": settings.gemini_model}
+    return {"status": "ok", "model": settings.gemini_model, "configured": llm.is_configured()}
 
 
 class ChatIn(BaseModel):
@@ -28,6 +28,6 @@ def debug_chat(body: ChatIn):
             system="You are a helpful assistant for university students. Answer in Persian.",
         )
     except llm.LlmError as e:
-        status = 429 if e.code == "rate_limited" else 502
+        status = {"rate_limited": 429, "not_configured": 503}.get(e.code, 502)
         raise HTTPException(status_code=status, detail=f"{e.code}: {e}")
     return {"answer": answer}
