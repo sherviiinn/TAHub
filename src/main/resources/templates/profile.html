@@ -13,14 +13,16 @@
         <span th:text="#{profile.saved}">Your field of study was saved.</span>
     </div>
 
-    <!-- Who you are -->
+    <!-- Who you are: a dark top (like the home page greeting), the facts under it -->
     <section class="card profile-card">
-        <div class="profile-head">
+        <div class="profile-hero">
+            <span class="home-hero-glow home-hero-glow-1" aria-hidden="true"></span>
+            <span class="home-hero-glow home-hero-glow-2" aria-hidden="true"></span>
             <span class="avatar avatar-l" aria-hidden="true"
                   th:text="${#strings.toUpperCase(#strings.substring(profileUser.fullName, 0, 1))}">S</span>
             <div class="profile-who">
                 <h2 class="profile-name" th:text="${profileUser.fullName}">Full name</h2>
-                <span class="tag" th:text="#{${'role.' + profileUser.role}}">Student</span>
+                <span class="tag tag-on-dark" th:text="#{${'role.' + profileUser.role}}">Student</span>
             </div>
         </div>
 
@@ -40,7 +42,10 @@
 
     <!-- Students can change their field of study -->
     <section class="card profile-section" th:if="${isStudent}">
-        <h2 th:text="#{profile.changeMajor}">Change your field of study</h2>
+        <h2 class="section-title">
+            <span class="section-icon" aria-hidden="true"><svg class="icon"><use href="#i-cap"/></svg></span>
+            <span th:text="#{profile.changeMajor}">Change your field of study</span>
+        </h2>
         <p class="muted" th:text="#{profile.changeMajor.help}">Your professors see it in their student lists.</p>
 
         <form method="post" th:action="@{/profile/major}" class="profile-form" data-busy-form>

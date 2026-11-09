@@ -11,14 +11,24 @@
 -->
 <main class="home" th:with="firstName=${#strings.arraySplit(fullName, ' ')[0]}">
 
+    <!-- The dark greeting card. The glows and the dots are only decoration. -->
     <section class="home-hero">
-        <span class="tag" th:text="#{${'role.' + role}}">Student</span>
-        <h1 th:text="#{home.hello(${firstName})}">Hi, Sara</h1>
-        <p class="muted" th:text="#{home.subtitle}">Where do you want to go today?</p>
+        <span class="home-hero-glow home-hero-glow-1" aria-hidden="true"></span>
+        <span class="home-hero-glow home-hero-glow-2" aria-hidden="true"></span>
+        <div class="home-hero-top">
+            <span class="tag tag-on-dark" th:text="#{${'role.' + role}}">Student</span>
+            <!-- app.js writes today's date here -->
+            <span class="home-hero-date" data-today></span>
+        </div>
+        <h1>
+            <span th:text="#{home.hi}">Hi,</span>
+            <span class="home-hero-name" th:text="${firstName}">Sara</span>
+        </h1>
+        <p th:text="#{home.subtitle}">Where do you want to go today?</p>
     </section>
 
     <!-- Study -->
-    <section class="home-group">
+    <section class="home-group home-group-study">
         <h2 class="home-group-title" th:text="#{home.group.study}">Study</h2>
         <div class="home-grid">
             <a class="home-card" th:href="@{/courses}" style="--i: 0">
@@ -65,7 +75,7 @@
     </section>
 
     <!-- Campus -->
-    <section class="home-group">
+    <section class="home-group home-group-campus">
         <h2 class="home-group-title" th:text="#{nav.group.campus}">Campus</h2>
         <div class="home-grid">
             <a class="home-card" th:href="@{/cafeteria}" style="--i: 4">
@@ -88,7 +98,7 @@
     </section>
 
     <!-- TA -->
-    <section class="home-group">
+    <section class="home-group home-group-ta">
         <h2 class="home-group-title" th:text="#{nav.group.ta}">TA</h2>
         <div class="home-grid">
             <a class="home-card" th:if="${navIsStudent}" th:href="@{/my-ta-requests}" style="--i: 6">
@@ -111,7 +121,7 @@
     </section>
 
     <!-- Admin only -->
-    <section class="home-group" th:if="${navIsAdmin}">
+    <section class="home-group home-group-admin" th:if="${navIsAdmin}">
         <h2 class="home-group-title" th:text="#{nav.group.admin}">Admin</h2>
         <div class="home-grid">
             <a class="home-card" th:href="@{/users}" style="--i: 7">
