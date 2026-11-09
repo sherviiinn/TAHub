@@ -9,6 +9,7 @@
      4. Page layout     8. Forms and tables   12. Phones
                                               13. Sign in and register pages
                                               14. Bubble drop-down lists
+                                              15. Home and profile pages
 */
 
 /* ===== 1. Font (files in static/fonts) ===== */
@@ -58,8 +59,8 @@
     --color-muted: #586a77;
     --color-bg: var(--white);
     --color-surface: var(--beige);
-    --color-border: #e3e8ed;
-    --color-border-strong: #cfd8e0;
+    --color-border: #c3cfda;      /* lines and card frames: clearly visible */
+    --color-border-strong: #9fb0bf; /* fields and buttons: a bit darker */
     --table-line: #aebdca;    /* lines inside tables: clearly visible */
     --table-head: var(--teal); /* the thick line under the header row */
     --color-primary: var(--navy);
@@ -273,7 +274,7 @@ main {
 
 .card {
     padding: 1.25rem;
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius-l);
     background: var(--color-bg);
     box-shadow: var(--shadow);
@@ -289,7 +290,7 @@ main {
     padding: 2rem 1rem;
     text-align: center;
     color: var(--color-muted);
-    border: 1px dashed var(--color-border-strong);
+    border: 1.5px dashed var(--color-border-strong);
     border-radius: var(--radius-l);
 }
 
@@ -533,7 +534,7 @@ button,
     gap: 0.45rem;
     min-block-size: 2.4rem;
     padding: 0.45rem 1.1rem;
-    border: 1px solid var(--color-border-strong);
+    border: 1.5px solid var(--color-border-strong);
     border-radius: var(--radius-pill);
     background: var(--color-bg);
     color: var(--color-text);
@@ -644,7 +645,7 @@ textarea {
     inline-size: 100%;
     max-inline-size: 28rem;
     padding: 0.6rem 0.9rem;
-    border: 1px solid var(--color-border-strong);
+    border: 1.5px solid var(--color-border-strong);
     border-radius: var(--radius);
     background: var(--color-bg);
     color: var(--color-text);
@@ -826,7 +827,7 @@ td form {
 
 .notification-list li {
     padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius);
     margin-block-end: 0.5rem;
     transition: background-color var(--fast) var(--ease);
@@ -1649,7 +1650,7 @@ button.pselect-button {
     inline-size: 100%;
     min-block-size: 2.6rem;
     padding: 0.6rem 0.9rem;
-    border: 1px solid var(--color-border-strong);
+    border: 1.5px solid var(--color-border-strong);
     border-radius: var(--radius);
     background: var(--color-bg);
     color: var(--color-text);
@@ -1718,7 +1719,7 @@ button.pselect-button {
     padding: 0.35rem;
     overflow-y: auto;
     list-style: none;
-    border: 1px solid var(--color-border-strong);
+    border: 1.5px solid var(--color-border-strong);
     border-radius: 14px;
     background: var(--white);
     box-shadow: 0 14px 34px rgb(47 65 86 / 0.16);
@@ -1800,4 +1801,259 @@ button.pselect-button {
 .pselect-option[aria-selected="true"] .pselect-check {
     opacity: 1;
     transform: none;
+}
+
+/* ===== 15. Home and profile pages (frontend step 3) ===== */
+
+/* ----- home: a short greeting, then the menu links as cards ----- */
+.home-hero {
+    margin-block-end: 2rem;
+}
+
+.home-hero .tag {
+    margin-block-end: 0.6rem;
+}
+
+.home-hero h1 {
+    margin-block-end: 0.35rem;
+    font-size: 2.2rem;
+}
+
+.home-hero p {
+    margin: 0;
+    font-size: 1.02rem;
+}
+
+.home-group + .home-group {
+    margin-block-start: 1.75rem;
+}
+
+/* An empty group (for example TA for a role with no TA link) is not shown */
+.home-group:not(:has(.home-card)) {
+    display: none;
+}
+
+.home-group-title {
+    margin: 0 0 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+    gap: 0.75rem;
+}
+
+.home-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-l);
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    animation: card-up 420ms var(--ease) both;
+    animation-delay: calc(var(--i, 0) * 45ms + 80ms);
+    transition: border-color var(--normal) var(--ease), box-shadow var(--normal) var(--ease),
+                transform var(--normal) var(--ease), background-color var(--normal) var(--ease);
+}
+
+.home-card:hover {
+    border-color: var(--teal);
+    color: var(--color-text);
+    box-shadow: 0 10px 28px rgb(47 65 86 / 0.13);
+    transform: translateY(-2px);
+}
+
+.home-card:active {
+    transform: translateY(0) scale(0.99);
+}
+
+.home-card-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.6rem;
+    block-size: 2.6rem;
+    flex: none;
+    border-radius: 12px;
+    background: var(--sky-soft);
+    color: var(--navy);
+    transition: background-color var(--normal) var(--ease), color var(--normal) var(--ease);
+}
+
+/* On hover the icon box turns dark, like the sign in page badge */
+.home-card:hover .home-card-icon {
+    background: linear-gradient(145deg, var(--navy), var(--teal));
+    color: var(--white);
+}
+
+.home-card-text {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+}
+
+.home-card-text strong {
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.home-card-text small {
+    line-height: 1.45;
+}
+
+/* The arrow at the end comes in a little on hover */
+.home-card-arrow {
+    margin-inline-start: auto;
+    color: var(--teal);
+    opacity: 0;
+    transform: translateX(calc(-6px * var(--dir))) scaleX(var(--dir));
+    transition: opacity var(--normal) var(--ease), transform var(--normal) var(--ease);
+}
+
+.home-card:hover .home-card-arrow,
+.home-card:focus-visible .home-card-arrow {
+    opacity: 1;
+    transform: translateX(0) scaleX(var(--dir));
+}
+
+@keyframes card-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ----- profile ----- */
+.alert-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.alert-success.alert-icon {
+    animation: slide-down 320ms var(--ease) both;
+}
+
+.profile-card,
+.profile-section {
+    padding: 1.5rem;
+    animation: card-up 420ms var(--ease) both;
+}
+
+.profile-section {
+    margin-block-start: 1rem;
+    animation-delay: 90ms;
+}
+
+.profile-section h2 {
+    margin: 0 0 0.25rem;
+}
+
+.profile-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar-l {
+    inline-size: 4rem;
+    block-size: 4rem;
+    background: linear-gradient(145deg, var(--navy), var(--teal));
+    font-size: 1.6rem;
+    font-weight: 900;
+    box-shadow: 0 8px 20px rgb(47 65 86 / 0.22);
+}
+
+.profile-who {
+    min-inline-size: 0;
+}
+
+.profile-name {
+    margin: 0 0 0.3rem;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--navy);
+    overflow-wrap: anywhere;
+}
+
+/* The facts under the name: small grey label, the value under it */
+.profile-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.75rem;
+    margin: 1.25rem 0 0;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--color-border);
+}
+
+.profile-facts div {
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius);
+    background: var(--beige);
+}
+
+.profile-facts dt {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+}
+
+.profile-facts dd {
+    margin: 0.1rem 0 0;
+    font-weight: 700;
+}
+
+.profile-facts dd[dir="ltr"] {
+    text-align: start;
+    unicode-bidi: plaintext;
+    letter-spacing: 0.02em;
+}
+
+.profile-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+}
+
+.profile-form .field {
+    flex: 1 1 16rem;
+    margin: 0;
+}
+
+.profile-form .pselect,
+.profile-form select {
+    max-inline-size: 100%;
+    inline-size: 100%;
+}
+
+.profile-form button[type="submit"] {
+    min-block-size: 2.6rem;
+}
+
+/* ----- professor registration: the invite code reads like a code ----- */
+.code-input {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    letter-spacing: 0.08em;
+}
+
+@media (max-width: 56rem) {
+    .home-hero h1 {
+        font-size: 1.7rem;
+    }
+
+    .home-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-form button[type="submit"] {
+        inline-size: 100%;
+    }
 }
