@@ -49,6 +49,7 @@
                 <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14.5 4H19a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4.5"/><path d="M10 16.5 14.5 12 10 7.5"/><path d="M14.5 12H4"/></symbol>
                 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
                 <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></symbol>
+                <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></symbol>
             </svg>
 
             <!-- Phones only: thin bar with the menu button -->
@@ -111,9 +112,11 @@
 
                     <div class="nav-section">
                         <p class="nav-heading" th:text="#{nav.group.campus}">Campus</p>
+                        <!-- Also active on the admin pages of the cafeteria (/admin/cafeteria/...) -->
                         <a class="nav-link" th:href="@{/cafeteria}"
-                           th:classappend="${#strings.startsWith(navCurrentPath, '/cafeteria')} ? 'is-active'"
-                           th:attr="aria-current=${#strings.startsWith(navCurrentPath, '/cafeteria')} ? 'page'">
+                           th:with="onCafeteria=${#strings.startsWith(navCurrentPath, '/cafeteria') or #strings.startsWith(navCurrentPath, '/admin/cafeteria')}"
+                           th:classappend="${onCafeteria} ? 'is-active'"
+                           th:attr="aria-current=${onCafeteria} ? 'page'">
                             <svg class="icon"><use href="#i-food"/></svg>
                             <span th:text="#{nav.cafeteria}">Cafeteria</span>
                         </a>

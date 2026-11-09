@@ -1,37 +1,163 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${appName}">TA Hub</title>
-</head>
+<head th:replace="~{fragments/layout :: head(${appName})}"></head>
 <body>
-<h1 th:text="#{home.welcome(${appName})}">Welcome</h1>
-<p th:text="#{home.signedInAs(${fullName}, ${role})}">Signed in as</p>
-<p><a th:href="@{/courses}" th:text="#{home.courses}">Courses</a></p>
-<p><a th:href="@{/profile}" th:text="#{home.profile}">My profile</a></p>
+<nav th:replace="~{fragments/layout :: nav}"></nav>
 
-<p th:if="${isAdmin}">
-    <a th:href="@{/admin/majors}" th:text="#{home.majors}">Manage fields of study</a>
-</p>
-<p th:if="${!isAdmin}">
-    <a th:href="@{/my-courses}" th:text="#{home.myCourses}">My courses</a>
-</p>
-<p>
-    <a th:href="@{/professors}" th:text="#{home.professors}">Professors</a>
-</p>
+<!--
+  The home page: a short greeting and the same links as the menu, as cards with one line of help.
+  Who sees which card follows the menu (navIsStudent, navIsProfessor, navIsAdmin from GlobalModelAttributes).
+  --i on each card only sets the order of the small entrance animation.
+-->
+<main class="home" th:with="firstName=${#strings.arraySplit(fullName, ' ')[0]}">
 
-<p th:if="${isAdmin}">
-    <a th:href="@{/users}" th:text="#{home.manageUsers}">Manage users</a>
-</p>
-<p th:if="${isAdmin}">
-    <a th:href="@{/admin/semesters}" th:text="#{home.semesters}">Manage semesters</a>
-</p>
-<p th:if="${isAdmin}">
-    <a th:href="@{/ta-requests}" th:text="#{ta.link.requests}">TA requests</a>
-</p>
-<form method="post" th:action="@{/logout}">
-    <button type="submit" th:text="#{home.logout}">Sign out</button>
-</form>
+    <!-- The dark greeting card. The glows and the dots are only decoration. -->
+    <section class="home-hero">
+        <span class="home-hero-glow home-hero-glow-1" aria-hidden="true"></span>
+        <span class="home-hero-glow home-hero-glow-2" aria-hidden="true"></span>
+        <div class="home-hero-top">
+            <span class="tag tag-on-dark" th:text="#{${'role.' + role}}">Student</span>
+            <!-- app.js writes today's date here -->
+            <span class="home-hero-date" data-today></span>
+        </div>
+        <h1>
+            <span th:text="#{home.hi}">Hi,</span>
+            <span class="home-hero-name" th:text="${firstName}">Sara</span>
+        </h1>
+        <p th:text="#{home.subtitle}">Where do you want to go today?</p>
+    </section>
+
+    <!-- Study -->
+    <section class="home-group home-group-study">
+        <h2 class="home-group-title" th:text="#{home.group.study}">Study</h2>
+        <div class="home-grid">
+            <a class="home-card" th:href="@{/courses}" style="--i: 0">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-book"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.courses}">Courses</strong>
+                    <small th:text="#{home.card.courses}">All courses of this semester</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:if="${navIsStudent}" th:href="@{/my-courses}" style="--i: 1">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-bookmark"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.myCourses}">My courses</strong>
+                    <small th:text="#{home.card.myCourses.student}">Courses you take or help with</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:if="${navIsProfessor}" th:href="@{/my-courses}" style="--i: 1">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-bookmark"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.myCourses}">My courses</strong>
+                    <small th:text="#{home.card.myCourses.professor}">Courses you teach</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:href="@{/professors}" style="--i: 2">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-people"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.professors}">Professors</strong>
+                    <small th:text="#{home.card.professors}">Their courses and offices</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:href="@{/notifications}" style="--i: 3">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-bell"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{nav.notificationsShort}">Notifications</strong>
+                    <small th:text="#{home.card.notifications}">News from your courses</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Campus -->
+    <section class="home-group home-group-campus">
+        <h2 class="home-group-title" th:text="#{nav.group.campus}">Campus</h2>
+        <div class="home-grid">
+            <a class="home-card" th:href="@{/cafeteria}" style="--i: 4">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-food"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{nav.cafeteria}">Cafeteria</strong>
+                    <small th:text="#{home.card.cafeteria}">The menu and reservation times</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:href="@{/notices}" style="--i: 5">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-megaphone"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{nav.notices}">Site notices</strong>
+                    <small th:text="#{home.card.notices}">News for everyone at the university</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- TA -->
+    <section class="home-group home-group-ta">
+        <h2 class="home-group-title" th:text="#{nav.group.ta}">TA</h2>
+        <div class="home-grid">
+            <a class="home-card" th:if="${navIsStudent}" th:href="@{/my-ta-requests}" style="--i: 6">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-inbox"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{ta.link.mine}">My TA requests</strong>
+                    <small th:text="#{home.card.taMine}">Your requests and invitations</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:if="${navIsProfessor or navIsAdmin}" th:href="@{/ta-requests}" style="--i: 6">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-inbox"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{ta.link.requests}">TA requests</strong>
+                    <small th:text="#{home.card.taRequests}">Students who want to be TAs</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Admin only -->
+    <section class="home-group home-group-admin" th:if="${navIsAdmin}">
+        <h2 class="home-group-title" th:text="#{nav.group.admin}">Admin</h2>
+        <div class="home-grid">
+            <a class="home-card" th:href="@{/users}" style="--i: 7">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-user"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.manageUsers}">Manage users</strong>
+                    <small th:text="#{home.card.users}">Accounts and professor invite codes</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:href="@{/admin/semesters}" style="--i: 8">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-calendar"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.semesters}">Manage semesters</strong>
+                    <small th:text="#{home.card.semesters}">Start a new semester</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:href="@{/admin/majors}" style="--i: 9">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-cap"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{home.majors}">Manage fields of study</strong>
+                    <small th:text="#{home.card.majors}">The list students choose from</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="home-card" th:href="@{/admin/foods}" style="--i: 10">
+                <span class="home-card-icon"><svg class="icon"><use href="#i-list"/></svg></span>
+                <span class="home-card-text">
+                    <strong th:text="#{cafeteria.manageFoods}">Manage foods</strong>
+                    <small th:text="#{home.card.foods}">Foods for the weekly menu</small>
+                </span>
+                <svg class="icon home-card-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+        </div>
+    </section>
+</main>
 </body>
 </html>

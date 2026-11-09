@@ -410,3 +410,15 @@
         }
     });
 })();
+
+// <span data-today>: today's date, written by the browser in the page language (home page)
+(function () {
+    var lang = document.documentElement.lang || 'en';
+    document.querySelectorAll('[data-today]').forEach(function (element) {
+        try {
+            element.textContent = new Date().toLocaleDateString(lang, {weekday: 'long', day: 'numeric', month: 'long'});
+        } catch (e) {
+            element.hidden = true;
+        }
+    });
+})();

@@ -1,31 +1,70 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="#{profile.title}">My profile</title>
-</head>
+<head th:replace="~{fragments/layout :: head(#{profile.title})}"></head>
 <body>
-<h1 th:text="#{profile.title}">My profile</h1>
+<nav th:replace="~{fragments/layout :: nav}"></nav>
 
-<p th:if="${param.saved}" th:text="#{profile.saved}"></p>
+<main class="profile">
+    <h1 th:text="#{profile.title}">My profile</h1>
 
-<p><span th:text="#{profile.name}">Name</span>: <strong th:text="${profileUser.fullName}"></strong></p>
-<p><span th:text="#{profile.studentNumber}">Student number</span>: <strong th:text="${profileUser.studentNumber}"></strong></p>
-<p><span th:text="#{profile.role}">Role</span>: <strong th:text="${profileUser.role}"></strong></p>
+    <!-- After saving the field of study (the page comes back with ?saved) -->
+    <div class="alert alert-success alert-icon" role="status" th:if="${param.saved}">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>
+        <span th:text="#{profile.saved}">Your field of study was saved.</span>
+    </div>
 
-<form th:if="${isStudent}" method="post" th:action="@{/profile/major}">
-    <label for="majorId" th:text="#{profile.major}">Field of study</label><br>
-    <select id="majorId" name="majorId" required>
-        <option value="" th:text="#{profile.chooseMajor}">Choose your field of study</option>
-        <option th:each="m : ${majors}"
-                th:value="${m.id}"
-                th:selected="${profileUser.major != null and profileUser.major.id == m.id}"
-                th:text="${m.name}"></option>
-    </select>
-    <button type="submit" th:text="#{profile.save}">Save</button>
-</form>
+    <!-- Who you are: a dark top (like the home page greeting), the facts under it -->
+    <section class="card profile-card">
+        <div class="profile-hero">
+            <span class="home-hero-glow home-hero-glow-1" aria-hidden="true"></span>
+            <span class="home-hero-glow home-hero-glow-2" aria-hidden="true"></span>
+            <span class="avatar avatar-l" aria-hidden="true"
+                  th:text="${#strings.toUpperCase(#strings.substring(profileUser.fullName, 0, 1))}">S</span>
+            <div class="profile-who">
+                <h2 class="profile-name" th:text="${profileUser.fullName}">Full name</h2>
+                <span class="tag tag-on-dark" th:text="#{${'role.' + profileUser.role}}">Student</span>
+            </div>
+        </div>
 
-<p><a th:href="@{/}" th:text="#{courses.back}">Back</a></p>
+        <dl class="profile-facts">
+            <div>
+                <!-- Students sign in with their student number, professors and admins with a username -->
+                <dt th:text="${isStudent} ? #{profile.studentNumber} : #{profReg.username}">Student number</dt>
+                <dd dir="ltr" th:text="${profileUser.studentNumber}">40312100001</dd>
+            </div>
+            <div th:if="${isStudent}">
+                <dt th:text="#{profile.major}">Field of study</dt>
+                <dd th:if="${profileUser.major != null}" th:text="${profileUser.major.name}">Computer engineering</dd>
+                <dd class="muted" th:if="${profileUser.major == null}" th:text="#{course.detail.majorNotSet}">Not set</dd>
+            </div>
+        </dl>
+    </section>
+
+    <!-- Students can change their field of study -->
+    <section class="card profile-section" th:if="${isStudent}">
+        <h2 class="section-title">
+            <span class="section-icon" aria-hidden="true"><svg class="icon"><use href="#i-cap"/></svg></span>
+            <span th:text="#{profile.changeMajor}">Change your field of study</span>
+        </h2>
+        <p class="muted" th:text="#{profile.changeMajor.help}">Your professors see it in their student lists.</p>
+
+        <form method="post" th:action="@{/profile/major}" class="profile-form" data-busy-form>
+            <div class="field">
+                <label for="majorId" th:text="#{profile.major}">Field of study</label>
+                <select id="majorId" name="majorId" required data-pretty-select>
+                    <option value="" th:text="#{profile.chooseMajor}">Choose your field of study</option>
+                    <option th:each="m : ${majors}"
+                            th:value="${m.id}"
+                            th:selected="${profileUser.major != null and profileUser.major.id == m.id}"
+                            th:text="${m.name}"></option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">
+                <span class="spinner" aria-hidden="true"></span>
+                <span th:text="#{profile.save}">Save</span>
+            </button>
+        </form>
+    </section>
+</main>
 </body>
 </html>
