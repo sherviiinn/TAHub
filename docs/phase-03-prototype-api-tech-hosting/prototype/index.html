@@ -4,445 +4,759 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TA Hub Prototype</title>
-<style>
-  :root {
-    --bg: #f5f6f8; --card: #ffffff; --text: #1d2330; --muted: #657084; --line: #dfe3ea;
-    --brand: #2f5bd3; --brand-soft: #e8eefc; --ok: #1f8a4c; --ok-soft: #e4f4ea;
-    --err: #c0392b; --err-soft: #fbe7e5; --warn: #9a6700; --warn-soft: #fff4d6;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-  a { color: var(--brand); }
-  .proto-bar { background: #1d2330; color: #fff; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 13px; }
-  .proto-bar strong { font-weight: 600; }
-  .proto-bar a { color: #cfe0ff; text-decoration: none; padding: 2px 8px; border: 1px solid #3a4560; border-radius: 6px; }
-  .proto-bar a:hover { background: #2b3550; }
-  .app-nav { background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
-  .app-nav .logo { font-weight: 700; color: var(--brand); margin-inline-end: 12px; }
-  .app-nav a { text-decoration: none; color: var(--text); }
-  .app-nav .user { margin-inline-start: auto; color: var(--muted); font-size: 14px; }
-  .badge { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--err); color: #fff; font-size: 12px; text-align: center; }
-  main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
-  section[data-screen] { display: none; }
-  section[data-screen].active { display: block; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
-  h1 { font-size: 24px; margin: 0 0 6px; }
-  h2 { font-size: 18px; margin: 0 0 10px; }
-  .muted { color: var(--muted); font-size: 14px; }
-  .alert { border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
-  .alert-error { background: var(--err-soft); color: var(--err); }
-  .alert-ok { background: var(--ok-soft); color: var(--ok); }
-  .alert-warn { background: var(--warn-soft); color: var(--warn); }
-  label { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 4px; }
-  input[type=text], input[type=password], input[type=number], input[type=datetime-local], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: #fff; }
-  .btn { display: inline-block; border: 1px solid var(--line); background: #fff; color: var(--text); padding: 8px 14px; border-radius: 6px; text-decoration: none; font: inherit; cursor: pointer; margin-top: 12px; }
-  .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-  .btn-danger { color: var(--err); border-color: #e9b3ad; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; }
-  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
-  .pill-ok { background: var(--ok-soft); color: var(--ok); }
-  .pill-err { background: var(--err-soft); color: var(--err); }
-  .pill-warn { background: var(--warn-soft); color: var(--warn); }
-  .pill-brand { background: var(--brand-soft); color: var(--brand); }
-  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-  .file-box { border: 2px dashed var(--line); border-radius: 8px; padding: 16px; text-align: center; color: var(--muted); }
-  .note { font-size: 13px; color: var(--muted); border-inline-start: 3px solid var(--line); padding-inline-start: 10px; margin-top: 10px; }
-  .narrow { max-width: 420px; margin: 40px auto; }
-  @media (max-width: 600px) { .app-nav .user { margin-inline-start: 0; width: 100%; } th, td { padding: 6px; } }
-</style>
+<link rel="stylesheet" href="app.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="prototype.css">
+<script src="app.js" defer></script>
 </head>
 <body>
 
-<div class="proto-bar">
-  <strong>TA Hub – clickable prototype (fake data)</strong>
-  <span>Start:</span>
-  <a href="#login">Student journey</a>
-  <a href="#prof-course">Professor / TA journey</a>
-  <a href="#map">All screens</a>
-</div>
+<!-- Icons (the same as the app's menu, plus a few for the new screens) -->
+<svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 3h11a1 1 0 0 1 1 1v17l-6.5-4.5L5.5 21V4a1 1 0 0 1 1-1z"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.2A6.5 6.5 0 0 1 21.5 20"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15 6 9.5z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v18"/><path d="M4 3v5a3 3 0 0 0 6 0V3"/><path d="M17.5 21V3c-2.2 1.3-3.5 4-3.5 7.5V13h3.5"/></symbol>
+    <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3.5 10v4a1 1 0 0 0 1 1H7l7 4.5v-15L7 9H4.5a1 1 0 0 0-1 1z"/><path d="M17.5 9a4 4 0 0 1 0 6"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3.5 13.5h5l1.5 3h4l1.5-3h5"/><path d="M6 4h12l2.5 9.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-5.5z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14.5 4H19a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4.5"/><path d="M10 16.5 14.5 12 10 7.5"/><path d="M14.5 12H4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6.5 3H14l4.5 4.5V20a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4.5h4.5"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M3.5 14.5h17"/><path d="M9 4.5v15"/><path d="M15 4.5v15"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-6 16-2.5-6.5z"/><path d="M11.5 13.5 20 4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+</svg>
 
-<nav class="app-nav" id="app-nav">
-  <span class="logo">TA Hub</span>
-  <a href="#home">Home</a>
-  <a href="#home">My courses</a>
-  <a href="#notifications">Notifications <span class="badge">2</span></a>
-  <span class="user" id="nav-user">Sara Ahmadi (student) · <a href="#login-out">Sign out</a></span>
+<!-- The menu: the same structure and classes as templates/fragments/layout.html -->
+<nav class="app-nav has-sidebar" id="app-nav" aria-label="Main">
+    <div class="topbar">
+        <button type="button" class="icon-button" data-nav-open aria-controls="sidebar" aria-expanded="false" aria-label="Open the menu">
+            <svg class="icon"><use href="#i-menu"/></svg>
+        </button>
+        <a class="brand" href="#home">TA Hub</a>
+    </div>
+    <div class="nav-backdrop" data-nav-close></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+            <a class="brand" href="#home">TA Hub</a>
+            <button type="button" class="icon-button sidebar-close" data-nav-close aria-label="Close the menu">
+                <svg class="icon"><use href="#i-close"/></svg>
+            </button>
+        </div>
+        <div class="sidebar-links">
+            <div class="nav-section">
+                <a class="nav-link" data-nav="home" href="#home" data-home><svg class="icon"><use href="#i-home"/></svg><span>Home</span></a>
+                <a class="nav-link" data-nav="courses" href="#courses" data-for="student"><svg class="icon"><use href="#i-book"/></svg><span>Courses</span></a>
+                <a class="nav-link" data-nav="courses" href="#staff-course" data-for="staff"><svg class="icon"><use href="#i-book"/></svg><span>My courses</span></a>
+                <a class="nav-link" data-nav="professors" href="#professor"><svg class="icon"><use href="#i-people"/></svg><span>Professors</span></a>
+                <a class="nav-link" data-nav="assistant" href="#assistant-pick" data-for="student"><svg class="icon"><use href="#i-chat"/></svg><span>Course assistant</span></a>
+                <a class="nav-link has-unread" data-nav="notifications" href="#notifications"><svg class="icon"><use href="#i-bell"/></svg><span>Notifications</span><span class="nav-badge">3</span></a>
+            </div>
+            <div class="nav-section">
+                <p class="nav-heading">Campus</p>
+                <a class="nav-link" href="#not-here"><svg class="icon"><use href="#i-food"/></svg><span>Cafeteria</span></a>
+                <a class="nav-link" href="#not-here"><svg class="icon"><use href="#i-megaphone"/></svg><span>Site notices</span></a>
+            </div>
+            <div class="nav-section">
+                <p class="nav-heading">TA</p>
+                <a class="nav-link" data-nav="my-ta" href="#my-ta" data-for="student"><svg class="icon"><use href="#i-inbox"/></svg><span>My TA requests</span></a>
+                <a class="nav-link" data-nav="ta-requests" href="#ta-requests" data-for="staff"><svg class="icon"><use href="#i-inbox"/></svg><span>TA requests</span></a>
+            </div>
+            <div class="nav-section" data-for="admin">
+                <p class="nav-heading">Admin</p>
+                <a class="nav-link" data-nav="hidden-reviews" href="#hidden-reviews"><svg class="icon"><use href="#i-alert"/></svg><span>Hidden reviews</span></a>
+            </div>
+        </div>
+        <div class="sidebar-foot">
+            <div class="nav-user">
+                <span class="avatar" aria-hidden="true" id="nav-avatar">S</span>
+                <span class="nav-user-name" id="nav-user">Sara Ahmadi</span>
+            </div>
+            <a class="nav-link" href="#not-here"><svg class="icon"><use href="#i-user"/></svg><span>My profile</span></a>
+            <a class="nav-link" href="#login-out"><svg class="icon"><use href="#i-logout"/></svg><span>Sign out</span></a>
+        </div>
+    </div>
 </nav>
 
-<main>
+<main id="page">
 
-<!-- ============ ALL SCREENS ============ -->
-<section data-screen="map">
-  <div class="card">
-    <h1>All prototype screens</h1>
-    <p class="muted">Main journey of the MVP: professor creates an assignment → student submits a PDF → TA grades each question → professor publishes → student sees own grade and can object.</p>
-    <h2>Student</h2>
-    <ol>
-      <li><a href="#login">Sign in</a> · <a href="#login-error">Sign in – wrong password</a></li>
-      <li><a href="#home">My courses</a> · <a href="#join-error">Join course – wrong code</a></li>
-      <li><a href="#course">Course page (announcements and assignments)</a></li>
-      <li><a href="#assignment">Assignment – submit PDF</a> · <a href="#submit-error">not a PDF</a> · <a href="#submitted">submitted</a> · <a href="#closed">deadline passed</a></li>
-      <li><a href="#grade">My grade per question</a> · <a href="#objection-form">object to a question</a> · <a href="#objection-sent">objection sent</a></li>
-      <li><a href="#forbidden">403 – another student's file</a></li>
-    </ol>
-    <h2>Professor / TA</h2>
-    <ol>
-      <li><a href="#prof-course">Course page (manager view)</a></li>
-      <li><a href="#new-assignment">New assignment</a> · <a href="#new-assignment-error">invalid points</a></li>
-      <li><a href="#submissions">Submissions list</a></li>
-      <li><a href="#grading">Grade one submission</a> · <a href="#grading-error">points above maximum</a></li>
-      <li><a href="#published">Grades published</a></li>
-      <li><a href="#objection-reply">Answer an objection</a></li>
-    </ol>
-  </div>
-</section>
-
-<!-- ============ LOGIN ============ -->
-<section data-screen="login" data-nav="off">
-  <div class="card narrow">
-    <h1>Sign in</h1>
-    <label for="u1">Student number or username</label>
-    <input id="u1" type="text" value="40312100001">
-    <label for="p1">Password</label>
-    <input id="p1" type="password" value="password">
-    <a class="btn btn-primary" href="#home">Sign in</a>
-    <a class="btn" href="#login-error">Try a wrong password</a>
-    <p class="muted" style="margin-top:16px">No account? <a href="#login">Create an account</a> · Professor? <a href="#login">Register with an invite code</a></p>
-  </div>
-</section>
-
-<section data-screen="login-error" data-nav="off">
-  <div class="card narrow">
-    <h1>Sign in</h1>
-    <div class="alert alert-error">Invalid student number (or username) or password.</div>
-    <label for="u2">Student number or username</label>
-    <input id="u2" type="text" value="40312100001">
-    <label for="p2">Password</label>
-    <input id="p2" type="password" value="">
-    <a class="btn btn-primary" href="#home">Sign in</a>
-  </div>
-</section>
-
-<section data-screen="login-out" data-nav="off">
-  <div class="card narrow">
-    <h1>Sign in</h1>
-    <div class="alert alert-ok">You have been signed out.</div>
-    <a class="btn btn-primary" href="#login">Sign in again</a>
-  </div>
-</section>
-
-<!-- ============ HOME ============ -->
-<section data-screen="home">
-  <h1>My courses · Semester 4052</h1>
-  <div class="card">
-    <div class="row">
-      <div><strong>CS301 – Software Analysis and Design</strong><br><span class="muted">Dr. Ali Karimi · 1 new assignment</span></div>
-      <a class="btn btn-primary" href="#course">Open</a>
+<!-- ================= ALL SCREENS ================= -->
+<section data-screen="map" data-role="student">
+    <div class="page-head"><h1>TA Hub prototype</h1></div>
+    <p class="muted">A clickable prototype of the four main journeys of the MVP, with success and error states. All data is fake. Use the round switcher at the bottom to jump between journeys.</p>
+    <div class="grid-2 mt">
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-inbox"/></svg></span><span>1. Becoming a TA (remote)</span></h2>
+            <ul class="list-plain">
+                <li><a href="#course">Student applies on the course page</a></li>
+                <li><a href="#ta-applied">Request sent</a> · <a href="#ta-apply-error">team full (error)</a></li>
+                <li><a href="#ta-requests">Professor accepts or rejects</a></li>
+                <li><a href="#my-ta">Student sees the result</a></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-book"/></svg></span><span>2. Course page in one place</span></h2>
+            <ul class="list-plain">
+                <li><a href="#login">Sign in</a> · <a href="#login-error">wrong password</a></li>
+                <li><a href="#courses">Join a course</a> · <a href="#join-error">wrong code</a></li>
+                <li><a href="#course">Announcements, Telegram group, resources</a></li>
+                <li><a href="#staff-resources">Resources for the assistant (staff view)</a></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-grid"/></svg></span><span>3. Assignments and grading</span></h2>
+            <ul class="list-plain">
+                <li><a href="#new-assignment">TA creates an assignment (question PDF)</a> · <a href="#new-assignment-error">error</a></li>
+                <li><a href="#assignment">Student submits a PDF</a> · <a href="#submit-error">too big</a> · <a href="#submitted">submitted</a></li>
+                <li><a href="#submissions">Submissions and deadline extension</a></li>
+                <li><a href="#grading-first">Grading panel: first student defines the questions</a></li>
+                <li><a href="#grading-next">Next student: same questions</a> · <a href="#grading-error">points above maximum</a></li>
+                <li><a href="#grade-sheet">Grade sheet and publishing</a></li>
+                <li><a href="#grade">Student sees own grade</a> · <a href="#objection">objection</a> · <a href="#objection-reply">TA answers</a></li>
+                <li><a href="#forbidden">403: another student's file</a></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-star"/></svg></span><span>4. Reviews and the AI assistant</span></h2>
+            <ul class="list-plain">
+                <li><a href="#professor">Professor page with reviews and AI summary</a></li>
+                <li><a href="#review-form">Write a review</a> · <a href="#review-sent">sent</a> · <a href="#review-held">held for the admin</a></li>
+                <li><a href="#hidden-reviews">Admin checks hidden reviews</a></li>
+                <li><a href="#assistant-pick">Course assistant</a> · <a href="#assistant">chat with sources and a quiz</a> · <a href="#assistant-busy">busy / not in the notes</a></li>
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="row">
-      <div><strong>CS201 – Data Structures</strong><br><span class="muted">Dr. Maryam Hosseini</span></div>
-      <a class="btn" href="#course">Open</a>
+</section>
+
+<!-- ================= SIGN IN (same markup as login.html) ================= -->
+<section data-screen="login" data-role="auth">
+<div class="auth">
+    <aside class="auth-aside">
+        <span class="auth-glow auth-glow-a" aria-hidden="true"></span>
+        <span class="auth-glow auth-glow-b" aria-hidden="true"></span>
+        <a class="auth-logo" href="#login"><span class="auth-logo-mark" aria-hidden="true">TA</span><span>TA Hub</span></a>
+        <div class="auth-intro">
+            <p class="auth-aside-title"><span>Your university,</span><br><span class="accent">in one place.</span></p>
+            <p class="auth-aside-text">Assignments, grades, course groups, TA work and reviews: no more switching between apps.</p>
+            <ul class="auth-chips">
+                <li class="auth-chip"><svg class="icon"><use href="#i-book"/></svg><span>Courses</span></li>
+                <li class="auth-chip"><svg class="icon"><use href="#i-grid"/></svg><span>Grading</span></li>
+                <li class="auth-chip"><svg class="icon"><use href="#i-inbox"/></svg><span>TA teams</span></li>
+                <li class="auth-chip"><svg class="icon"><use href="#i-chat"/></svg><span>AI assistant</span></li>
+            </ul>
+        </div>
+        <div class="auth-showcase" aria-hidden="true">
+            <div class="demo-card demo-card-1">
+                <span class="demo-icon"><svg class="icon"><use href="#i-bell"/></svg></span>
+                <div class="demo-text"><strong>Grades published</strong><small>CS301 · HW1</small></div>
+                <span class="demo-pill">1</span>
+            </div>
+            <div class="demo-card demo-card-2">
+                <span class="demo-icon"><svg class="icon"><use href="#i-file"/></svg></span>
+                <div class="demo-text"><strong>HW2 due</strong><small>Use Case and Activity</small><span class="demo-bar"><i></i></span><small>Closes in 2d 4h</small></div>
+            </div>
+            <div class="demo-card demo-card-3">
+                <span class="demo-icon"><svg class="icon"><use href="#i-inbox"/></svg></span>
+                <div class="demo-text"><strong>TA request</strong><small><span class="demo-dot"></span><span>CS201 · Data Structures</span></small></div>
+                <span class="demo-pill demo-pill-teal">Accepted</span>
+            </div>
+        </div>
+        <p class="auth-aside-foot">Made by students, for students.</p>
+    </aside>
+    <div class="auth-main">
+        <span class="auth-blob auth-blob-sky" aria-hidden="true"></span>
+        <span class="auth-blob auth-blob-beige" aria-hidden="true"></span>
+        <div class="auth-card">
+            <span class="auth-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg></span>
+            <h1 class="auth-title">Welcome back</h1>
+            <p class="auth-subtitle">Sign in with your student number (or username) to continue.</p>
+            <div class="alert alert-success" data-show-on="login-out">You have been signed out.</div>
+            <form class="auth-form" onsubmit="location.hash='home'; return false;">
+                <div class="field"><label for="u1">Student number or username</label><input type="text" id="u1" dir="ltr" value="40312100001"></div>
+                <div class="field"><label for="p1">Password</label><input type="password" id="p1" value="password"></div>
+                <div class="auth-error" role="alert" data-show-on="login-error">
+                    <svg class="icon"><use href="#i-alert"/></svg><span>Invalid student number (or username) or password.</span>
+                </div>
+                <button type="submit" class="btn-primary btn-block"><span>Sign in</span></button>
+            </form>
+            <p class="auth-switch"><span>Try:</span> <a href="#login-error">a wrong password</a> · <a href="#staff-course">sign in as a professor</a></p>
+            <p class="auth-switch auth-switch-small"><a href="#login">Professor? Register with an invite code</a></p>
+        </div>
+        <p class="auth-footer">TA Hub</p>
     </div>
-  </div>
-  <div class="card">
-    <h2>Join a course</h2>
-    <p class="muted">CS305 – Databases · Dr. Ali Karimi</p>
-    <label for="jc">Join code</label>
-    <input id="jc" type="text" value="K7P2QX">
-    <a class="btn btn-primary" href="#course">Join</a>
-    <a class="btn" href="#join-error">Try a wrong code</a>
-  </div>
+</div>
 </section>
 
-<section data-screen="join-error">
-  <h1>CS305 – Databases</h1>
-  <div class="card">
-    <div class="alert alert-error">The join code is not correct. Ask your professor for the code.</div>
-    <label for="jc2">Join code</label>
-    <input id="jc2" type="text" value="ABC123">
-    <a class="btn btn-primary" href="#course">Join</a>
-  </div>
+<!-- ================= STUDENT ================= -->
+<section data-screen="home" data-role="student" data-nav-key="home">
+    <div class="home">
+    <section class="home-hero">
+        <span class="home-hero-glow home-hero-glow-1"></span><span class="home-hero-glow home-hero-glow-2"></span>
+        <div class="home-hero-top"><span class="tag tag-on-dark">Student</span><span class="home-hero-date" data-today></span></div>
+        <h1><span>Hi,</span> <span class="home-hero-name">Sara</span></h1>
+        <p>Where do you want to go today?</p>
+    </section>
+    <section class="home-group home-group-study">
+        <h2 class="home-group-title">Study</h2>
+        <div class="home-grid">
+            <a class="home-card" href="#course" style="--i:0"><span class="home-card-icon"><svg class="icon"><use href="#i-book"/></svg></span><span class="home-card-text"><strong>CS301 · Software Analysis</strong><small>HW2 due in 2 days</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+            <a class="home-card" href="#courses" style="--i:1"><span class="home-card-icon"><svg class="icon"><use href="#i-bookmark"/></svg></span><span class="home-card-text"><strong>Courses</strong><small>Join a course with its code</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+            <a class="home-card" href="#assistant-pick" style="--i:2"><span class="home-card-icon"><svg class="icon"><use href="#i-chat"/></svg></span><span class="home-card-text"><strong>Course assistant</strong><small>Ask questions about the course notes</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+            <a class="home-card" href="#professor" style="--i:3"><span class="home-card-icon"><svg class="icon"><use href="#i-people"/></svg></span><span class="home-card-text"><strong>Professors</strong><small>Reviews before choosing courses</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+        </div>
+    </section>
+    <section class="home-group home-group-ta">
+        <h2 class="home-group-title">TA</h2>
+        <div class="home-grid">
+            <a class="home-card" href="#my-ta" style="--i:4"><span class="home-card-icon"><svg class="icon"><use href="#i-inbox"/></svg></span><span class="home-card-text"><strong>My TA requests</strong><small>1 accepted, 1 waiting</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+        </div>
+    </section>
+    </div>
 </section>
 
-<!-- ============ COURSE (student) ============ -->
-<section data-screen="course">
-  <p class="muted"><a href="#home">My courses</a> › CS301</p>
-  <h1>CS301 – Software Analysis and Design</h1>
-  <p class="muted">Group 1 · Dr. Ali Karimi · TAs: Reza Mohammadi (Head TA), Nima Rahimi</p>
-  <div class="card">
-    <h2>Assignments</h2>
+<section data-screen="courses" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>Courses · Semester 4052</h1></div>
     <table>
-      <tr><th>Title</th><th>Deadline</th><th>Points</th><th>Status</th></tr>
-      <tr><td><a href="#assignment">HW2 – Use Case and Activity</a></td><td>1405-09-05 23:59</td><td>20</td><td><span class="pill pill-warn">Not submitted</span></td></tr>
-      <tr><td><a href="#grade">HW1 – User stories</a></td><td>1405-08-20 23:59</td><td>10</td><td><span class="pill pill-ok">Graded: 8.5 / 10</span></td></tr>
+        <tr><th>Course</th><th>Professor</th><th>Status</th><th></th></tr>
+        <tr><td><strong>CS301</strong> Software Analysis and Design</td><td>Dr. Ali Karimi</td><td><span class="tag">Enrolled</span></td><td><a href="#course">Open</a></td></tr>
+        <tr><td><strong>CS305</strong> Databases</td><td>Dr. Ali Karimi</td><td><span class="tag tag-muted">Not enrolled</span></td><td><a href="#courses">Join below</a></td></tr>
+        <tr><td><strong>CS201</strong> Data Structures</td><td>Dr. Maryam Hosseini</td><td><span class="tag tag-orange">TA requests open</span></td><td><a href="#course">Apply</a></td></tr>
     </table>
-  </div>
-  <div class="card">
-    <h2>Announcements</h2>
-    <p><strong>HW2 is published</strong> <span class="pill pill-brand">New</span><br><span class="muted">Dr. Ali Karimi · 1405-08-24</span><br>Please submit one PDF. Late submissions are not accepted.</p>
-  </div>
+    <div class="card">
+        <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-bookmark"/></svg></span><span>Join CS305 · Databases</span></h2>
+        <form onsubmit="location.hash='course'; return false;">
+            <div class="field"><label for="jc">Join code (from your professor)</label><input id="jc" type="text" dir="ltr" value="K7P2QX"></div>
+            <div class="row"><button class="btn-primary">Join</button><a class="btn btn-ghost" href="#join-error">Try a wrong code</a></div>
+        </form>
+    </div>
 </section>
 
-<!-- ============ ASSIGNMENT (student) ============ -->
-<section data-screen="assignment">
-  <p class="muted"><a href="#course">CS301</a> › HW2</p>
-  <h1>HW2 – Use Case and Activity</h1>
-  <p class="muted">Deadline: 1405-09-05 23:59 (Tehran) · 11 days left</p>
-  <div class="card">
-    <h2>Questions</h2>
-    <table>
-      <tr><th>#</th><th>Question</th><th>Points</th></tr>
-      <tr><td>Q1</td><td>Use Case diagram of your MVP</td><td>8</td></tr>
-      <tr><td>Q2</td><td>Activity diagram with an error path</td><td>8</td></tr>
-      <tr><td>Q3</td><td>Short explanation</td><td>4</td></tr>
-      <tr><th></th><th>Total</th><th>20</th></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h2>Your submission</h2>
-    <div class="file-box">answers.pdf · 2.4 MB</div>
-    <p class="muted">One PDF file, up to 20 MB. You can replace or delete it until the deadline.</p>
-    <a class="btn btn-primary" href="#submitted">Submit</a>
-    <a class="btn" href="#submit-error">Try a .docx file</a>
-    <a class="btn" href="#closed">See after the deadline</a>
-  </div>
+<section data-screen="join-error" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>Join CS305 · Databases</h1></div>
+    <div class="card">
+        <div class="alert alert-error alert-icon"><svg class="icon"><use href="#i-alert"/></svg><span>The join code is not correct. Ask your professor for the code.</span></div>
+        <div class="field"><label for="jc2">Join code</label><input id="jc2" type="text" dir="ltr" value="ABC123"></div>
+        <a class="btn btn-primary" href="#course">Join</a>
+    </div>
 </section>
 
-<section data-screen="submit-error">
-  <p class="muted"><a href="#course">CS301</a> › HW2</p>
-  <h1>HW2 – Use Case and Activity</h1>
-  <div class="card">
-    <div class="alert alert-error">Only PDF files up to 20 MB are accepted. "answers.docx" was not saved.</div>
-    <h2>Your submission</h2>
-    <div class="file-box">No file submitted yet</div>
-    <a class="btn btn-primary" href="#submitted">Choose another file</a>
-  </div>
+<section data-screen="course" data-role="student" data-nav-key="courses">
+    <div class="page-head">
+        <div><h1>CS301 · Software Analysis and Design</h1><p class="kv"><span>Group 1</span><span>Dr. Ali Karimi</span><span>TAs: Reza Mohammadi <span class="tag tag-orange">Head TA</span>, Nima Rahimi</span></p></div>
+        <a class="btn" href="#professor">Professor page</a>
+    </div>
+    <div class="grid-2">
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-file"/></svg></span><span>Assignments</span></h2>
+            <ul class="list-plain">
+                <li><a href="#assignment">HW2 · Use Case and Activity</a><span class="tag tag-orange right">Due in 2 days</span></li>
+                <li><a href="#grade">HW1 · User stories</a><span class="tag right">Graded: 8.5 / 10</span></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-chat"/></svg></span><span>Course group and resources</span></h2>
+            <ul class="list-plain">
+                <li><span class="tag">Telegram</span><a href="#course">t.me/cs301_group</a></li>
+                <li><span class="tag tag-muted">PDF</span><a href="#course">Chapter 2 · UML notes</a></li>
+                <li><span class="tag tag-muted">YouTube</span><a href="#course">Activity diagrams in 10 minutes</a></li>
+            </ul>
+            <a class="btn btn-small mt" href="#assistant">Ask the course assistant</a>
+        </div>
+    </div>
+    <div class="card mt">
+        <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-megaphone"/></svg></span><span>Announcements</span></h2>
+        <p><strong>HW2 is published</strong><span class="tag-new">New</span><br><span class="muted">Reza Mohammadi · 1405-08-24</span></p>
+        <p class="announcement-body">Send one PDF. The deadline was extended to Friday 23:59.</p>
+    </div>
+    <div class="card mt">
+        <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-inbox"/></svg></span><span>TA requests are open: CS201 · Data Structures</span></h2>
+        <p class="muted">Dr. Maryam Hosseini is looking for TAs for a course you passed last year. Apply from anywhere; you can withdraw your request later.</p>
+        <form onsubmit="location.hash='ta-applied'; return false;">
+            <div class="field"><label for="tam">Message (optional)</label><textarea id="tam" rows="3">I got 19 in this course and I live in Babol, so I can help online.</textarea></div>
+            <div class="row"><button class="btn-primary">Send TA request</button><a class="btn btn-ghost" href="#ta-apply-error">See: team is full</a></div>
+        </form>
+    </div>
 </section>
 
-<section data-screen="submitted">
-  <p class="muted"><a href="#course">CS301</a> › HW2</p>
-  <h1>HW2 – Use Case and Activity</h1>
-  <div class="card">
-    <div class="alert alert-ok">Your file was submitted on 1405-08-25 at 21:14.</div>
-    <h2>Your submission</h2>
-    <table>
-      <tr><th>File</th><th>Submitted</th><th></th></tr>
-      <tr><td><a href="#submitted">answers.pdf</a></td><td>1405-08-25 21:14</td><td><span class="pill pill-ok">Submitted</span></td></tr>
-    </table>
-    <a class="btn" href="#assignment">Replace file</a>
-    <a class="btn btn-danger" href="#assignment">Delete</a>
-    <p class="note">Only you, the professor and the TAs of this course can open this file.</p>
-  </div>
+<section data-screen="ta-applied" data-role="student" data-nav-key="my-ta">
+    <div class="page-head"><h1>CS201 · Data Structures</h1></div>
+    <div class="alert alert-success alert-icon"><svg class="icon"><use href="#i-check"/></svg><span>Your TA request was sent. Dr. Hosseini got a notification; you will get one when she decides.</span></div>
+    <div class="card"><p class="kv"><span>Status: <b class="status status-wait">Waiting</b></span><span>Sent: today 21:14</span></p><a class="btn btn-ghost btn-small" href="#course">Withdraw request</a></div>
 </section>
 
-<section data-screen="closed">
-  <p class="muted"><a href="#course">CS301</a> › HW2</p>
-  <h1>HW2 – Use Case and Activity</h1>
-  <div class="card">
-    <div class="alert alert-warn">The deadline has passed. Submissions are closed.</div>
-    <table>
-      <tr><th>File</th><th>Submitted</th></tr>
-      <tr><td>answers.pdf</td><td>1405-08-25 21:14</td></tr>
-    </table>
-    <p class="muted">Your grade will appear here after the professor publishes the grades.</p>
-  </div>
-</section>
-
-<!-- ============ GRADE (student) ============ -->
-<section data-screen="grade">
-  <p class="muted"><a href="#course">CS301</a> › HW1</p>
-  <h1>HW1 – User stories · My grade</h1>
-  <div class="card">
-    <table>
-      <tr><th>#</th><th>Points</th><th>Comment</th><th></th></tr>
-      <tr><td>Q1</td><td>4 / 4</td><td>Good.</td><td></td></tr>
-      <tr><td>Q2</td><td>2.5 / 4</td><td>Missing ownership cases in the criteria.</td><td><a href="#objection-form">Object</a></td></tr>
-      <tr><td>Q3</td><td>2 / 2</td><td></td><td></td></tr>
-      <tr><th>Total</th><th>8.5 / 10</th><th></th><th></th></tr>
-    </table>
-    <p class="note">Only you can see your grade.</p>
-  </div>
-</section>
-
-<section data-screen="objection-form">
-  <p class="muted"><a href="#course">CS301</a> › <a href="#grade">HW1</a> › Objection</p>
-  <h1>Object to Q2</h1>
-  <div class="card">
-    <p class="muted">Q2: 2.5 / 4 · "Missing ownership cases in the criteria."</p>
-    <label for="ob">Why do you think the grade should change?</label>
-    <textarea id="ob" rows="3">US-03 has an ownership case in its second criterion.</textarea>
-    <a class="btn btn-primary" href="#objection-sent">Send objection</a>
-    <p class="muted">You can send one objection per question.</p>
-  </div>
-</section>
-
-<section data-screen="objection-sent">
-  <p class="muted"><a href="#course">CS301</a> › HW1</p>
-  <h1>HW1 – User stories · My grade</h1>
-  <div class="card">
-    <div class="alert alert-ok">Your objection to Q2 was sent. The TA will answer it.</div>
-    <table>
-      <tr><th>#</th><th>Points</th><th>Objection</th></tr>
-      <tr><td>Q2</td><td>2.5 / 4</td><td><span class="pill pill-warn">Open</span></td></tr>
-    </table>
-  </div>
-</section>
-
-<section data-screen="forbidden">
-  <div class="card narrow">
-    <h1>403 – Access denied</h1>
-    <p>You can only open your own submission.</p>
+<section data-screen="ta-apply-error" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>CS201 · Data Structures</h1></div>
+    <div class="alert alert-error alert-icon"><svg class="icon"><use href="#i-alert"/></svg><span>The TA team of this course is full, so no new requests are accepted. Nothing was sent.</span></div>
     <a class="btn" href="#course">Back to the course</a>
-  </div>
 </section>
 
-<section data-screen="notifications">
-  <h1>Notifications</h1>
-  <div class="card">
-    <p><strong>New assignment in CS301 – Software Analysis and Design</strong><br><a href="#assignment">HW2 – Use Case and Activity</a> · <span class="muted">today</span></p>
-    <p><strong>Grades published in CS301</strong><br><a href="#grade">HW1 – User stories</a> · <span class="muted">3 days ago</span></p>
-  </div>
-</section>
-
-<!-- ============ PROFESSOR / TA ============ -->
-<section data-screen="prof-course" data-user="Dr. Ali Karimi (professor)">
-  <p class="muted">Courses › CS301</p>
-  <h1>CS301 – Software Analysis and Design</h1>
-  <p class="muted">Group 1 · 42 students · Join code: K7P2QX</p>
-  <div class="card">
-    <div class="row"><h2>Assignments</h2><a class="btn btn-primary" href="#new-assignment">New assignment</a></div>
+<section data-screen="my-ta" data-role="student" data-nav-key="my-ta">
+    <div class="page-head"><h1>My TA requests</h1></div>
     <table>
-      <tr><th>Title</th><th>Deadline</th><th>Submitted</th><th>Grades</th></tr>
-      <tr><td><a href="#submissions">HW2 – Use Case and Activity</a></td><td>1405-09-05 23:59</td><td>23 / 42</td><td><span class="pill pill-warn">Not published</span></td></tr>
-      <tr><td><a href="#submissions">HW1 – User stories</a></td><td>1405-08-20 23:59</td><td>40 / 42</td><td><span class="pill pill-ok">Published</span></td></tr>
+        <tr><th>Course</th><th>Sent</th><th>Status</th><th></th></tr>
+        <tr><td>CS201 · Data Structures</td><td>1405-08-20</td><td><span class="status status-ok">Accepted</span> · you are a TA</td><td><a href="#course">Open</a></td></tr>
+        <tr><td>CS305 · Databases</td><td>1405-08-22</td><td><span class="status status-wait">Waiting</span></td><td><a href="#my-ta">Withdraw</a></td></tr>
+        <tr><td>CS240 · Algorithms</td><td>1405-08-10</td><td><span class="status status-bad">Rejected</span></td><td></td></tr>
     </table>
-  </div>
+    <div class="card-soft"><strong>Invitations</strong><p class="muted">Dr. Karimi invited you to be a TA of CS310 · Software Engineering.</p><div class="row"><a class="btn btn-primary btn-small" href="#my-ta">Accept</a><a class="btn btn-ghost btn-small" href="#my-ta">Decline</a></div></div>
 </section>
 
-<section data-screen="new-assignment" data-user="Dr. Ali Karimi (professor)">
-  <p class="muted"><a href="#prof-course">CS301</a> › New assignment</p>
-  <h1>New assignment</h1>
-  <div class="card">
-    <label for="t">Title</label><input id="t" type="text" value="HW2 – Use Case and Activity">
-    <label for="d">Deadline</label><input id="d" type="text" value="1405-09-05 23:59">
-    <label>Questions and points</label>
+<section data-screen="assignment" data-role="student" data-nav-key="courses">
+    <div class="page-head"><div><h1>HW2 · Use Case and Activity</h1><p class="kv"><span>CS301</span><span>Chapter 2</span><span><svg class="icon" style="width:1rem;height:1rem;vertical-align:-2px"><use href="#i-clock"/></svg> Deadline <b>Fri 1405-08-30 23:59</b></span><span class="tag tag-orange">Extended · 80%</span></p></div></div>
+    <div class="note-box mb">The first deadline was Wed 23:59. Answers sent after it get 80% of their grade.</div>
+    <div class="card">
+        <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-file"/></svg></span><span>Questions</span></h2>
+        <p><a href="#assignment">HW2-questions.pdf</a> <span class="muted">(uploaded by Reza Mohammadi)</span></p>
+    </div>
+    <div class="card mt">
+        <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-upload"/></svg></span><span>Your answer</span></h2>
+        <div class="file-drop"><svg class="icon"><use href="#i-upload"/></svg><div><strong>answers.pdf</strong> · 3.2 MB<br><span class="muted">One PDF file, up to 15 MB. You can replace or delete it until the deadline.</span></div></div>
+        <div class="row mt"><a class="btn btn-primary" href="#submitted">Submit</a><a class="btn btn-ghost" href="#submit-error">Try a 22 MB file</a><a class="btn btn-ghost" href="#closed">See after the deadline</a></div>
+    </div>
+</section>
+
+<section data-screen="submit-error" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>HW2 · Use Case and Activity</h1></div>
+    <div class="card">
+        <div class="alert alert-error alert-icon"><svg class="icon"><use href="#i-alert"/></svg><span>"scan.pdf" is 22 MB. Only PDF files up to 15 MB are accepted. Nothing was saved.</span></div>
+        <div class="file-drop"><svg class="icon"><use href="#i-upload"/></svg><div><strong>Choose a file</strong><br><span class="muted">PDF, up to 15 MB</span></div></div>
+        <a class="btn btn-primary mt" href="#submitted">Choose another file</a>
+    </div>
+</section>
+
+<section data-screen="submitted" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>HW2 · Use Case and Activity</h1></div>
+    <div class="alert alert-success alert-icon"><svg class="icon"><use href="#i-check"/></svg><span>Submitted on Thu 1405-08-29 at 21:14 (after the first deadline: 80% of the grade).</span></div>
+    <div class="card">
+        <table>
+            <tr><th>File</th><th>Sent</th><th>Status</th></tr>
+            <tr><td dir="ltr">Sara Ahmadi - 40312100001 - Ch2.pdf</td><td>1405-08-29 21:14</td><td><span class="tag tag-orange">Extended · 80%</span></td></tr>
+        </table>
+        <div class="row"><a class="btn" href="#assignment">Replace file</a><a class="btn btn-danger" href="#assignment">Delete</a></div>
+        <p class="muted mt">The file name is made automatically (name, student number, chapter). Only you, the professor and the TAs of this course can open it.</p>
+    </div>
+</section>
+
+<section data-screen="closed" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>HW2 · Use Case and Activity</h1></div>
+    <div class="alert alert-icon"><svg class="icon"><use href="#i-clock"/></svg><span>The deadline has passed. Submissions are closed. Your grade will appear here after the professor publishes it.</span></div>
+    <div class="card"><p class="kv"><span>Your file: <b dir="ltr">Sara Ahmadi - 40312100001 - Ch2.pdf</b></span><span>Sent 1405-08-29 21:14</span></p></div>
+</section>
+
+<section data-screen="grade" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>HW1 · User stories · My grade</h1><span class="tag">Published</span></div>
     <table>
-      <tr><th>#</th><th>Question</th><th>Points</th></tr>
-      <tr><td>Q1</td><td><input type="text" value="Use Case diagram of your MVP"></td><td><input type="number" value="8"></td></tr>
-      <tr><td>Q2</td><td><input type="text" value="Activity diagram with an error path"></td><td><input type="number" value="8"></td></tr>
-      <tr><td>Q3</td><td><input type="text" value="Short explanation"></td><td><input type="number" value="4"></td></tr>
+        <tr><th>Question</th><th>Points</th><th>Comment</th><th></th></tr>
+        <tr><td>Q1</td><td>4 / 4</td><td>Good.</td><td></td></tr>
+        <tr><td>Q2</td><td>2.5 / 4</td><td>Missing ownership cases in the criteria.</td><td><a href="#objection">Object</a></td></tr>
+        <tr><td>Q3</td><td>2 / 2</td><td></td><td></td></tr>
+        <tr><th>Total</th><th>8.5 / 10</th><th colspan="2">Sent on time · 100%</th></tr>
     </table>
-    <p class="muted">Total: 20 points</p>
-    <a class="btn" href="#new-assignment">Save as draft</a>
-    <a class="btn btn-primary" href="#prof-course">Publish</a>
-    <a class="btn" href="#new-assignment-error">Try 0 points</a>
-    <p class="note">Publishing sends a notification to all active students of this course.</p>
-  </div>
+    <p class="muted">Only you can see your grade.</p>
 </section>
 
-<section data-screen="new-assignment-error" data-user="Dr. Ali Karimi (professor)">
-  <p class="muted"><a href="#prof-course">CS301</a> › New assignment</p>
-  <h1>New assignment</h1>
-  <div class="card">
-    <div class="alert alert-error">Every question needs more than 0 points.</div>
+<section data-screen="objection" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>Object to HW1 · Q2</h1></div>
+    <div class="card">
+        <p class="kv"><span>Your points: <b>2.5 / 4</b></span><span>Comment: "Missing ownership cases in the criteria."</span></p>
+        <div class="field mt"><label for="ob">Why should the grade change?</label><textarea id="ob" rows="3">US-03 has an ownership case in its second criterion (page 2).</textarea></div>
+        <a class="btn btn-primary" href="#objection-sent">Send objection</a>
+        <p class="muted mt">One objection per question.</p>
+    </div>
+</section>
+
+<section data-screen="objection-sent" data-role="student" data-nav-key="courses">
+    <div class="page-head"><h1>HW1 · User stories · My grade</h1></div>
+    <div class="alert alert-success alert-icon"><svg class="icon"><use href="#i-check"/></svg><span>Your objection to Q2 was sent. The TA will answer it.</span></div>
+    <table><tr><th>Question</th><th>Points</th><th>Objection</th></tr><tr><td>Q2</td><td>2.5 / 4</td><td><span class="status status-wait">Open</span></td></tr></table>
+</section>
+
+<section data-screen="forbidden" data-role="student" data-nav-key="courses">
+    <div class="empty"><h1>403 · Access denied</h1><p>You can only open your own submission.</p><a class="btn" href="#course">Back to the course</a></div>
+</section>
+
+<section data-screen="professor" data-role="student" data-nav-key="professors">
+    <section class="card profile-card mb">
+        <div class="profile-hero">
+            <span class="home-hero-glow home-hero-glow-1"></span><span class="home-hero-glow home-hero-glow-2"></span>
+            <span class="avatar avatar-l">A</span>
+            <div class="profile-who"><h2 class="profile-name">Dr. Ali Karimi</h2><span class="tag tag-on-dark">Professor</span></div>
+        </div>
+        <dl class="profile-facts">
+            <div><dt>Office</dt><dd>Building B, room 214</dd></div>
+            <div><dt>Usually in the office</dt><dd>Sat and Mon mornings</dd></div>
+            <div><dt>This semester</dt><dd>CS301, CS305</dd></div>
+        </dl>
+    </section>
+    <div class="grid-2">
+        <div class="card">
+            <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-star"/></svg></span><span>Student reviews</span></h2>
+            <div class="row"><span class="rating-big">4.3</span><span><span class="stars">★★★★<span class="off">★</span></span><br><span class="muted">from 37 reviews</span></span></div>
+            <a class="btn btn-primary mt" href="#review-form">Write a review</a>
+            <p class="muted mt">Reviews are anonymous. You can review a professor of a course you take.</p>
+        </div>
+        <div class="ai-summary">
+            <span class="tag tag-on-dark">Made by AI · 1405-08-20</span>
+            <h3>Summary of 37 reviews</h3>
+            <ul>
+                <li><b>Strengths:</b> clear examples, answers questions in class.</li>
+                <li><b>Weaknesses:</b> heavy weekly homework.</li>
+                <li><b>Teaching style:</b> project based, uses UML a lot.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="card mt">
+        <h2>Latest reviews</h2>
+        <div class="review"><span class="stars">★★★★★</span> <span class="muted">· CS301 · 4051</span><p>Very organized. The project helped me a lot.</p></div>
+        <div class="review"><span class="stars">★★★<span class="off">★★</span></span> <span class="muted">· CS305 · 4051</span><p>Good teacher but too many assignments.</p></div>
+    </div>
+</section>
+
+<section data-screen="review-form" data-role="student" data-nav-key="professors">
+    <div class="page-head"><h1>Review Dr. Ali Karimi</h1></div>
+    <div class="card">
+        <p class="kv"><span>Course: <b>CS301 · Software Analysis and Design</b></span></p>
+        <label>Your rating</label>
+        <div class="star-input">★★★★<span class="stars"><span class="off">★</span></span></div>
+        <div class="field mt"><label for="rv">Comment</label><textarea id="rv" rows="4">Explains UML with good examples. The homework is a lot but useful.</textarea></div>
+        <div class="row"><a class="btn btn-primary" href="#review-sent">Send review</a><a class="btn btn-ghost" href="#review-held">See: a rude comment</a></div>
+        <p class="muted mt">Your name is never shown. One review per professor and course.</p>
+    </div>
+</section>
+
+<section data-screen="review-sent" data-role="student" data-nav-key="professors">
+    <div class="page-head"><h1>Review Dr. Ali Karimi</h1></div>
+    <div class="alert alert-success alert-icon"><svg class="icon"><use href="#i-check"/></svg><span>Thank you. Your review is published (without your name).</span></div>
+    <a class="btn" href="#professor">Back to the professor page</a>
+</section>
+
+<section data-screen="review-held" data-role="student" data-nav-key="professors">
+    <div class="page-head"><h1>Review Dr. Ali Karimi</h1></div>
+    <div class="alert alert-icon"><svg class="icon"><use href="#i-alert"/></svg><span>Your review was saved and will be checked by an admin before it is shown.</span></div>
+    <a class="btn" href="#professor">Back to the professor page</a>
+</section>
+
+<section data-screen="assistant-pick" data-role="student" data-nav-key="assistant">
+    <div class="page-head"><h1>Course assistant</h1></div>
+    <p class="muted">Answers come only from the notes of the course and professor you choose. Only courses with ready notes are listed.</p>
+    <div class="home-grid mt">
+        <a class="home-card" href="#assistant"><span class="home-card-icon"><svg class="icon"><use href="#i-chat"/></svg></span><span class="home-card-text"><strong>CS301 · Dr. Ali Karimi</strong><small>3 notes ready</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+        <a class="home-card" href="#assistant"><span class="home-card-icon"><svg class="icon"><use href="#i-chat"/></svg></span><span class="home-card-text"><strong>CS201 · Dr. Maryam Hosseini</strong><small>1 note ready</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+    </div>
+</section>
+
+<section data-screen="assistant" data-role="student" data-nav-key="assistant">
+    <div class="chat">
+        <div class="chat-head"><svg class="icon"><use href="#i-sparkle"/></svg><strong>CS301 · Dr. Ali Karimi</strong><span class="tag tag-muted">7 questions left today</span></div>
+        <div class="chat-body">
+            <div class="msg msg-user">What is the difference between include and extend in a use case diagram?</div>
+            <div class="msg msg-ai">
+                <strong>include</strong> is a step that always happens (for example "Log in" inside "Submit assignment"). <strong>extend</strong> is an optional step that happens only in some cases (for example "Submit late" extends "Submit assignment").
+                <div class="sources"><a href="#assistant">Ch. 2 UML notes · p. 14</a><a href="#assistant">Ch. 2 UML notes · p. 15</a></div>
+                <div class="msg-meta">Made by AI from the course notes · may be wrong</div>
+            </div>
+            <div class="msg msg-user">Make a quiz</div>
+            <div class="quiz-card">
+                <strong>Quiz 1/3</strong><p>Which arrow shows an optional step in a use case diagram?</p>
+                <span class="quiz-option wrong">include</span>
+                <span class="quiz-option right">extend ✓</span>
+                <span class="quiz-option">generalization</span>
+                <span class="quiz-option">association</span>
+                <p class="muted mt">extend = optional; include = always. (Ch. 2 · p. 15)</p>
+            </div>
+        </div>
+        <div class="chat-foot">
+            <div class="chat-quick"><a href="#assistant">Make a quiz</a><a href="#assistant">Written problem</a><a href="#assistant">Flashcards</a><a href="#assistant-busy">See: busy / not in the notes</a></div>
+            <div class="chat-input"><input type="text" placeholder="Ask about this course…"><button class="btn-primary" aria-label="Send"><svg class="icon"><use href="#i-send"/></svg></button></div>
+        </div>
+    </div>
+</section>
+
+<section data-screen="assistant-busy" data-role="student" data-nav-key="assistant">
+    <div class="chat">
+        <div class="chat-head"><svg class="icon"><use href="#i-sparkle"/></svg><strong>CS301 · Dr. Ali Karimi</strong><span class="tag tag-muted">5 questions left today</span></div>
+        <div class="chat-body">
+            <div class="msg msg-user">What is quicksort?</div>
+            <div class="msg msg-ai">The answer to this question is not in the notes of this course.</div>
+            <div class="msg msg-user">Explain sequence diagrams</div>
+            <div class="msg msg-ai msg-warn">The server is busy right now. Please try again in a moment.<div class="sources"><a href="#assistant">These pages are related: Ch. 3 · p. 4</a></div></div>
+            <div class="msg msg-ai"><span class="typing"><i></i><i></i><i></i></span></div>
+        </div>
+        <div class="chat-foot"><div class="chat-input"><input type="text" placeholder="Ask about this course…"><button class="btn-primary" aria-label="Send"><svg class="icon"><use href="#i-send"/></svg></button></div></div>
+    </div>
+</section>
+
+<section data-screen="notifications" data-role="student" data-nav-key="notifications">
+    <div class="page-head"><h1>Notifications</h1></div>
+    <ul class="notification-list">
+        <li class="notification-unread"><strong>Deadline extended in CS301</strong> · <a href="#assignment">HW2 · Use Case and Activity</a></li>
+        <li class="notification-unread"><strong>Your TA request was accepted</strong> · <a href="#my-ta">CS201 · Data Structures</a></li>
+        <li class="notification-unread"><strong>Grades published in CS301</strong> · <a href="#grade">HW1 · User stories</a></li>
+    </ul>
+</section>
+
+<section data-screen="not-here" data-role="student">
+    <div class="empty"><h1>Not in this prototype</h1><p>This page already exists in the real app but is not part of the four main journeys.</p><a class="btn" href="#map">All screens</a></div>
+</section>
+
+<!-- ================= PROFESSOR / TA ================= -->
+<section data-screen="staff-course" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><div><h1>CS301 · Software Analysis and Design</h1><p class="kv"><span>Group 1</span><span>42 students</span><span>Join code: <b dir="ltr">K7P2QX</b></span></p></div><a class="btn btn-primary" href="#new-assignment">New assignment</a></div>
     <table>
-      <tr><th>#</th><th>Question</th><th>Points</th></tr>
-      <tr><td>Q1</td><td><input type="text" value="Use Case diagram of your MVP"></td><td><input type="number" value="0"></td></tr>
+        <tr><th>Assignment</th><th>Deadline</th><th>Submitted</th><th>Graded</th><th>Grades</th></tr>
+        <tr><td><a href="#submissions">HW2 · Use Case and Activity</a></td><td>Fri 1405-08-30 <span class="tag tag-orange">Extended</span></td><td>31 / 42</td><td>1 / 31</td><td><span class="tag tag-muted">Not published</span></td></tr>
+        <tr><td><a href="#grade-sheet">HW1 · User stories</a></td><td>1405-08-20</td><td>40 / 42</td><td>40 / 40</td><td><span class="tag">Published</span></td></tr>
     </table>
-    <a class="btn btn-primary" href="#new-assignment">Fix</a>
-  </div>
+    <div class="grid-2">
+        <a class="home-card" href="#ta-requests"><span class="home-card-icon"><svg class="icon"><use href="#i-inbox"/></svg></span><span class="home-card-text"><strong>TA requests</strong><small>2 waiting</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+        <a class="home-card" href="#staff-resources"><span class="home-card-icon"><svg class="icon"><use href="#i-file"/></svg></span><span class="home-card-text"><strong>Resources and notes</strong><small>3 notes ready for the assistant</small></span><svg class="icon home-card-arrow"><use href="#i-arrow"/></svg></a>
+    </div>
 </section>
 
-<section data-screen="submissions" data-user="Reza Mohammadi (Head TA)">
-  <p class="muted"><a href="#prof-course">CS301</a> › HW2 › Submissions</p>
-  <h1>HW2 – Submissions</h1>
-  <p class="muted">23 of 42 students submitted · Deadline 1405-09-05 23:59</p>
-  <div class="card">
+<section data-screen="ta-requests" data-role="staff" data-nav-key="ta-requests">
+    <div class="page-head"><h1>TA requests</h1><span class="tag">CS201 team: 2 of 3</span></div>
     <table>
-      <tr><th>Student</th><th>Number</th><th>Submitted</th><th>Grade</th><th></th></tr>
-      <tr><td>Sara Ahmadi</td><td>40312100001</td><td>1405-08-25 21:14</td><td>–</td><td><a href="#grading">Grade</a></td></tr>
-      <tr><td>Lena Sadeghi</td><td>40412100006</td><td>1405-08-26 10:02</td><td>17 / 20</td><td><a href="#grading">Edit</a></td></tr>
-      <tr><td>Omid Hashemi</td><td>40212100005</td><td><span class="pill pill-err">Not submitted</span></td><td>–</td><td></td></tr>
+        <tr><th>Student</th><th>Course</th><th>Message</th><th></th></tr>
+        <tr><td>Sara Ahmadi<br><span class="muted" dir="ltr">40312100001</span></td><td>CS201</td><td>I got 19 in this course and I live in Babol, so I can help online.</td><td><div class="row"><a class="btn btn-primary btn-small" href="#ta-accepted">Accept</a><a class="btn btn-ghost btn-small" href="#ta-requests">Reject</a></div></td></tr>
+        <tr><td>Omid Hashemi<br><span class="muted" dir="ltr">40212100005</span></td><td>CS201</td><td></td><td><div class="row"><a class="btn btn-primary btn-small" href="#ta-accepted">Accept</a><a class="btn btn-ghost btn-small" href="#ta-requests">Reject</a></div></td></tr>
     </table>
-    <a class="btn btn-primary" href="#published">Publish grades</a>
-  </div>
 </section>
 
-<section data-screen="grading" data-user="Reza Mohammadi (Head TA)">
-  <p class="muted"><a href="#submissions">HW2 submissions</a> › Sara Ahmadi</p>
-  <h1>Grade: Sara Ahmadi</h1>
-  <div class="card">
-    <div class="file-box">answers.pdf (opens in the page)</div>
-    <table style="margin-top:12px">
-      <tr><th>#</th><th>Points</th><th>Comment</th></tr>
-      <tr><td>Q1 (max 8)</td><td><input type="number" value="7"></td><td><input type="text" value="One actor is missing."></td></tr>
-      <tr><td>Q2 (max 8)</td><td><input type="number" value="8"></td><td><input type="text" value=""></td></tr>
-      <tr><td>Q3 (max 4)</td><td><input type="number" value="3"></td><td><input type="text" value=""></td></tr>
+<section data-screen="ta-accepted" data-role="staff" data-nav-key="ta-requests">
+    <div class="page-head"><h1>Permissions of Sara Ahmadi · CS201</h1></div>
+    <div class="alert alert-success alert-icon"><svg class="icon"><use href="#i-check"/></svg><span>Sara Ahmadi is now a TA of CS201. She got a notification.</span></div>
+    <div class="card">
+        <ul class="permission-list">
+            <li><label><input type="checkbox" checked> Manage assignments and grade</label></li>
+            <li><label><input type="checkbox" checked> Post announcements</label></li>
+            <li><label><input type="checkbox" checked> Edit the Telegram link and resources</label></li>
+            <li><label><input type="checkbox"> Manage students</label></li>
+            <li><label><input type="checkbox"> Manage the TA team (Head TA)</label></li>
+        </ul>
+        <a class="btn btn-primary mt" href="#ta-requests">Save</a>
+    </div>
+</section>
+
+<section data-screen="new-assignment" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><h1>New assignment · CS301</h1></div>
+    <div class="card">
+        <div class="field"><label for="na1">Title</label><input id="na1" type="text" value="HW2 · Use Case and Activity"></div>
+        <div class="field"><label for="na2">Chapter</label><input id="na2" type="text" value="2"><div class="field-hint muted">Used in the file names: "name - student number - Ch2.pdf".</div></div>
+        <div class="field"><label for="na3">Deadline</label><input id="na3" type="text" value="1405-08-28 23:59"></div>
+        <label>Questions (PDF)</label>
+        <div class="file-drop"><svg class="icon"><use href="#i-upload"/></svg><div><strong>HW2-questions.pdf</strong> · 0.4 MB</div></div>
+        <p class="muted mt">Questions and points are added while grading the first answer.</p>
+        <div class="row"><a class="btn" href="#new-assignment">Save as draft</a><a class="btn btn-primary" href="#staff-course">Publish</a><a class="btn btn-ghost" href="#new-assignment-error">See: missing PDF</a></div>
+    </div>
+</section>
+
+<section data-screen="new-assignment-error" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><h1>New assignment · CS301</h1></div>
+    <div class="card">
+        <div class="alert alert-error alert-icon"><svg class="icon"><use href="#i-alert"/></svg><span>Upload the questions as a PDF before publishing.</span></div>
+        <a class="btn btn-primary" href="#new-assignment">Fix</a>
+    </div>
+</section>
+
+<section data-screen="submissions" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><div><h1>HW2 · Submissions</h1><p class="kv"><span>31 of 42 submitted</span><span>1 graded</span><span>Deadline Fri 1405-08-30 23:59 <span class="tag tag-orange">Extended · 80%</span></span></p></div><a class="btn btn-primary" href="#grading-next">Grade next</a></div>
+    <table>
+        <tr><th>Student</th><th>File</th><th>Sent</th><th>Grade</th></tr>
+        <tr><td>Lena Sadeghi</td><td dir="ltr">Lena Sadeghi - 40412100006 - Ch2.pdf</td><td>1405-08-27 10:02</td><td><a href="#grading-first">17 / 20</a></td></tr>
+        <tr><td>Sara Ahmadi</td><td dir="ltr">Sara Ahmadi - 40312100001 - Ch2.pdf</td><td>1405-08-29 21:14 <span class="tag tag-orange">Extended</span></td><td><a href="#grading-next">Grade</a></td></tr>
+        <tr><td>Omid Hashemi</td><td class="muted">Not submitted</td><td></td><td></td></tr>
     </table>
-    <p class="muted">Total: 18 / 20</p>
-    <a class="btn btn-primary" href="#submissions">Save</a>
-    <a class="btn" href="#grading-error">Try 9 for Q1</a>
-  </div>
+    <div class="card-soft">
+        <h2 class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-clock"/></svg></span><span>Extend the deadline (for everyone)</span></h2>
+        <div class="row"><div class="field"><label for="ex1">New deadline</label><input id="ex1" type="text" value="1405-09-02 23:59"></div><div class="field"><label for="ex2">Grade factor for late answers (%)</label><input id="ex2" type="number" value="70"></div></div>
+        <a class="btn btn-primary btn-small" href="#submissions">Extend</a>
+        <p class="muted mt">History: Wed → Fri (80%). Students get a notification.</p>
+    </div>
 </section>
 
-<section data-screen="grading-error" data-user="Reza Mohammadi (Head TA)">
-  <p class="muted"><a href="#submissions">HW2 submissions</a> › Sara Ahmadi</p>
-  <h1>Grade: Sara Ahmadi</h1>
-  <div class="card">
-    <div class="alert alert-error">Q1: points must be between 0 and 8. Nothing was saved.</div>
-    <a class="btn btn-primary" href="#grading">Fix</a>
-  </div>
+<section data-screen="grading-first" data-role="staff" data-nav-key="courses" data-wide>
+    <div class="page-head"><div><h1>Grading HW2 · Lena Sadeghi</h1><p class="kv"><span>First answer: you define the questions while grading</span></p></div><a class="btn" href="#submissions">All submissions</a></div>
+    <div class="grader">
+        <div class="pdf-viewer">
+            <div class="pdf-toolbar"><svg class="icon"><use href="#i-file"/></svg><span dir="ltr">Lena Sadeghi - 40412100006 - Ch2.pdf</span><span class="tag tag-on-dark">Page 1 / 3</span></div>
+            <div class="pdf-pages">
+                <div class="pdf-page"><span class="q-mark">Q1</span><h4>Use case diagram</h4><span class="scribble"></span><span class="scribble s2"></span><span class="scribble s3"></span><div class="code">Student --- (Submit PDF)
+TA ------ (Grade answer)</div><span class="scribble s2"></span><span class="q-mark">Q2</span><h4>Activity diagram</h4><span class="scribble"></span><span class="scribble s3"></span></div>
+            </div>
+        </div>
+        <div class="card grade-panel">
+            <div class="q-tabs"><a class="q-tab done" href="#grading-first">Q1 · 8</a><a class="q-tab current" href="#grading-first">Q2 · ?</a><a class="q-tab add" href="#grading-first">+ Question</a></div>
+            <div class="q-box">
+                <strong>Question 2</strong>
+                <div class="row mt"><div class="field"><label for="g1">Max points</label><input id="g1" type="number" value="8"></div><div class="field"><label for="g2">Points</label><input id="g2" type="number" value="7"></div></div>
+                <div class="field"><label for="g3">Comment (optional)</label><textarea id="g3" rows="2">The error path is missing.</textarea></div>
+                <a class="btn btn-primary" href="#grading-first">Save and next question</a>
+            </div>
+            <div class="total-line"><span class="muted">Total so far</span><span class="points-out">14</span><span class="muted">/ 16</span></div>
+            <p class="muted">The questions you add here are used for every other answer of this assignment.</p>
+            <a class="btn btn-small" href="#grading-next">Finish · next student</a>
+        </div>
+    </div>
 </section>
 
-<section data-screen="published" data-user="Dr. Ali Karimi (professor)">
-  <p class="muted"><a href="#prof-course">CS301</a> › HW2</p>
-  <h1>HW2 – Grades published</h1>
-  <div class="card">
-    <div class="alert alert-ok">Grades are published. Each student can now see only their own grade.</div>
-    <a class="btn" href="#objection-reply">See objections (1 open)</a>
-  </div>
+<section data-screen="grading-next" data-role="staff" data-nav-key="courses" data-wide>
+    <div class="page-head"><div><h1>Grading HW2 · Sara Ahmadi</h1><p class="kv"><span>2 of 31</span><span class="tag tag-orange">Extended · 80%</span></p></div><a class="btn" href="#submissions">All submissions</a></div>
+    <div class="progress mb"><i style="width:6%"></i></div>
+    <div class="grader">
+        <div class="pdf-viewer">
+            <div class="pdf-toolbar"><svg class="icon"><use href="#i-file"/></svg><span dir="ltr">Sara Ahmadi - 40312100001 - Ch2.pdf</span><span class="tag tag-on-dark">Page 2 / 4</span></div>
+            <div class="pdf-pages">
+                <div class="pdf-page"><span class="q-mark">Q2</span><h4>Activity: submit a PDF</h4><span class="scribble s2"></span><div class="code">[start] -> (signed in?) -no-> [login]
+            -yes-> (before deadline?) -no-> [closed]</div><span class="scribble"></span><span class="scribble s3"></span><span class="q-mark">Q3</span><h4>Explanation</h4><span class="scribble s2"></span><span class="scribble"></span></div>
+            </div>
+        </div>
+        <div class="card grade-panel">
+            <div class="q-tabs"><a class="q-tab done" href="#grading-next">Q1 · 8</a><a class="q-tab current" href="#grading-next">Q2 · 8</a><a class="q-tab" href="#grading-next">Q3 · 4</a></div>
+            <div class="q-box">
+                <strong>Question 2</strong> <span class="muted">· max 8</span>
+                <div class="field mt"><label for="h2">Points</label><input id="h2" type="number" value="7"></div>
+                <div class="field"><label for="h3">Comment (optional)</label><textarea id="h3" rows="2"></textarea></div>
+                <div class="row"><a class="btn btn-primary" href="#grading-next">Save and next question</a><a class="btn btn-ghost" href="#grading-error">Try 9</a></div>
+            </div>
+            <div class="total-line"><span class="muted">Total</span><span class="points-out">14</span><span class="muted">/ 20 · × 80% = <b>11.2</b></span></div>
+        </div>
+    </div>
 </section>
 
-<section data-screen="objection-reply" data-user="Reza Mohammadi (Head TA)">
-  <p class="muted"><a href="#prof-course">CS301</a> › HW1 › Objections</p>
-  <h1>Objection: Sara Ahmadi, Q2</h1>
-  <div class="card">
-    <p><strong>Student:</strong> US-03 has an ownership case in its second criterion.</p>
-    <p class="muted">Current points: 2.5 / 4</p>
-    <label for="rep">Reply</label>
-    <textarea id="rep" rows="2">You are right, I missed it.</textarea>
-    <label for="np">New points (optional)</label>
-    <input id="np" type="number" value="3.5">
-    <a class="btn btn-primary" href="#prof-course">Accept and change grade</a>
-    <a class="btn" href="#prof-course">Reject</a>
-  </div>
+<section data-screen="grading-error" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><h1>Grading HW2 · Sara Ahmadi</h1></div>
+    <div class="card">
+        <div class="alert alert-error alert-icon"><svg class="icon"><use href="#i-alert"/></svg><span>Question 2: points must be between 0 and 8. Nothing was saved.</span></div>
+        <a class="btn btn-primary" href="#grading-next">Fix</a>
+    </div>
+</section>
+
+<section data-screen="grade-sheet" data-role="staff" data-nav-key="courses" data-wide>
+    <div class="page-head"><div><h1>HW2 · Grade sheet</h1><p class="kv"><span>Type in a cell to change a grade; it is saved at once.</span></p></div><div class="row"><a class="btn" href="#grade-sheet">Export CSV</a><a class="btn btn-primary" href="#published">Publish grades</a></div></div>
+    <div class="sheet-wrap">
+    <table class="sheet">
+        <tr><th>Student</th><th>Number</th><th class="qcol">Q1<small>max 8</small></th><th class="qcol">Q2<small>max 8</small></th><th class="qcol">Q3<small>max 4</small></th><th class="qcol">Sum</th><th class="qcol">Factor</th><th class="qcol">Final</th><th>Objection</th></tr>
+        <tr><td>Lena Sadeghi</td><td dir="ltr">40412100006</td><td class="cell"><input value="7"></td><td class="cell"><input value="7"></td><td class="cell"><input value="3"></td><td class="num">17</td><td class="num">100%</td><td class="num">17</td><td></td></tr>
+        <tr><td>Sara Ahmadi</td><td dir="ltr">40312100001</td><td class="cell"><input value="7"></td><td class="cell"><input value="7"></td><td class="cell empty-cell"><input value=""></td><td class="num">14</td><td class="num">80%</td><td class="num">11.2</td><td><span class="status status-wait">Open (Q2)</span></td></tr>
+        <tr><td>Nima Rahimi</td><td dir="ltr">40312100003</td><td class="cell empty-cell"><input value=""></td><td class="cell empty-cell"><input value=""></td><td class="cell empty-cell"><input value=""></td><td class="num">–</td><td class="num">100%</td><td class="num">–</td><td></td></tr>
+    </table>
+    </div>
+    <p class="muted">Empty cells are not graded yet.</p>
+</section>
+
+<section data-screen="published" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><h1>HW2 · Grades published</h1></div>
+    <div class="alert alert-success alert-icon"><svg class="icon"><use href="#i-check"/></svg><span>Grades are published. Each student now sees only their own grade and got a notification.</span></div>
+    <a class="btn" href="#objection-reply">Objections (1 open)</a>
+</section>
+
+<section data-screen="objection-reply" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><h1>Objection · Sara Ahmadi · HW1 Q2</h1></div>
+    <div class="card">
+        <p><strong>Student:</strong> US-03 has an ownership case in its second criterion (page 2).</p>
+        <p class="kv"><span>Current points: <b>2.5 / 4</b></span></p>
+        <div class="field mt"><label for="rp">Reply</label><textarea id="rp" rows="2">You are right, I missed it.</textarea></div>
+        <div class="field"><label for="np">New points (optional)</label><input id="np" type="number" value="3.5"></div>
+        <div class="row"><a class="btn btn-primary" href="#staff-course">Accept and change the grade</a><a class="btn btn-ghost" href="#staff-course">Reject</a></div>
+    </div>
+</section>
+
+<section data-screen="staff-resources" data-role="staff" data-nav-key="courses">
+    <div class="page-head"><h1>CS301 · Resources</h1><a class="btn btn-primary" href="#staff-resources">Add resource</a></div>
+    <table>
+        <tr><th>Resource</th><th>Type</th><th>Course assistant</th></tr>
+        <tr><td>Chapter 2 · UML notes</td><td><span class="tag tag-muted">PDF (uploaded)</span></td><td><span class="status status-ok">Ready</span></td></tr>
+        <tr><td>Chapter 3 · Sequence diagrams</td><td><span class="tag tag-muted">PDF (uploaded)</span></td><td><span class="status status-wait">Preparing for the assistant…</span></td></tr>
+        <tr><td>Old exam 4041</td><td><span class="tag tag-muted">PDF (link)</span></td><td><span class="status status-bad">Failed: the link could not be downloaded</span> · <a href="#staff-resources">Try again</a></td></tr>
+        <tr><td>Activity diagrams in 10 minutes</td><td><span class="tag tag-muted">YouTube</span></td><td class="muted">Not used</td></tr>
+    </table>
+</section>
+
+<!-- ================= ADMIN ================= -->
+<section data-screen="hidden-reviews" data-role="admin" data-nav-key="hidden-reviews">
+    <div class="page-head"><h1>Hidden reviews</h1><span class="tag tag-orange">2 to check</span></div>
+    <table>
+        <tr><th>Review</th><th>About</th><th>Why hidden</th><th></th></tr>
+        <tr><td>"The worst ****** teacher, ..."</td><td>Dr. Ali Karimi · CS305</td><td>Word list</td><td><div class="row"><a class="btn btn-small" href="#hidden-reviews">Publish</a><a class="btn btn-ghost btn-small" href="#hidden-reviews">Keep hidden</a></div></td></tr>
+        <tr><td>"He never answers, total clown."</td><td>Reza Mohammadi (TA) · CS301</td><td>AI: insulting</td><td><div class="row"><a class="btn btn-small" href="#hidden-reviews">Publish</a><a class="btn btn-ghost btn-small" href="#hidden-reviews">Keep hidden</a></div></td></tr>
+    </table>
+    <p class="muted">Hidden reviews are never deleted. Only admins see them.</p>
 </section>
 
 </main>
 
+<div class="proto-switch" aria-label="Prototype navigation">
+    <strong>Prototype</strong>
+    <a href="#map">All screens</a>
+    <a href="#login">Student</a>
+    <a href="#staff-course">Professor / TA</a>
+    <a href="#hidden-reviews">Admin</a>
+</div>
+
 <script>
-  // Shows one screen at a time, chosen by the part of the address after "#".
-  function show() {
-    var id = location.hash.slice(1) || 'map';
-    var screens = document.querySelectorAll('section[data-screen]');
-    var found = null;
-    screens.forEach(function (s) {
-      var on = s.getAttribute('data-screen') === id;
-      s.classList.toggle('active', on);
-      if (on) found = s;
-    });
-    if (!found) { location.hash = 'map'; return; }
-    document.getElementById('app-nav').style.display = found.getAttribute('data-nav') === 'off' ? 'none' : '';
-    var user = found.getAttribute('data-user') || 'Sara Ahmadi (student)';
-    document.getElementById('nav-user').innerHTML = user + ' · <a href="#login-out">Sign out</a>';
-    window.scrollTo(0, 0);
-  }
-  window.addEventListener('hashchange', show);
-  show();
+  // Shows one screen at a time (the part of the address after "#"), and sets the menu for that role.
+  (function () {
+    var users = {
+      student: { name: 'Sara Ahmadi', home: '#home' },
+      staff:   { name: 'Dr. Ali Karimi', home: '#staff-course' },
+      admin:   { name: 'Admin', home: '#hidden-reviews' }
+    };
+    var aliases = { 'login-error': 'login', 'login-out': 'login' };
+    function show() {
+      var id = location.hash.slice(1) || 'map';
+      var target = aliases[id] || id;
+      var found = null;
+      document.querySelectorAll('section[data-screen]').forEach(function (s) {
+        var on = s.getAttribute('data-screen') === target;
+        s.classList.toggle('active', on);
+        if (on) found = s;
+      });
+      if (!found) { location.hash = 'map'; return; }
+      // States that share one screen (sign in with an error, after signing out)
+      document.querySelectorAll('[data-show-on]').forEach(function (el) {
+        el.hidden = el.getAttribute('data-show-on') !== id;
+      });
+      var role = found.getAttribute('data-role');
+      var isAuth = role === 'auth';
+      document.body.classList.toggle('auth-page', isAuth);
+      var nav = document.getElementById('app-nav');
+      nav.hidden = isAuth;
+      nav.classList.toggle('has-sidebar', !isAuth);
+      var main = document.getElementById('page');
+      main.classList.toggle('auth', isAuth);
+      main.classList.toggle('wide', found.hasAttribute('data-wide'));
+      if (!isAuth) {
+        var who = role === 'staff' ? 'staff' : role === 'admin' ? 'admin' : 'student';
+        document.getElementById('nav-user').textContent = users[who].name;
+        document.getElementById('nav-avatar').textContent = users[who].name.replace('Dr. ', '').charAt(0);
+        document.querySelector('[data-home]').setAttribute('href', users[who].home);
+        document.querySelectorAll('[data-for]').forEach(function (el) {
+          el.hidden = el.getAttribute('data-for') !== who;
+        });
+        var key = found.getAttribute('data-nav-key');
+        document.querySelectorAll('.nav-link[data-nav]').forEach(function (a) {
+          var active = key && a.getAttribute('data-nav') === key && !a.hidden;
+          a.classList.toggle('is-active', !!active);
+        });
+      }
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener('hashchange', show);
+    show();
+  })();
 </script>
 </body>
 </html>
