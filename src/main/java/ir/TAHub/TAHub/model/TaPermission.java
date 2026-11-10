@@ -21,6 +21,8 @@ public enum TaPermission {
     MANAGE_STUDENTS,
     /** Add, edit and delete the course's resources (videos and links). */
     MANAGE_RESOURCES,
+    /** Create, edit, publish, extend and hide assignments (the question PDF too). */
+    MANAGE_ASSIGNMENTS,
     /** Add and remove TAs (the head TA has this). */
     MANAGE_TEAM,
     /** Give other TAs the permissions they have themselves (the head TA has this). */
@@ -33,6 +35,6 @@ public enum TaPermission {
 
     /** What a TA gets when the professor makes them a TA (the professor can change it right after). */
     public static Set<TaPermission> defaults() {
-        return EnumSet.of(POST_ANNOUNCEMENTS, EDIT_TELEGRAM, MANAGE_RESOURCES);
+        return EnumSet.of(POST_ANNOUNCEMENTS, EDIT_TELEGRAM, MANAGE_RESOURCES, MANAGE_ASSIGNMENTS);
     }
 }

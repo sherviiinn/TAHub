@@ -1,6 +1,6 @@
 # TA Hub - زمینه‌ی پروژه
 
-آخرین به‌روزرسانی: ۲۰ آبان ۱۴۰۵ (2026-11-10) — قفل رشته (شاخه‌ی `fix-major-lock`): فرم انتخاب رشته فقط برای کسی که رشته نداره، کارت «رشته‌ات اشتباهه؟» و صفحه‌ی `major-request`، تغییر رشته توسط ادمین توی پنل حساب‌ها (بخش‌های ۶.۱، ۷، ۸، ۱۲). همون روز: پنل نمره‌دهی، فونت‌ها برای مهرسا، تصمیم‌های شروین، پروتوتایپ جدید.
+آخرین به‌روزرسانی: ۲۰ آبان ۱۴۰۵ (2026-11-10) — قدم ۴-ب (شاخه‌ی `step-4b-assignments`): تمرین‌ها، ذخیره‌ی فایل PDF و اولین تست‌های خودکار با Testcontainers (بخش‌های ۵، ۷، ۹). قبلش همون روز: قفل رشته (`fix-major-lock`)، پنل نمره‌دهی، فونت‌ها برای مهرسا، پروتوتایپ جدید.
 
 ## این فایل رو چطور استفاده کنیم
 
@@ -155,6 +155,10 @@ git push origin phase-3-done
 - `notifications`: id، user_id، type، title (برای اطلاعیه: «کد درس - اسم درس»)، link (مسیر داخل برنامه که سرور می‌سازه)، item_count (تعداد رویدادی که این ردیف نشون می‌ده)، announcement_id (اختیاری، فقط برای نوتیفیکیشن «اطلاعیه ویرایش شد»)، first_event_at (اختیاری)، message_key و message_arg (اختیاری؛ برای نوتیفیکیشن‌هایی که متنشون از `messages.properties` میاد، مثل یادآوری سلف)، seen، created_at.
 - `ta_applications`: id، student_id، offering_id، message، status (PENDING، ACCEPTED، REJECTED، WITHDRAWN)، created_at، decided_at. یکتا روی (دانشجو، ارائه).
 - `enrollments`: id، student_id، offering_id، enrolled_at، status، source (ROSTER یا JOIN_CODE). برای هر دانشجو و ارائه فقط یه ردیف. یکتا روی (دانشجو، ارائه).
+- `stored_files` (قدم ۴-ب): id، stored_name (یکتا، اسم تصادفی که سرور می‌سازه مثل `uuid.pdf`)، original_name (فقط برای نمایش)، content_type، size_bytes، uploaded_by_id، uploaded_at. خود فایل‌ها توی پوشه‌ی `tahub.storage.dir` (پیش‌فرض `data/files`، توی `.gitignore`) ـن و هیچ‌وقت مستقیم سرو نمی‌شن؛ فقط کنترلر بعد از چک دسترسی می‌فرسته.
+- `assignments` (قدم ۴-ب): id، offering_id، title (حداکثر ۱۵۰)، chapter (اجباری، حداکثر ۳۰؛ توی اسم فایل‌ها میاد)، description (اختیاری، ۲۰۰۰)، deadline (مهلت فعلی)، first_deadline (مهلت موقع انتشار؛ تحویل بعدش «تمدیدی» حساب می‌شه)، question_file_id (اختیاری تا وقتی پیش‌نویسه)، published، published_at، deleted (فقط پنهان)، created_by_id، created_at، updated_at.
+- `assignment_extensions` (قدم ۴-ب): id، assignment_id، previous_deadline، new_deadline، factor_percent (۱ تا ۱۰۰)، created_by_id، created_at. هر تمدید برای همه‌ی دانشجوهاست و چند بار می‌شه انجامش داد.
+- `app_flags` (قدم ۴-ب): name (کلید)، done_at. یادداشت «این کار یه‌باره قبلاً انجام شده» (مثلاً دادن دسترسی تمرین به TAهای قبلی، `AssignmentPermissionMigration`).
 
 ## ۶. چیزهایی که الان کار می‌کنن
 
@@ -340,6 +344,9 @@ git push origin phase-3-done
 | `notice-edit` (ادمین) | `GET /admin/notices/{id}/edit` | `notice`، `title`، `body`، `noticeErrorKey` | `/admin/notices/{id}/edit` (`title`، `body`) |
 | `profile` | `GET /profile` (پارامترهای `saved`، `majorLocked`) | `profileUser`، `isStudent`، `majors`، `canChangeMajor` (فقط برای دانشجوی بدون رشته `true`؛ فرم انتخاب رشته فقط با همین نشون داده می‌شه، وگرنه کارت «رشته‌ات اشتباهه؟» با لینک `/profile/major-request`) | `/profile/major`: `majorId` (فقط وقتی رشته نداره؛ وگرنه برمی‌گرده با `?majorLocked`) |
 | `major-request` (دانشجو) | `GET /profile/major-request` | `profileUser` | فعلاً فرم نداره (فقط توضیح «به‌زودی»)؛ فرم درخواست با عکس کارت بعد از قدم ۴-پ |
+| `assignments` (اعضای ارائه) | `GET /courses/{id}/assignments` | `offering`، `rows` (هر ردیف: `assignment`، `deadline` متن، `passed`، `extendFactor` که اگه تمدید نشده null ـه)، `isStaff`، `canManage`، `isCurrentSemester`، `isCancelled` | دکمه‌ی `New assignment` فقط با `canManage` |
+| `assignment-form` | `GET /courses/{id}/assignments/new` و `GET /assignments/{aid}/edit` (فقط `canManage`) | `offering`، `assignment` (برای جدید null)، `isNew`، `isDraft`، `formTitle`، `formChapter`، `formDescription`، `formDeadline` (فرمت `datetime-local`)، `currentDeadline`، `maxMb`، `assignmentErrorKey` | multipart: `POST /courses/{id}/assignments` یا `/assignments/{aid}/edit` با `title`، `chapter`، `description`، `deadline` (فقط پیش‌نویس)، `questionFile`، `action` (`draft`، `publish`، `save`) |
+| `assignment-detail` | `GET /assignments/{aid}` (دانشجو پیش‌نویس رو نمی‌بینه: 404) | `assignment`، `offering`، `row`، `firstDeadline`، `isStaff`، `canManage`، `hasQuestions`، `extensions` (هر ردیف: `from`، `to`، `factorPercent`، `byName`، `when`)، `suggestedDeadline`، `assignmentDoneKey`، `assignmentErrorKey`، `draftNewDeadline`، `draftFactor` | `/assignments/{aid}/publish`، `/extend` (`newDeadline`، `factor`)، `/hide`؛ PDF سؤال: `GET /assignments/{aid}/question.pdf` |
 
 ## ۷.۱. قالب مشترک (layout)
 
@@ -478,6 +485,15 @@ git push origin phase-3-done
 - بعداً (بعد از فاز ۴): تأیید دانشجو با عکس کارت دانشجویی. فقط ادمین می‌بینه، توی جای عمومی ذخیره نمی‌شه و بعد از تصمیم پاک می‌شه؛ محدودیت‌های حساب تأییدنشده همون موقع تصمیم گرفته می‌شه. (تأیید با ایمیل دانشجویی کنار گذاشته شد چون بیشتر دانشجوها ندارن.)
 
 **فاز ۴:** تمرین با سؤال‌ها و بارم، آپلود PDF توسط دانشجو (فقط تحویل خودش، حذف و تعویض قبل از مهلت)، ذخیره‌ی فایل روی دیسک با اسمی که سرور می‌سازه.
+
+**قدم ۴-ب: تمرین‌ها + ذخیره‌ی فایل + اولین تست‌ها** (شاخه‌ی `step-4b-assignments`):
+- تمرین فقط برای اعضای ارائه‌ست: استاد (و ادمین)، TAهای فعال و دانشجوهای ثبت‌نام‌شده. بقیه 403 می‌گیرن. لینک «Assignments (n)» توی صفحه‌ی درس هم فقط برای همین‌هاست.
+- ساختن، ویرایش، انتشار، تمدید و حذف فقط با دسترسی جدید `MANAGE_ASSIGNMENTS` (استاد همیشه داره؛ برای TA پیش‌فرضه و TAهایی که قبلاً دسترسی‌شون ذخیره شده بود یه بار خودکار می‌گیرن) و فقط توی ارائه‌ی لغونشده‌ی **ترم فعال**؛ پس TA ترم قبل نمی‌تونه برای ارائه‌ی ترم قبل چیزی آپلود کنه. دانشجوی عادی و غیرعضو دکمه‌ها رو نمی‌بینن و سرور هم رد می‌کنه.
+- سؤال‌ها یه PDF ـه (حداکثر ۱۵ مگ؛ با بایت‌های اول فایل چک می‌شه که واقعاً PDF باشه، نه با اسمش). پیش‌نویس فقط برای استاد و TAها دیده می‌شه. انتشار بدون PDF یا با مهلت گذشته ممکن نیست. بعد از انتشار مهلت فقط با «تمدید» عوض می‌شه: مهلت جدید برای همه، ضریب ۱ تا ۱۰۰ درصد، چند بار. کنار تمرین تمدیدشده برچسب `Extended | 80%` (ضریب آخرین تمدید). حذف فقط پنهان می‌کنه و نوتیفیکیشن‌هاش پاک می‌شن.
+- نوتیفیکیشن: انتشار → «New assignment: …» برای دانشجوهای ثبت‌نام‌شده؛ تمدید → «Deadline extended: …» (یکی برای هر تمرین؛ کسی که «New assignment» رو هنوز نخونده دوباره خبر نمی‌گیره).
+- فایل‌ها: `FileStorageService` (همین سرویس برای تحویل دانشجو در ۴-پ، جزوه‌ها و عکس کارت هم استفاده می‌شه). سقف multipart عمداً ۵۰ مگه تا خطای «بیشتر از ۱۵ مگ» پیام درست نشون بده (اگه Tomcat زودتر رد کنه، توکن CSRF گم می‌شه و کاربر 403 خالی می‌بینه).
+- **تست‌های خودکار (برای ارائه‌ی ۲):** `./mvnw test` با Docker Desktop روشن. Testcontainers یه PostgreSQL 16 خالی می‌سازه (`TestcontainersConfiguration`)، پس دیتابیس توسعه دست نمی‌خوره. `AssignmentControllerTests`: ورود نکرده → صفحه‌ی ورود؛ استاد می‌سازه و منتشر می‌کنه و دانشجو می‌بینه؛ دانشجو و TA بی‌دسترسی 403؛ TA با دسترسی می‌سازه؛ TA و استاد ترم قبل 403؛ غیرعضو 403 روی لیست، صفحه و PDF؛ پیش‌نویس برای دانشجو پنهان؛ انتشار بدون PDF یا با مهلت گذشته رد؛ فایل غیر PDF رد؛ ضریب ۰، ۱۰۱، متن و خالی رد؛ تمدید درست مهلت رو جلو می‌بره و برچسب `Extended | 80%` رو نشون می‌ده.
+- بعدی: **قدم ۴-پ** تحویل PDF دانشجو (۱۵ مگ، اسم خودکار «اسم - شماره - فصل»، یادآوری ۲۴ ساعته، برچسب تمدید و ضریب) و لیست تحویل‌ها برای TA.
 
 **فاز ۵ (هسته):** نمایش PDF داخل سایت، نمره و کامنت برای هر سؤال، جمع خودکار، Grade Sheet (ردیف‌ها از ثبت‌نام‌های فعال؛ ستون‌ها: نام، شماره‌ی دانشجویی، Q1 و ...، جمع، وضعیت اعتراض)، انتشار نمره (هر دانشجو فقط نمره‌ی خودش رو می‌بینه)، خروجی CSV (توی Google Sheets باز می‌شه). بعضی قسمت‌ها جاوااسکریپت لازم دارن.
 
@@ -630,6 +646,7 @@ Rules you must follow:
 - ~~**باگ برای شروین:** دانشجو هر وقت بخواد رشته‌اش رو عوض می‌کنه.~~ **درست شد (شاخه‌ی `fix-major-lock`، بخش ۸).** **برای مهرسا:** صفحه‌ی پروفایل حالا `canChangeMajor` داره و Claude بخش رشته‌ی `profile.html` رو عوض کرده (فرم فقط با `canChangeMajor`، کارت جدید «رشته‌ات اشتباهه؟» با کلاس‌های خودت)؛ صفحه‌ی جدید `major-request.html` هم با همون کلاس‌هاست. اگه خواستی ظاهرشون رو بهتر کن.
 
 - **پروتوتایپ رو باید از نو ساخت** (`docs/phase-03-prototype-api-tech-hosting/prototype/index.html`، کار Claude با شروین، **تا ۲۴ آبان برای ارائه‌ی ۱**): با منوی کناری، رنگ‌ها (با نارنجی) و فونت فرانت (قدم ۱ تا ۳ مهرسا merge شدن)، و با هر چهار مسیر اصلی (TA شدن، صفحه‌ی درس، تمرین با جدول نمره‌ی شبیه گوگل شیت و اعتراض، نظرسنجی و دستیار درسی به‌شکل چت طبق ۹.۱.۲)، هر کدوم با حالت خطا. نسخه‌ی فعلی فقط ورود، ورود به درس و مسیر تمرین رو داره.
+- **برای بعد (شروین خواست):** (۱) خوش‌آمد صفحه‌ی خانه اولین کلمه‌ی اسم رو نشون می‌ده (`home.html`، `arraySplit(fullName, ' ')[0]`)، پس برای استادی که اسمش با «Dr.» شروع می‌شه فقط «Dr.» میاد؛ باید درست بشه (مثلاً «Dr.» و «دکتر» رد بشن، یا برای استاد اسم کامل بیاد). (۲) هنوز هیچ جایی برای عوض کردن اسم یا رمز توسط خود کاربر نیست (فقط ثبت‌نام و ساختن کاربر توسط ادمین)؛ یه بخش توی پروفایل لازمه: تغییر رمز با رمز فعلی، و تغییر اسم.
 - هنوز هر کسی می‌تونه با شماره‌ی دانشجویی کس دیگه (با فرمت درست) ثبت‌نام کنه. فعلاً راه‌حل اینه که صاحب واقعی به ادمین بگه و ادمین از پنل حساب‌ها اون حساب رو Disable و بعد Release number کنه. راه‌حل کامل بعداً: تأیید با عکس کارت دانشجویی (قدم ۴-الف).
 - تا ادمین حداقل یه رشته اضافه نکنه، ثبت‌نام بسته‌ست.
 - کاربرهایی که ادمین از `/users` می‌سازه رشته ندارن (از پروفایل انتخاب می‌کنن). حذف کاربر دیگه وجود نداره؛ به‌جاش Disable توی پنل حساب‌ها.

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${assignment.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <!-- data-live-topics: this page reloads itself (static/js/live.js) when this offering changes -->
+    <main th:attr="data-live-topics='offering:' + ${offering.id}">
+
+    <div class="page-head">
+        <div>
+            <h1>
+                <span th:text="${assignment.title}">HW1</span>
+                <span th:unless="${assignment.published}" class="tag tag-muted" th:text="#{assignments.draft}">Draft</span>
+                <span th:if="${row.extendFactor != null}" class="tag tag-orange"
+                      th:text="#{assignments.extendedTag(${row.extendFactor})}">Extended | 80%</span>
+                <span th:if="${assignment.published and row.passed}" class="tag tag-muted"
+                      th:text="#{assignments.passed}">Deadline passed</span>
+            </h1>
+            <p class="muted" th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</p>
+        </div>
+        <a th:if="${canManage}" class="btn btn-ghost"
+           th:href="@{/assignments/{aid}/edit(aid=${assignment.id})}" th:text="#{assignments.edit}">Edit</a>
+    </div>
+
+    <p th:if="${assignmentDoneKey}" class="alert alert-success" role="status" th:text="#{${assignmentDoneKey}}"></p>
+    <p th:if="${assignmentErrorKey}" class="alert alert-error" role="alert" th:text="#{${assignmentErrorKey}}"></p>
+
+    <!-- The assignment itself -->
+    <section class="card">
+        <p>
+            <span th:text="#{assignments.chapter(${assignment.chapter})}">Chapter: Ch2</span>
+            <br>
+            <strong dir="ltr" th:text="#{assignments.deadline(${row.deadline})}">Deadline: 2026-11-20 23:59</strong>
+            <br th:if="${row.extendFactor != null}">
+            <small th:if="${row.extendFactor != null}" class="muted" dir="ltr"
+                   th:text="#{assignments.firstDeadline(${firstDeadline})}">First deadline: ...</small>
+        </p>
+        <p th:if="${assignment.description}" class="announcement-body" th:text="${assignment.description}">Description</p>
+        <p th:if="${hasQuestions}">
+            <a class="btn btn-primary" target="_blank" rel="noopener"
+               th:href="@{/assignments/{aid}/question.pdf(aid=${assignment.id})}" th:text="#{assignments.questions}">Questions (PDF)</a>
+        </p>
+        <p th:unless="${hasQuestions}" class="muted" th:text="#{assignments.noQuestions}">No question PDF yet.</p>
+    </section>
+
+    <!-- A draft: only the professor and TAs see it; those who manage can publish it here -->
+    <section th:if="${isStaff and !assignment.published}" class="card-soft">
+        <p th:text="#{assignments.draftNote}">This is a draft.</p>
+        <form th:if="${canManage}" method="post" th:action="@{/assignments/{aid}/publish(aid=${assignment.id})}">
+            <button type="submit" class="btn-primary" th:text="#{assignments.publish}">Publish</button>
+        </form>
+    </section>
+
+    <!-- Extend the deadline (published assignments, professor and TAs with "Manage assignments") -->
+    <section th:if="${canManage and assignment.published}" class="card">
+        <h2 th:text="#{assignments.extend.title}">Extend the deadline</h2>
+        <p class="muted" th:text="#{assignments.extend.help}">The new deadline is for every student.</p>
+        <form method="post" th:action="@{/assignments/{aid}/extend(aid=${assignment.id})}">
+            <div class="field">
+                <label for="newDeadline" th:text="#{assignments.extend.newDeadline}">New deadline</label>
+                <input type="datetime-local" id="newDeadline" name="newDeadline" required dir="ltr"
+                       th:value="${draftNewDeadline != null ? draftNewDeadline : suggestedDeadline}">
+            </div>
+            <div class="field">
+                <label for="factor" th:text="#{assignments.extend.factor}">Grade factor (%)</label>
+                <input type="number" id="factor" name="factor" min="1" max="100" step="1" required dir="ltr"
+                       th:value="${draftFactor}">
+                <p class="field-hint" th:text="#{assignments.extend.factorHint}">For example 80.</p>
+            </div>
+            <button type="submit" class="btn-primary" th:text="#{assignments.extend.button}">Extend</button>
+        </form>
+    </section>
+
+    <!-- History of extensions (for the professor and TAs) -->
+    <section th:if="${isStaff and !#lists.isEmpty(extensions)}" class="card">
+        <h2 th:text="#{assignments.extensions.title}">Extensions</h2>
+        <table>
+            <thead>
+            <tr>
+                <th th:text="#{assignments.extensions.from}">From</th>
+                <th th:text="#{assignments.extensions.to}">To</th>
+                <th th:text="#{assignments.extensions.factor}">Factor</th>
+                <th th:text="#{assignments.extensions.by}">By</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${extensions}">
+                <td dir="ltr" th:text="${e.from}"></td>
+                <td dir="ltr" th:text="${e.to}"></td>
+                <td dir="ltr" th:text="${e.factorPercent} + '%'"></td>
+                <td>
+                    <span th:text="${e.byName}"></span>
+                    <small class="muted" dir="ltr" th:text="${e.when}"></small>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Delete (only hides) -->
+    <section th:if="${canManage}" class="card-soft">
+        <p class="muted" th:text="#{assignments.hide.help}">Deleting hides the assignment.</p>
+        <form method="post" th:action="@{/assignments/{aid}/hide(aid=${assignment.id})}">
+            <button type="submit" class="btn-small btn-danger" th:text="#{assignments.hide}">Delete</button>
+        </form>
+    </section>
+
+    <p><a th:href="@{/courses/{id}/assignments(id=${offering.id})}" th:text="#{assignments.backToList}">Back to the assignments</a></p>
+    </main>
+</body>
+</html>
