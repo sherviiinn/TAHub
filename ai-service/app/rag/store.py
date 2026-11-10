@@ -28,6 +28,17 @@ CREATE TABLE IF NOT EXISTS chunks (
     text         TEXT NOT NULL,
     embedding    BLOB NOT NULL
 );
+CREATE TABLE IF NOT EXISTS material_jobs (
+    material_id  TEXT PRIMARY KEY,
+    course_id    TEXT NOT NULL,
+    professor_id TEXT NOT NULL,
+    title        TEXT NOT NULL,
+    chapter      TEXT,
+    source_url   TEXT,
+    status       TEXT NOT NULL,
+    error        TEXT,
+    updated_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_materials_owner ON materials(course_id, professor_id);
 CREATE INDEX IF NOT EXISTS idx_chunks_material ON chunks(material_id);
 """
@@ -35,7 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_chunks_material ON chunks(material_id);
 
 def _connect() -> sqlite3.Connection:
     settings.data_dir.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(settings.data_dir / "rag.db")
+    conn = sqlite3.connect(settings.data_dir / "rag.db", timeout=15)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(_SCHEMA)
@@ -103,3 +114,87 @@ def search(course_id: str, professor_id: str, query_vector, top_k: int = 5) -> l
          "score": float(scores[i])}
         for i in best
     ]
+
+
+def count_chunks(material_id: str) -> int:
+    with closing(_connect()) as conn:
+        return conn.execute("SELECT COUNT(*) FROM chunks WHERE material_id = ?",
+                            (material_id,)).fetchone()[0]
+
+
+def has_materials(course_id: str, professor_id: str) -> bool:
+    with closing(_connect()) as conn:
+        return conn.execute(
+            "SELECT 1 FROM materials WHERE course_id = ? AND professor_id = ? LIMIT 1",
+            (course_id, professor_id),
+        ).fetchone() is not None
+
+
+def random_chunks(course_id: str, professor_id: str, n: int) -> list[dict]:
+    """n random chunks of this course+professor (used for quizzes without a topic)."""
+    with closing(_connect()) as conn:
+        rows = conn.execute(
+            "SELECT c.text, c.page, m.title, m.chapter, m.material_id"
+            " FROM chunks c JOIN materials m ON m.material_id = c.material_id"
+            " WHERE m.course_id = ? AND m.professor_id = ? ORDER BY RANDOM() LIMIT ?",
+            (course_id, professor_id, n),
+        ).fetchall()
+    return [{"text": r["text"], "page": r["page"], "title": r["title"],
+             "chapter": r["chapter"], "materialId": r["material_id"]} for r in rows]
+
+
+# ----- Status of each material (queued, downloading, reading, ready, failed) -----
+
+def save_job(material_id: str, course_id: str, professor_id: str, title: str,
+             chapter: str | None, source_url: str | None) -> None:
+    with closing(_connect()) as conn, conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO material_jobs"
+            " (material_id, course_id, professor_id, title, chapter, source_url, status, error, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, 'queued', NULL, CURRENT_TIMESTAMP)",
+            (material_id, course_id, professor_id, title, chapter, source_url),
+        )
+
+
+def set_job_status(material_id: str, status: str, error: str | None = None) -> None:
+    with closing(_connect()) as conn, conn:
+        conn.execute(
+            "UPDATE material_jobs SET status = ?, error = ?, updated_at = CURRENT_TIMESTAMP"
+            " WHERE material_id = ?",
+            (status, error, material_id),
+        )
+
+
+def get_job(material_id: str) -> dict | None:
+    with closing(_connect()) as conn:
+        row = conn.execute("SELECT * FROM material_jobs WHERE material_id = ?",
+                           (material_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_job(material_id: str) -> None:
+    with closing(_connect()) as conn, conn:
+        conn.execute("DELETE FROM material_jobs WHERE material_id = ?", (material_id,))
+
+
+def fail_unfinished_jobs() -> None:
+    """Jobs that were running when the service stopped are marked failed (Spring can retry)."""
+    with closing(_connect()) as conn, conn:
+        conn.execute(
+            "UPDATE material_jobs SET status = 'failed', error = 'interrupted',"
+            " updated_at = CURRENT_TIMESTAMP WHERE status IN ('queued', 'downloading', 'reading')"
+        )
+
+
+def outline(course_id: str, professor_id: str, max_pages: int = 150) -> list[dict]:
+    """Start of every page of the notes of this course+professor, in order (for study plans)."""
+    with closing(_connect()) as conn:
+        rows = conn.execute(
+            "SELECT m.material_id, m.title, m.chapter, c.page, substr(c.text, 1, 90) AS head"
+            " FROM chunks c JOIN materials m ON m.material_id = c.material_id"
+            " WHERE m.course_id = ? AND m.professor_id = ? AND c.chunk_index = 0"
+            " ORDER BY m.chapter, m.title, c.page LIMIT ?",
+            (course_id, professor_id, max_pages),
+        ).fetchall()
+    return [{"materialId": r["material_id"], "title": r["title"], "chapter": r["chapter"],
+             "page": r["page"], "head": r["head"]} for r in rows]
