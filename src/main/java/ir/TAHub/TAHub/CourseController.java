@@ -16,6 +16,7 @@ import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.Semester;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.AnnouncementRepository;
+import ir.TAHub.TAHub.repository.AssignmentRepository;
 import ir.TAHub.TAHub.repository.CourseOfferingRepository;
 import ir.TAHub.TAHub.repository.CourseRepository;
 import ir.TAHub.TAHub.repository.CourseResourceRepository;
@@ -73,6 +74,7 @@ public class CourseController {
     private final TaLimitRequestRepository limitRequestRepository;
     private final CourseResourceRepository resourceRepository;
     private final TaService taService;
+    private final AssignmentRepository assignmentRepository;
 
     public CourseController(CourseOfferingRepository offeringRepository,
                             CourseRepository courseRepository,
@@ -87,7 +89,8 @@ public class CourseController {
                             TaInvitationRepository invitationRepository,
                             TaLimitRequestRepository limitRequestRepository,
                             CourseResourceRepository resourceRepository,
-                            TaService taService) {
+                            TaService taService,
+                            AssignmentRepository assignmentRepository) {
         this.offeringRepository = offeringRepository;
         this.courseRepository = courseRepository;
         this.semesterRepository = semesterRepository;
@@ -102,6 +105,7 @@ public class CourseController {
         this.limitRequestRepository = limitRequestRepository;
         this.resourceRepository = resourceRepository;
         this.taService = taService;
+        this.assignmentRepository = assignmentRepository;
     }
 
     /** Lists only the offerings of the active semester. Older ones are hidden, not deleted. */
@@ -216,6 +220,10 @@ public class CourseController {
         model.addAttribute("canSeeAnnouncements", canSeeAnnouncements);
         if (canSeeAnnouncements) {
             model.addAttribute("announcementCount", announcementRepository.countByOfferingAndDeletedFalse(offering));
+            // Assignments are for the same people. The professor and TAs count drafts too.
+            model.addAttribute("assignmentCount", canManage || isTa
+                    ? assignmentRepository.countByOfferingAndDeletedFalse(offering)
+                    : assignmentRepository.countByOfferingAndDeletedFalseAndPublishedTrue(offering));
         }
         // Resources are for everyone who is logged in.
         model.addAttribute("resourceCount", resourceRepository.countByOfferingAndDeletedFalse(offering));

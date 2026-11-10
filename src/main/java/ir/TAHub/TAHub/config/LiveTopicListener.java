@@ -1,6 +1,8 @@
 package ir.TAHub.TAHub.config;
 
 import ir.TAHub.TAHub.model.Announcement;
+import ir.TAHub.TAHub.model.Assignment;
+import ir.TAHub.TAHub.model.AssignmentExtension;
 import ir.TAHub.TAHub.model.CafeteriaMeal;
 import ir.TAHub.TAHub.model.CafeteriaSettings;
 import ir.TAHub.TAHub.model.CourseOffering;
@@ -41,6 +43,7 @@ import java.util.Set;
  *          ta-requests    the TA request pages (requests and invitations)
  *          notices        site notices page;  banner  the yellow top bar
  *          cafeteria      cafeteria pages
+ *          (assignments and their extensions belong to offering:<id> too)
  *          (notifications pages are told separately, only to their owner, by NotificationStream)
  */
 @Component
@@ -121,6 +124,10 @@ public class LiveTopicListener
             topics.add(offeringTopic(request.getOffering()));
         } else if (entity instanceof Announcement announcement) {
             topics.add(offeringTopic(announcement.getOffering()));
+        } else if (entity instanceof Assignment homework) {
+            topics.add(offeringTopic(homework.getOffering()));
+        } else if (entity instanceof AssignmentExtension extension) {
+            topics.add(offeringTopic(extension.getAssignment().getOffering()));
         } else if (entity instanceof SiteNotice) {
             topics.add("notices");
             topics.add("banner");

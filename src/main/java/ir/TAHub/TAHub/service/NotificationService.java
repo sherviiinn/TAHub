@@ -1,6 +1,7 @@
 package ir.TAHub.TAHub.service;
 
 import ir.TAHub.TAHub.model.Announcement;
+import ir.TAHub.TAHub.model.Assignment;
 import ir.TAHub.TAHub.model.CourseOffering;
 import ir.TAHub.TAHub.model.Enrollment;
 import ir.TAHub.TAHub.model.EnrollmentStatus;
@@ -23,8 +24,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 /** Creates notifications. Other parts of the app call this when something happens. */
@@ -51,6 +54,8 @@ public class NotificationService {
     public static final String TA_LIMIT_REJECTED_KEY = "notifications.ta.limitRejected";
     public static final String TA_LIMIT_EXPIRED_KEY = "notifications.ta.limitExpired";
     public static final String TA_NOT_HEAD_KEY = "notifications.ta.notHead";
+    public static final String ASSIGNMENT_NEW_KEY = "notifications.assignment.new";
+    public static final String ASSIGNMENT_EXTENDED_KEY = "notifications.assignment.extended";
     private static final String MY_TA_REQUESTS_LINK = "/my-ta-requests";
     private static final String CAFETERIA_LINK = "/cafeteria";
     private static final String DATE_SEPARATOR = ", ";
@@ -570,6 +575,84 @@ public class NotificationService {
             notifications.add(notification);
         }
         notificationRepository.saveAll(notifications);
+    }
+
+    /**
+     * An assignment was published: every enrolled student is told ("New assignment: HW1 (CS201 - ...)").
+     * The link is the assignment itself, so each assignment has its own notification.
+     */
+    @Transactional
+    public void notifyAssignmentPublished(Assignment assignment) {
+        String link = assignmentLink(assignment);
+        Set<Long> alreadyTold = new HashSet<>();
+        for (Notification old : notificationRepository.findByMessageKeyAndLinkAndSeenFalse(ASSIGNMENT_NEW_KEY, link)) {
+            alreadyTold.add(old.getUser().getId());
+        }
+        List<Notification> notifications = new ArrayList<>();
+        for (Enrollment enrollment : enrollmentRepository
+                .findByOfferingAndStatusOrderByStudentFullNameAsc(assignment.getOffering(), EnrollmentStatus.ACTIVE)) {
+            User student = enrollment.getStudent();
+            if (alreadyTold.contains(student.getId())) {
+                continue;
+            }
+            Notification notification = create(student, NotificationType.GENERAL, "New assignment", link);
+            notification.setMessageKey(ASSIGNMENT_NEW_KEY);
+            notification.setMessageArg(assignmentName(assignment));
+            notifications.add(notification);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    /**
+     * The deadline of an assignment was extended: every enrolled student is told, once per assignment
+     * (an unread one just moves up). A student who has not read "New assignment" yet is not told again:
+     * they will see the new deadline when they open it.
+     */
+    @Transactional
+    public void notifyAssignmentExtended(Assignment assignment) {
+        String link = assignmentLink(assignment);
+        Set<Long> notReadNew = new HashSet<>();
+        for (Notification old : notificationRepository.findByMessageKeyAndLinkAndSeenFalse(ASSIGNMENT_NEW_KEY, link)) {
+            notReadNew.add(old.getUser().getId());
+        }
+        Map<Long, Notification> unread = new HashMap<>();
+        for (Notification old : notificationRepository.findByMessageKeyAndLinkAndSeenFalse(ASSIGNMENT_EXTENDED_KEY, link)) {
+            unread.putIfAbsent(old.getUser().getId(), old);
+        }
+        List<Notification> notifications = new ArrayList<>();
+        for (Enrollment enrollment : enrollmentRepository
+                .findByOfferingAndStatusOrderByStudentFullNameAsc(assignment.getOffering(), EnrollmentStatus.ACTIVE)) {
+            User student = enrollment.getStudent();
+            if (notReadNew.contains(student.getId())) {
+                continue;
+            }
+            Notification notification = unread.get(student.getId());
+            if (notification != null) {
+                notification.setCreatedAt(Instant.now());
+            } else {
+                notification = create(student, NotificationType.GENERAL, "Deadline extended", link);
+                notification.setMessageKey(ASSIGNMENT_EXTENDED_KEY);
+                notification.setMessageArg(assignmentName(assignment));
+            }
+            notifications.add(notification);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    /** An assignment was hidden (deleted): all its notifications (read or unread) are removed. */
+    @Transactional
+    public void onAssignmentHidden(Assignment assignment) {
+        notificationRepository.deleteAll(notificationRepository.findByLink(assignmentLink(assignment)));
+    }
+
+    private String assignmentLink(Assignment assignment) {
+        return "/assignments/" + assignment.getId();
+    }
+
+    /** "HW1 (CS201 - Data structures)", cut to fit the column. */
+    private String assignmentName(Assignment assignment) {
+        String name = assignment.getTitle() + " (" + courseName(assignment.getOffering()) + ")";
+        return name.length() > 255 ? name.substring(0, 252) + "..." : name;
     }
 
     private String courseName(CourseOffering offering) {

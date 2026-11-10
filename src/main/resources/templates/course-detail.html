@@ -17,6 +17,11 @@
         <a th:href="@{/courses/{id}/announcements(id=${offering.id})}"
            th:text="#{announcements.link(${announcementCount})}">Announcements</a>
     </p>
+    <!-- Assignments: only for the people of this offering too -->
+    <p th:if="${canSeeAnnouncements}">
+        <a th:href="@{/courses/{id}/assignments(id=${offering.id})}"
+           th:text="#{assignments.link(${assignmentCount})}">Assignments</a>
+    </p>
     <p th:if="${canSeeAnnouncements and offering.telegramLink != null}">
         <a th:href="${offering.telegramLink}" target="_blank" rel="noopener noreferrer"
            th:text="#{telegram.link}">Telegram group</a>

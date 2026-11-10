@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{assignments.title})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <!-- data-live-topics: this page reloads itself (static/js/live.js) when this offering changes -->
+    <main th:attr="data-live-topics='offering:' + ${offering.id}">
+
+    <div class="page-head">
+        <div>
+            <h1 th:text="#{assignments.title}">Assignments</h1>
+            <p class="muted" th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</p>
+        </div>
+        <!-- Only the professor and TAs with "Manage assignments" (active semester) see this -->
+        <a th:if="${canManage}" class="btn btn-primary"
+           th:href="@{/courses/{id}/assignments/new(id=${offering.id})}" th:text="#{assignments.new}">New assignment</a>
+    </div>
+
+    <p th:unless="${isCurrentSemester}" class="alert" th:text="#{assignments.archivedNote}">This semester is archived.</p>
+    <p th:if="${isCancelled}" class="alert" th:text="#{course.detail.cancelledBanner}">Cancelled.</p>
+
+    <p th:if="${#lists.isEmpty(rows)}" class="empty" th:text="#{assignments.none}">No assignments yet.</p>
+
+    <ul class="stack assignment-list" th:unless="${#lists.isEmpty(rows)}">
+        <li class="card" th:each="r : ${rows}">
+            <h2>
+                <a th:href="@{/assignments/{aid}(aid=${r.assignment.id})}" th:text="${r.assignment.title}">HW1</a>
+                <!-- Tags: draft (staff only), extended with its factor, deadline passed -->
+                <span th:unless="${r.assignment.published}" class="tag tag-muted" th:text="#{assignments.draft}">Draft</span>
+                <span th:if="${r.extendFactor != null}" class="tag tag-orange"
+                      th:text="#{assignments.extendedTag(${r.extendFactor})}">Extended | 80%</span>
+                <span th:if="${r.assignment.published and r.passed}" class="tag tag-muted"
+                      th:text="#{assignments.passed}">Deadline passed</span>
+            </h2>
+            <p class="muted">
+                <span th:text="#{assignments.chapter(${r.assignment.chapter})}">Chapter: Ch2</span>
+                &middot;
+                <span dir="ltr" th:text="#{assignments.deadline(${r.deadline})}">Deadline: 2026-11-20 23:59</span>
+            </p>
+        </li>
+    </ul>
+
+    <p><a th:href="@{/courses/{id}(id=${offering.id})}" th:text="#{announcements.backToCourse}">Back to the course</a></p>
+    </main>
+</body>
+</html>

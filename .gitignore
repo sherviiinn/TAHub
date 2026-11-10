@@ -33,3 +33,6 @@ build/
 .vscode/
 
 Claude outputs/
+
+### Uploaded files (local storage) ###
+/data/

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${isNew} ? #{assignments.form.newTitle} : #{assignments.form.editTitle})}"></head>
+<body>
+    <nav th:replace="~{fragments/layout :: nav}"></nav>
+    <main>
+
+    <div class="page-head">
+        <div>
+            <h1 th:text="${isNew} ? #{assignments.form.newTitle} : #{assignments.form.editTitle}">New assignment</h1>
+            <p class="muted" th:text="${offering.course.code} + ' - ' + ${offering.course.name}">Course</p>
+        </div>
+    </div>
+
+    <th:block th:if="${assignmentErrorKey}">
+        <p class="alert alert-error" role="alert" th:text="#{${assignmentErrorKey}}"></p>
+        <!-- A browser never keeps a chosen file after a reload -->
+        <p class="muted" th:text="#{assignments.form.fileAgain}">Please choose the file again.</p>
+    </th:block>
+
+    <!-- New: POST /courses/{id}/assignments. Edit: POST /assignments/{aid}/edit. The PDF needs multipart. -->
+    <form class="card" method="post" enctype="multipart/form-data" data-busy-form
+          th:action="${isNew} ? @{/courses/{id}/assignments(id=${offering.id})} : @{/assignments/{aid}/edit(aid=${assignment.id})}">
+        <div class="field">
+            <label for="title" th:text="#{assignments.form.title}">Title</label>
+            <input type="text" id="title" name="title" maxlength="150" required autocomplete="off" th:value="${formTitle}">
+        </div>
+        <div class="field">
+            <label for="chapter" th:text="#{assignments.form.chapter}">Chapter</label>
+            <input type="text" id="chapter" name="chapter" maxlength="30" required autocomplete="off" th:value="${formChapter}">
+            <p class="field-hint" th:text="#{assignments.form.chapterHint}">Short, used in file names.</p>
+        </div>
+        <div class="field">
+            <label for="description" th:text="#{assignments.form.description}">Description (optional)</label>
+            <textarea id="description" name="description" rows="5" maxlength="2000" th:text="${formDescription}"></textarea>
+        </div>
+
+        <!-- The deadline is chosen while it is a draft. After publishing, only "Extend" changes it. -->
+        <div class="field" th:if="${isDraft}">
+            <label for="deadline" th:text="#{assignments.form.deadline}">Deadline</label>
+            <input type="datetime-local" id="deadline" name="deadline" required dir="ltr" th:value="${formDeadline}">
+        </div>
+        <p th:unless="${isDraft}" class="muted" th:text="#{assignments.form.deadlineLocked(${currentDeadline})}">The deadline is ...</p>
+
+        <div class="field">
+            <label for="questionFile" th:text="#{assignments.form.file}">Question PDF</label>
+            <input type="file" id="questionFile" name="questionFile" accept="application/pdf,.pdf">
+            <p class="field-hint" th:text="#{assignments.form.fileHint(${maxMb})}">A PDF file, at most 15 MB.</p>
+            <p class="field-hint" th:if="${assignment != null and assignment.questionFile != null}"
+               th:text="#{assignments.form.fileReplace(${assignment.questionFile.originalName})}">There is already a PDF.</p>
+        </div>
+
+        <div class="row">
+            <!-- A draft can be saved as it is, or published now (needs the PDF and a future deadline) -->
+            <th:block th:if="${isDraft}">
+                <button type="submit" name="action" value="draft" class="btn-ghost" th:text="#{assignments.form.saveDraft}">Save as draft</button>
+                <button type="submit" name="action" value="publish" class="btn-primary" th:text="#{assignments.form.publish}">Publish</button>
+            </th:block>
+            <button th:unless="${isDraft}" type="submit" name="action" value="save" class="btn-primary"
+                    th:text="#{assignments.form.save}">Save</button>
+            <a class="btn btn-ghost"
+               th:href="${isNew} ? @{/courses/{id}/assignments(id=${offering.id})} : @{/assignments/{aid}(aid=${assignment.id})}"
+               th:text="#{assignments.form.cancel}">Cancel</a>
+        </div>
+    </form>
+    </main>
+</body>
+</html>
