@@ -1,9 +1,11 @@
 package ir.TAHub.TAHub;
 
 import ir.TAHub.TAHub.model.EnrollmentStatus;
+import ir.TAHub.TAHub.model.Major;
 import ir.TAHub.TAHub.model.Role;
 import ir.TAHub.TAHub.model.User;
 import ir.TAHub.TAHub.repository.EnrollmentRepository;
+import ir.TAHub.TAHub.repository.MajorRepository;
 import ir.TAHub.TAHub.repository.TaAssignmentRepository;
 import ir.TAHub.TAHub.repository.UserRepository;
 import ir.TAHub.TAHub.service.AccountService;
@@ -43,17 +45,20 @@ public class AccountController {
     private final TaAssignmentRepository taRepository;
     private final AccountService accountService;
     private final StudentNumberRules numberRules;
+    private final MajorRepository majorRepository;
 
     public AccountController(UserRepository userRepository,
                              EnrollmentRepository enrollmentRepository,
                              TaAssignmentRepository taRepository,
                              AccountService accountService,
-                             StudentNumberRules numberRules) {
+                             StudentNumberRules numberRules,
+                             MajorRepository majorRepository) {
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.taRepository = taRepository;
         this.accountService = accountService;
         this.numberRules = numberRules;
+        this.majorRepository = majorRepository;
     }
 
     @GetMapping("/admin/accounts")
@@ -97,6 +102,7 @@ public class AccountController {
         model.addAttribute("validNumber", validNumber);
         model.addAttribute("settings", numberRules.settings());
         model.addAttribute("hint", numberRules.hint());
+        model.addAttribute("majors", majorRepository.findAllByOrderByNameAsc());
         return "accounts";
     }
 
@@ -158,6 +164,32 @@ public class AccountController {
         accountService.release(user);
         // Search for the released number, so the admin sees the result (it is kept in releasedNumber).
         return back(number, flash, null, "accounts.done.released");
+    }
+
+    /**
+     * Students cannot change their own field of study once it is set. Until the change request with a student
+     * card exists (after step 4-p), an admin changes it here.
+     */
+    @PostMapping("/admin/accounts/{id}/major")
+    public String changeMajor(@PathVariable Long id,
+                              @RequestParam(required = false) Long majorId,
+                              @RequestParam(defaultValue = "") String q,
+                              RedirectAttributes flash) {
+        Optional<User> found = userRepository.findById(id);
+        if (found.isEmpty()) {
+            return back(q, flash, "accounts.error.notFound", null);
+        }
+        User user = found.get();
+        if (user.getRole() != Role.STUDENT) {
+            return back(q, flash, "accounts.error.majorNotStudent", null);
+        }
+        Optional<Major> major = majorId == null ? Optional.empty() : majorRepository.findById(majorId);
+        if (major.isEmpty()) {
+            return back(q, flash, "accounts.error.majorNotFound", null);
+        }
+        user.setMajor(major.get());
+        userRepository.save(user);
+        return back(q, flash, null, "accounts.done.majorChanged");
     }
 
     @PostMapping("/admin/accounts/number-format")

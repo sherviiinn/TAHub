@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{majorRequest.title})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav}"></nav>
+
+<!-- Change request for the field of study. For now only an explanation: the form with the student card
+     photo is built after step 4-p (file uploads). Until then an admin changes it in /admin/accounts. -->
+<main class="profile">
+    <h1 th:text="#{majorRequest.title}">Change your field of study</h1>
+
+    <section class="card profile-section">
+        <dl class="profile-facts">
+            <div>
+                <dt th:text="#{majorRequest.current}">Your field of study now</dt>
+                <dd th:if="${profileUser.major != null}" th:text="${profileUser.major.name}">Computer engineering</dd>
+                <dd class="muted" th:if="${profileUser.major == null}" th:text="#{course.detail.majorNotSet}">Not set</dd>
+            </div>
+        </dl>
+    </section>
+
+    <div class="empty">
+        <h2 th:text="#{majorRequest.soon.title}">Coming soon</h2>
+        <p th:text="#{majorRequest.soon.text}">Soon you can send a change request here with a photo of your student card.</p>
+    </div>
+
+    <p><a class="btn" th:href="@{/profile}" th:text="#{majorRequest.back}">Back to my profile</a></p>
+</main>
+</body>
+</html>

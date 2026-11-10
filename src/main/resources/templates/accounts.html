@@ -26,6 +26,7 @@
                 <th th:text="#{accounts.col.name}">Name</th>
                 <th th:text="#{accounts.col.login}">Number / username</th>
                 <th th:text="#{accounts.col.role}">Role</th>
+                <th th:text="#{accounts.col.major}">Field of study</th>
                 <th th:text="#{accounts.col.courses}">Courses</th>
                 <th th:text="#{accounts.col.ta}">TA roles</th>
                 <th th:text="#{accounts.col.status}">Status</th>
@@ -41,6 +42,22 @@
                     <span th:if="${u.releasedNumber != null}" th:text="#{accounts.releasedFrom(${u.releasedNumber})}"></span>
                 </td>
                 <td th:text="#{${'role.' + u.role}}"></td>
+                <td>
+                    <!-- Students cannot change their own field of study once set; the admin does it here -->
+                    <th:block th:if="${u.role.name() == 'STUDENT'}">
+                        <span th:if="${u.major != null}" th:text="${u.major.name}"></span>
+                        <span class="muted" th:if="${u.major == null}" th:text="#{course.detail.majorNotSet}">Not set</span>
+                        <form th:if="${u.releasedNumber == null}" method="post"
+                              th:action="@{/admin/accounts/{id}/major(id=${u.id})}" class="row">
+                            <input type="hidden" name="q" th:value="${q}">
+                            <select name="majorId" required th:attr="aria-label=#{accounts.col.major}">
+                                <option th:each="m : ${majors}" th:value="${m.id}" th:text="${m.name}"
+                                        th:selected="${u.major != null and u.major.id == m.id}"></option>
+                            </select>
+                            <button type="submit" class="btn-small" th:text="#{accounts.major.change}">Change</button>
+                        </form>
+                    </th:block>
+                </td>
                 <td th:text="${courses[u.id]}"></td>
                 <td th:text="${taRoles[u.id]}"></td>
                 <td>

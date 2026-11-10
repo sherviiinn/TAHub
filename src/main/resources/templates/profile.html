@@ -13,6 +13,12 @@
         <span th:text="#{profile.saved}">Your field of study was saved.</span>
     </div>
 
+    <!-- A student with a field of study tried to change it without a request (the server refused) -->
+    <div class="alert alert-error alert-icon" role="alert" th:if="${param.majorLocked}">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/></svg>
+        <span th:text="#{profile.majorLocked}">Your field of study is already set. To change it, send a change request.</span>
+    </div>
+
     <!-- Who you are: a dark top (like the home page greeting), the facts under it -->
     <section class="card profile-card">
         <div class="profile-hero">
@@ -40,8 +46,8 @@
         </dl>
     </section>
 
-    <!-- Students can change their field of study -->
-    <section class="card profile-section" th:if="${isStudent}">
+    <!-- Only a student WITHOUT a field of study chooses it here, once (canChangeMajor from ProfileController) -->
+    <section class="card profile-section" th:if="${canChangeMajor}">
         <h2 class="section-title">
             <span class="section-icon" aria-hidden="true"><svg class="icon"><use href="#i-cap"/></svg></span>
             <span th:text="#{profile.changeMajor}">Change your field of study</span>
@@ -64,6 +70,16 @@
                 <span th:text="#{profile.save}">Save</span>
             </button>
         </form>
+    </section>
+
+    <!-- A student WITH a field of study cannot change it alone: a request, checked by an admin -->
+    <section class="card profile-section" th:if="${isStudent and !canChangeMajor}">
+        <h2 class="section-title">
+            <span class="section-icon" aria-hidden="true"><svg class="icon"><use href="#i-cap"/></svg></span>
+            <span th:text="#{profile.majorWrong.title}">Is your field of study wrong?</span>
+        </h2>
+        <p class="muted" th:text="#{profile.majorWrong.text}">An admin changes it after checking your student card.</p>
+        <a class="btn" th:href="@{/profile/major-request}" th:text="#{profile.majorWrong.button}">Request a change</a>
     </section>
 </main>
 </body>
